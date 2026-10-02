@@ -72,33 +72,21 @@ $routes->group(
     ],
     static function ($routes) {
 
-        /*
-        | GET ALL USERS
-        */
         $routes->get(
             '',
             'Api\UserController::index'
         );
 
-        /*
-        | GET DETAIL USER
-        */
         $routes->get(
             '(:num)',
             'Api\UserController::show/$1'
         );
 
-        /*
-        | CREATE USER
-        */
         $routes->post(
             '',
             'Api\UserController::create'
         );
 
-        /*
-        | UPDATE USER
-        */
         $routes->put(
             '(:num)',
             'Api\UserController::update/$1'
@@ -109,9 +97,6 @@ $routes->group(
             'Api\UserController::update/$1'
         );
 
-        /*
-        | NONAKTIFKAN USER
-        */
         $routes->delete(
             '(:num)',
             'Api\UserController::delete/$1'
@@ -125,7 +110,7 @@ $routes->group(
 | SURAT MASUK - READ
 |--------------------------------------------------------------------------
 |
-| Admin, Kepala Seksi, dan Staf boleh melihat surat masuk.
+| Admin, Kepala Seksi, dan Staf
 |
 */
 
@@ -136,25 +121,16 @@ $routes->group(
     ],
     static function ($routes) {
 
-        /*
-        | GET SEMUA SURAT MASUK
-        */
         $routes->get(
             '',
             'Api\SuratMasukController::index'
         );
 
-        /*
-        | GET DETAIL SURAT MASUK
-        */
         $routes->get(
             '(:num)',
             'Api\SuratMasukController::show/$1'
         );
 
-        /*
-        | DOWNLOAD FILE SURAT
-        */
         $routes->get(
             '(:num)/file',
             'Api\SuratMasukController::downloadFile/$1'
@@ -168,10 +144,7 @@ $routes->group(
 | SURAT MASUK - CREATE / UPDATE / UPLOAD
 |--------------------------------------------------------------------------
 |
-| Admin dan Staf boleh:
-| - tambah surat
-| - edit surat
-| - upload file
+| Admin dan Staf
 |
 */
 
@@ -182,17 +155,11 @@ $routes->group(
     ],
     static function ($routes) {
 
-        /*
-        | CREATE SURAT MASUK
-        */
         $routes->post(
             '',
             'Api\SuratMasukController::create'
         );
 
-        /*
-        | UPDATE SURAT MASUK
-        */
         $routes->put(
             '(:num)',
             'Api\SuratMasukController::update/$1'
@@ -203,9 +170,6 @@ $routes->group(
             'Api\SuratMasukController::update/$1'
         );
 
-        /*
-        | UPLOAD FILE SURAT
-        */
         $routes->post(
             '(:num)/file',
             'Api\SuratMasukController::uploadFile/$1'
@@ -219,7 +183,7 @@ $routes->group(
 | SURAT MASUK - DELETE
 |--------------------------------------------------------------------------
 |
-| Hanya admin yang boleh menghapus surat masuk.
+| Hanya admin
 |
 */
 
@@ -228,5 +192,121 @@ $routes->delete(
     'Api\SuratMasukController::delete/$1',
     [
         'filter' => 'role:admin',
+    ]
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| DISPOSISI - READ
+|--------------------------------------------------------------------------
+|
+| Admin:
+| - melihat semua disposisi
+|
+| Kepala Seksi:
+| - melihat disposisi yang dibuatnya
+|
+| Staf:
+| - melihat disposisi yang ditujukan kepadanya
+|
+*/
+
+$routes->group(
+    'api/disposisi',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+
+        /*
+        | GET ALL DISPOSISI
+        */
+        $routes->get(
+            '',
+            'Api\DisposisiController::index'
+        );
+
+        /*
+        | GET DETAIL DISPOSISI
+        */
+        $routes->get(
+            '(:num)',
+            'Api\DisposisiController::show/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| DISPOSISI - KEPALA SEKSI
+|--------------------------------------------------------------------------
+|
+| Kepala Seksi dapat:
+| - membuat disposisi
+| - mengembalikan disposisi untuk revisi
+|
+*/
+
+$routes->group(
+    'api/disposisi',
+    [
+        'filter' => 'role:kepala_seksi',
+    ],
+    static function ($routes) {
+
+        /*
+        | CREATE DISPOSISI
+        */
+        $routes->post(
+            '',
+            'Api\DisposisiController::create'
+        );
+
+        /*
+        | KEMBALIKAN UNTUK REVISI
+        */
+        $routes->patch(
+            '(:num)/kembalikan',
+            'Api\DisposisiController::kembalikan/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| DISPOSISI - STAF
+|--------------------------------------------------------------------------
+|
+| Staf mengisi tindak lanjut disposisi.
+|
+*/
+
+$routes->patch(
+    'api/disposisi/(:num)/tindak-lanjut',
+    'Api\DisposisiController::tindakLanjut/$1',
+    [
+        'filter' => 'role:staf',
+    ]
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| DISPOSISI - SELESAI
+|--------------------------------------------------------------------------
+|
+| Kepala Seksi atau Staf dapat menandai disposisi selesai.
+| Controller tetap melakukan pengecekan kepemilikan disposisi.
+|
+*/
+
+$routes->patch(
+    'api/disposisi/(:num)/selesai',
+    'Api\DisposisiController::selesai/$1',
+    [
+        'filter' => 'role:kepala_seksi,staf',
     ]
 );
