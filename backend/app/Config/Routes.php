@@ -8,7 +8,7 @@ use CodeIgniter\Router\RouteCollection;
 
 /*
 |--------------------------------------------------------------------------
-| DEFAULT ROUTE
+| DEFAULT
 |--------------------------------------------------------------------------
 */
 
@@ -17,91 +17,33 @@ $routes->get('/', 'Home::index');
 
 /*
 |--------------------------------------------------------------------------
-| AUTHENTICATION API
+| AUTHENTICATION
 |--------------------------------------------------------------------------
-|
-| Endpoint:
-|
-| POST /api/auth/login
-| POST /api/auth/forgot-password
-| POST /api/auth/verify-otp
-| POST /api/auth/reset-password
-| POST /api/auth/logout
-|
 */
 
 $routes->group(
     'api/auth',
     static function ($routes) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOGIN
-        |--------------------------------------------------------------------------
-        |
-        | Tidak membutuhkan token.
-        |
-        */
-
         $routes->post(
             'login',
             'Api\AuthController::login'
         );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | FORGOT PASSWORD
-        |--------------------------------------------------------------------------
-        |
-        | Request OTP melalui email.
-        |
-        */
 
         $routes->post(
             'forgot-password',
             'Api\AuthController::forgotPassword'
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | VERIFY OTP
-        |--------------------------------------------------------------------------
-        |
-        | Verifikasi OTP yang diterima user.
-        |
-        */
-
         $routes->post(
             'verify-otp',
             'Api\AuthController::verifyOtp'
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESET PASSWORD
-        |--------------------------------------------------------------------------
-        |
-        | Mengubah password setelah OTP berhasil diverifikasi.
-        |
-        */
-
         $routes->post(
             'reset-password',
             'Api\AuthController::resetPassword'
         );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOGOUT
-        |--------------------------------------------------------------------------
-        |
-        | Membutuhkan Bearer Token.
-        |
-        */
 
         $routes->post(
             'logout',
@@ -116,17 +58,10 @@ $routes->group(
 
 /*
 |--------------------------------------------------------------------------
-| USER MANAGEMENT API
+| USER MANAGEMENT
 |--------------------------------------------------------------------------
 |
-| Hanya ADMIN yang boleh mengakses seluruh endpoint di bawah ini.
-|
-| GET    /api/users
-| GET    /api/users/{id}
-| POST   /api/users
-| PUT    /api/users/{id}
-| PATCH  /api/users/{id}
-| DELETE /api/users/{id}
+| Hanya admin
 |
 */
 
@@ -138,102 +73,160 @@ $routes->group(
     static function ($routes) {
 
         /*
-        |--------------------------------------------------------------------------
         | GET ALL USERS
-        |--------------------------------------------------------------------------
-        |
-        | Contoh:
-        |
-        | GET /api/users
-        | GET /api/users?search=andi
-        | GET /api/users?role=staf
-        | GET /api/users?page=1&per_page=20
-        |
         */
-
         $routes->get(
             '',
             'Api\UserController::index'
         );
 
-
         /*
-        |--------------------------------------------------------------------------
-        | GET USER DETAIL
-        |--------------------------------------------------------------------------
-        |
-        | Contoh:
-        |
-        | GET /api/users/1
-        |
+        | GET DETAIL USER
         */
-
         $routes->get(
             '(:num)',
             'Api\UserController::show/$1'
         );
 
-
         /*
-        |--------------------------------------------------------------------------
         | CREATE USER
-        |--------------------------------------------------------------------------
-        |
-        | POST /api/users
-        |
         */
-
         $routes->post(
             '',
             'Api\UserController::create'
         );
 
-
         /*
-        |--------------------------------------------------------------------------
-        | UPDATE USER - PUT
-        |--------------------------------------------------------------------------
-        |
-        | PUT /api/users/1
-        |
+        | UPDATE USER
         */
-
         $routes->put(
             '(:num)',
             'Api\UserController::update/$1'
         );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE USER - PATCH
-        |--------------------------------------------------------------------------
-        |
-        | PATCH /api/users/1
-        |
-        */
 
         $routes->patch(
             '(:num)',
             'Api\UserController::update/$1'
         );
 
-
         /*
-        |--------------------------------------------------------------------------
-        | DELETE / NONAKTIFKAN USER
-        |--------------------------------------------------------------------------
-        |
-        | DELETE /api/users/1
-        |
-        | Controller kita tidak benar-benar menghapus data.
-        | User hanya diubah status menjadi nonaktif.
-        |
+        | NONAKTIFKAN USER
         */
-
         $routes->delete(
             '(:num)',
             'Api\UserController::delete/$1'
         );
     }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SURAT MASUK - READ
+|--------------------------------------------------------------------------
+|
+| Admin, Kepala Seksi, dan Staf boleh melihat surat masuk.
+|
+*/
+
+$routes->group(
+    'api/surat-masuk',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+
+        /*
+        | GET SEMUA SURAT MASUK
+        */
+        $routes->get(
+            '',
+            'Api\SuratMasukController::index'
+        );
+
+        /*
+        | GET DETAIL SURAT MASUK
+        */
+        $routes->get(
+            '(:num)',
+            'Api\SuratMasukController::show/$1'
+        );
+
+        /*
+        | DOWNLOAD FILE SURAT
+        */
+        $routes->get(
+            '(:num)/file',
+            'Api\SuratMasukController::downloadFile/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SURAT MASUK - CREATE / UPDATE / UPLOAD
+|--------------------------------------------------------------------------
+|
+| Admin dan Staf boleh:
+| - tambah surat
+| - edit surat
+| - upload file
+|
+*/
+
+$routes->group(
+    'api/surat-masuk',
+    [
+        'filter' => 'role:admin,staf',
+    ],
+    static function ($routes) {
+
+        /*
+        | CREATE SURAT MASUK
+        */
+        $routes->post(
+            '',
+            'Api\SuratMasukController::create'
+        );
+
+        /*
+        | UPDATE SURAT MASUK
+        */
+        $routes->put(
+            '(:num)',
+            'Api\SuratMasukController::update/$1'
+        );
+
+        $routes->patch(
+            '(:num)',
+            'Api\SuratMasukController::update/$1'
+        );
+
+        /*
+        | UPLOAD FILE SURAT
+        */
+        $routes->post(
+            '(:num)/file',
+            'Api\SuratMasukController::uploadFile/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SURAT MASUK - DELETE
+|--------------------------------------------------------------------------
+|
+| Hanya admin yang boleh menghapus surat masuk.
+|
+*/
+
+$routes->delete(
+    'api/surat-masuk/(:num)',
+    'Api\SuratMasukController::delete/$1',
+    [
+        'filter' => 'role:admin',
+    ]
 );
