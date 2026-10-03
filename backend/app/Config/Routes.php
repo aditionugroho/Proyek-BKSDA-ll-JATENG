@@ -109,9 +109,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | SURAT MASUK - READ
 |--------------------------------------------------------------------------
-|
-| Admin, Kepala Seksi, dan Staf
-|
 */
 
 $routes->group(
@@ -143,9 +140,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | SURAT MASUK - CREATE / UPDATE / UPLOAD
 |--------------------------------------------------------------------------
-|
-| Admin dan Staf
-|
 */
 
 $routes->group(
@@ -182,9 +176,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | SURAT MASUK - DELETE
 |--------------------------------------------------------------------------
-|
-| Hanya Admin
-|
 */
 
 $routes->delete(
@@ -200,9 +191,6 @@ $routes->delete(
 |--------------------------------------------------------------------------
 | SURAT KELUAR - READ
 |--------------------------------------------------------------------------
-|
-| Admin, Kepala Seksi, dan Staf
-|
 */
 
 $routes->group(
@@ -234,9 +222,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | SURAT KELUAR - CREATE / UPDATE / UPLOAD
 |--------------------------------------------------------------------------
-|
-| Admin dan Staf
-|
 */
 
 $routes->group(
@@ -273,9 +258,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | SURAT KELUAR - DELETE
 |--------------------------------------------------------------------------
-|
-| Hanya Admin
-|
 */
 
 $routes->delete(
@@ -291,16 +273,6 @@ $routes->delete(
 |--------------------------------------------------------------------------
 | DISPOSISI - READ
 |--------------------------------------------------------------------------
-|
-| Admin:
-| - melihat semua disposisi
-|
-| Kepala Seksi:
-| - melihat disposisi yang dibuatnya
-|
-| Staf:
-| - melihat disposisi yang ditujukan kepadanya
-|
 */
 
 $routes->group(
@@ -375,5 +347,86 @@ $routes->patch(
     'Api\DisposisiController::selesai/$1',
     [
         'filter' => 'role:kepala_seksi,staf',
+    ]
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| ARSIP - READ
+|--------------------------------------------------------------------------
+|
+| Admin, Kepala Seksi, dan Staf
+|
+*/
+
+$routes->group(
+    'api/arsip',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+
+        $routes->get(
+            '',
+            'Api\ArsipController::index'
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\ArsipController::show/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| ARSIP - CREATE / UPDATE
+|--------------------------------------------------------------------------
+|
+| Admin dan Staf
+|
+*/
+
+$routes->group(
+    'api/arsip',
+    [
+        'filter' => 'role:admin,staf',
+    ],
+    static function ($routes) {
+
+        $routes->post(
+            '',
+            'Api\ArsipController::create'
+        );
+
+        $routes->put(
+            '(:num)',
+            'Api\ArsipController::update/$1'
+        );
+
+        $routes->patch(
+            '(:num)',
+            'Api\ArsipController::update/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| ARSIP - DELETE
+|--------------------------------------------------------------------------
+|
+| Hanya Admin
+|
+*/
+
+$routes->delete(
+    'api/arsip/(:num)',
+    'Api\ArsipController::delete/$1',
+    [
+        'filter' => 'role:admin',
     ]
 );
