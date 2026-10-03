@@ -61,7 +61,7 @@ $routes->group(
 | USER MANAGEMENT
 |--------------------------------------------------------------------------
 |
-| Hanya admin
+| Hanya Admin
 |
 */
 
@@ -183,13 +183,104 @@ $routes->group(
 | SURAT MASUK - DELETE
 |--------------------------------------------------------------------------
 |
-| Hanya admin
+| Hanya Admin
 |
 */
 
 $routes->delete(
     'api/surat-masuk/(:num)',
     'Api\SuratMasukController::delete/$1',
+    [
+        'filter' => 'role:admin',
+    ]
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SURAT KELUAR - READ
+|--------------------------------------------------------------------------
+|
+| Admin, Kepala Seksi, dan Staf
+|
+*/
+
+$routes->group(
+    'api/surat-keluar',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+
+        $routes->get(
+            '',
+            'Api\SuratKeluarController::index'
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\SuratKeluarController::show/$1'
+        );
+
+        $routes->get(
+            '(:num)/file',
+            'Api\SuratKeluarController::downloadFile/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SURAT KELUAR - CREATE / UPDATE / UPLOAD
+|--------------------------------------------------------------------------
+|
+| Admin dan Staf
+|
+*/
+
+$routes->group(
+    'api/surat-keluar',
+    [
+        'filter' => 'role:admin,staf',
+    ],
+    static function ($routes) {
+
+        $routes->post(
+            '',
+            'Api\SuratKeluarController::create'
+        );
+
+        $routes->put(
+            '(:num)',
+            'Api\SuratKeluarController::update/$1'
+        );
+
+        $routes->patch(
+            '(:num)',
+            'Api\SuratKeluarController::update/$1'
+        );
+
+        $routes->post(
+            '(:num)/file',
+            'Api\SuratKeluarController::uploadFile/$1'
+        );
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SURAT KELUAR - DELETE
+|--------------------------------------------------------------------------
+|
+| Hanya Admin
+|
+*/
+
+$routes->delete(
+    'api/surat-keluar/(:num)',
+    'Api\SuratKeluarController::delete/$1',
     [
         'filter' => 'role:admin',
     ]
@@ -219,17 +310,11 @@ $routes->group(
     ],
     static function ($routes) {
 
-        /*
-        | GET ALL DISPOSISI
-        */
         $routes->get(
             '',
             'Api\DisposisiController::index'
         );
 
-        /*
-        | GET DETAIL DISPOSISI
-        */
         $routes->get(
             '(:num)',
             'Api\DisposisiController::show/$1'
@@ -242,11 +327,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | DISPOSISI - KEPALA SEKSI
 |--------------------------------------------------------------------------
-|
-| Kepala Seksi dapat:
-| - membuat disposisi
-| - mengembalikan disposisi untuk revisi
-|
 */
 
 $routes->group(
@@ -256,17 +336,11 @@ $routes->group(
     ],
     static function ($routes) {
 
-        /*
-        | CREATE DISPOSISI
-        */
         $routes->post(
             '',
             'Api\DisposisiController::create'
         );
 
-        /*
-        | KEMBALIKAN UNTUK REVISI
-        */
         $routes->patch(
             '(:num)/kembalikan',
             'Api\DisposisiController::kembalikan/$1'
@@ -279,9 +353,6 @@ $routes->group(
 |--------------------------------------------------------------------------
 | DISPOSISI - STAF
 |--------------------------------------------------------------------------
-|
-| Staf mengisi tindak lanjut disposisi.
-|
 */
 
 $routes->patch(
@@ -297,10 +368,6 @@ $routes->patch(
 |--------------------------------------------------------------------------
 | DISPOSISI - SELESAI
 |--------------------------------------------------------------------------
-|
-| Kepala Seksi atau Staf dapat menandai disposisi selesai.
-| Controller tetap melakukan pengecekan kepemilikan disposisi.
-|
 */
 
 $routes->patch(
