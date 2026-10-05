@@ -595,31 +595,100 @@ class SuratKeluarController extends BaseController
             ], 422);
         }
 
-        $allowedExtensions = [
-            'pdf',
-            'doc',
-            'docx',
-            'jpg',
-            'jpeg',
-            'png',
+        $allowedFileTypes = [
+            'pdf' => [
+                'application/pdf',
+            ],
+
+            'docx' => [
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/zip',
+            ],
+
+            'jpg' => [
+                'image/jpeg',
+            ],
+
+            'jpeg' => [
+                'image/jpeg',
+            ],
+
+            'png' => [
+                'image/png',
+            ],
         ];
 
         $extension = strtolower(
-            $file->getExtension()
+            $file->getClientExtension()
+        );
+
+        if (
+            !array_key_exists(
+                $extension,
+                $allowedFileTypes
+            )
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Format file harus PDF, DOCX, JPG/JPEG, atau PNG.',
+            ], 422);
+        }
+
+        $mimeType = strtolower(
+            (string) $file->getMimeType()
         );
 
         if (
             !in_array(
-                $extension,
-                $allowedExtensions,
+                $mimeType,
+                $allowedFileTypes[$extension],
                 true
             )
         ) {
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'Format file tidak didukung.',
+                    'Tipe isi file tidak sesuai dengan format file.',
             ], 422);
+        }
+        if ($extension === 'docx') {
+            $zip = new \ZipArchive();
+
+            $zipResult = $zip->open(
+                $file->getTempName()
+            );
+
+            if ($zipResult !== true) {
+                return $this->respond([
+                    'status' => false,
+                    'message' =>
+                        'File DOCX tidak valid.',
+                ], 422);
+            }
+
+            $hasContentTypes =
+                $zip->locateName(
+                    '[Content_Types].xml'
+                ) !== false;
+
+            $hasWordDocument =
+                $zip->locateName(
+                    'word/document.xml'
+                ) !== false;
+
+            $zip->close();
+
+            if (
+                !$hasContentTypes ||
+                !$hasWordDocument
+            ) {
+                return $this->respond([
+                    'status' => false,
+                    'message' =>
+                        'File bukan dokumen DOCX yang valid.',
+                ], 422);
+            }
         }
 
         $uploadDirectory =
