@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\ActivityLogModel;
 use App\Models\AuthTokenModel;
 use App\Models\DisposisiModel;
+use App\Models\NotifikasiModel;
 use App\Models\SuratMasukModel;
 use App\Models\UserModel;
 use CodeIgniter\API\ResponseTrait;
@@ -19,14 +20,16 @@ class DisposisiController extends BaseController
     protected UserModel $userModel;
     protected AuthTokenModel $tokenModel;
     protected ActivityLogModel $activityLogModel;
+    protected NotifikasiModel $notifikasiModel;
 
     public function __construct()
     {
-        $this->disposisiModel   = new DisposisiModel();
-        $this->suratModel       = new SuratMasukModel();
-        $this->userModel        = new UserModel();
-        $this->tokenModel       = new AuthTokenModel();
+        $this->disposisiModel = new DisposisiModel();
+        $this->suratModel = new SuratMasukModel();
+        $this->userModel = new UserModel();
+        $this->tokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
+        $this->notifikasiModel = new NotifikasiModel();
     }
 
     /*
@@ -85,26 +88,33 @@ class DisposisiController extends BaseController
         $user = $this->getCurrentUser();
 
         $this->activityLogModel->insert([
-            'user_id' =>
-                $user['id'] ?? null,
+            'user_id' => $user['id'] ?? null,
+            'aktivitas' => $aktivitas,
+            'modul' => 'disposisi',
+            'referensi_id' => $referensiId,
+            'deskripsi' => $deskripsi,
+            'ip_address' => $this->request->getIPAddress(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
 
-            'aktivitas' =>
-                $aktivitas,
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE NOTIFICATION
+    |--------------------------------------------------------------------------
+    */
 
-            'modul' =>
-                'disposisi',
-
-            'referensi_id' =>
-                $referensiId,
-
-            'deskripsi' =>
-                $deskripsi,
-
-            'ip_address' =>
-                $this->request->getIPAddress(),
-
-            'created_at' =>
-                date('Y-m-d H:i:s'),
+    private function createNotification(
+        int $userId,
+        string $pesan,
+        string $tipe
+    ): void {
+        $this->notifikasiModel->insert([
+            'user_id' => $userId,
+            'pesan' => $pesan,
+            'tipe' => $tipe,
+            'is_read' => 0,
+            'created_at' => date('Y-m-d H:i:s'),
         ]);
     }
 
@@ -186,7 +196,7 @@ class DisposisiController extends BaseController
 
         /*
         |--------------------------------------------------------------------------
-        | SCOPE BERDASARKAN ROLE
+        | SCOPE ROLE
         |--------------------------------------------------------------------------
         */
 
@@ -221,18 +231,23 @@ class DisposisiController extends BaseController
             ];
 
             if (
-                in_array(
+                !in_array(
                     $status,
                     $allowedStatus,
                     true
                 )
             ) {
-                $this->disposisiModel
-                    ->where(
-                        'disposisi.status',
-                        $status
-                    );
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Status disposisi tidak valid.',
+                ], 422);
             }
+
+            $this->disposisiModel
+                ->where(
+                    'disposisi.status',
+                    $status
+                );
         }
 
         /*
@@ -276,11 +291,8 @@ class DisposisiController extends BaseController
 
         return $this->respond([
             'status' => true,
-            'message' =>
-                'Data disposisi berhasil diambil.',
-
-            'data' =>
-                $data,
+            'message' => 'Data disposisi berhasil diambil.',
+            'data' => $data,
 
             'pagination' => [
                 'current_page' =>
@@ -370,8 +382,7 @@ class DisposisiController extends BaseController
             'status' => true,
             'message' =>
                 'Detail disposisi berhasil diambil.',
-            'data' =>
-                $disposisi,
+            'data' => $disposisi,
         ]);
     }
 
@@ -379,9 +390,6 @@ class DisposisiController extends BaseController
     |--------------------------------------------------------------------------
     | CREATE DISPOSISI
     |--------------------------------------------------------------------------
-    |
-    | Hanya Kepala Seksi.
-    |
     */
 
     public function create()
@@ -504,7 +512,7 @@ class DisposisiController extends BaseController
 
         /*
         |--------------------------------------------------------------------------
-        | INSERT
+        | INSERT DISPOSISI
         |--------------------------------------------------------------------------
         */
 
@@ -560,7 +568,7 @@ class DisposisiController extends BaseController
 
         /*
         |--------------------------------------------------------------------------
-        | LOG
+        | ACTIVITY LOG
         |--------------------------------------------------------------------------
         */
 
@@ -569,6 +577,19 @@ class DisposisiController extends BaseController
             (int) $id,
             'Membuat disposisi surat kepada ' .
             $staf['name']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | NOTIFIKASI STAF
+        |--------------------------------------------------------------------------
+        */
+
+        $this->createNotification(
+            (int) $staf['id'],
+            'Anda menerima disposisi baru untuk surat "' .
+            $surat['perihal'] . '".',
+            'disposisi_baru'
         );
 
         return $this->respondCreated([
@@ -586,9 +607,6 @@ class DisposisiController extends BaseController
     |--------------------------------------------------------------------------
     | TINDAK LANJUT
     |--------------------------------------------------------------------------
-    |
-    | Hanya staf penerima.
-    |
     */
 
     public function tindakLanjut($id = null)
@@ -667,10 +685,34 @@ class DisposisiController extends BaseController
             ]
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVITY LOG
+        |--------------------------------------------------------------------------
+        */
+
         $this->logActivity(
             'tindak_lanjut',
             (int) $id,
             'Mengisi hasil tindak lanjut disposisi.'
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | NOTIFIKASI KEPALA SEKSI
+        |--------------------------------------------------------------------------
+        */
+
+        $surat = $this->suratModel->find(
+            $disposisi['surat_masuk_id']
+        );
+
+        $this->createNotification(
+            (int) $disposisi['dari_user_id'],
+            'Staf telah mengisi tindak lanjut untuk disposisi surat "' .
+            ($surat['perihal'] ?? 'Surat Masuk') .
+            '".',
+            'tindak_lanjut'
         );
 
         return $this->respond([
@@ -714,8 +756,10 @@ class DisposisiController extends BaseController
         }
 
         /*
-         * Staf hanya disposisi miliknya.
-         */
+        |--------------------------------------------------------------------------
+        | STAF HANYA DISPOSISI MILIKNYA
+        |--------------------------------------------------------------------------
+        */
 
         if (
             $user['role'] === 'staf' &&
@@ -730,8 +774,10 @@ class DisposisiController extends BaseController
         }
 
         /*
-         * Kepala hanya disposisi yang dibuatnya.
-         */
+        |--------------------------------------------------------------------------
+        | KEPALA HANYA DISPOSISI YANG DIBUATNYA
+        |--------------------------------------------------------------------------
+        */
 
         if (
             $user['role'] === 'kepala_seksi' &&
@@ -774,26 +820,71 @@ class DisposisiController extends BaseController
             ], 422);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE DISPOSISI
+        |--------------------------------------------------------------------------
+        */
+
         $this->disposisiModel->update(
             $id,
             [
-                'status' =>
-                    'selesai',
+                'status' => 'selesai',
             ]
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE SURAT MASUK
+        |--------------------------------------------------------------------------
+        */
 
         $this->suratModel->update(
             $disposisi['surat_masuk_id'],
             [
-                'status' =>
-                    'selesai',
+                'status' => 'selesai',
             ]
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVITY LOG
+        |--------------------------------------------------------------------------
+        */
 
         $this->logActivity(
             'selesai',
             (int) $id,
             'Menyelesaikan disposisi.'
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | NOTIFIKASI
+        |--------------------------------------------------------------------------
+        */
+
+        $surat = $this->suratModel->find(
+            $disposisi['surat_masuk_id']
+        );
+
+        if (
+            $user['role'] ===
+            'kepala_seksi'
+        ) {
+            $notificationUserId =
+                (int) $disposisi['ke_user_id'];
+        } else {
+            $notificationUserId =
+                (int) $disposisi['dari_user_id'];
+        }
+
+        $this->createNotification(
+            $notificationUserId,
+            'Disposisi surat "' .
+            ($surat['perihal'] ?? 'Surat Masuk') .
+            '" telah diselesaikan.',
+            'disposisi_selesai'
         );
 
         return $this->respond([
@@ -811,9 +902,6 @@ class DisposisiController extends BaseController
     |--------------------------------------------------------------------------
     | KEMBALIKAN UNTUK REVISI
     |--------------------------------------------------------------------------
-    |
-    | Hanya Kepala Seksi pembuat disposisi.
-    |
     */
 
     public function kembalikan($id = null)
@@ -868,6 +956,12 @@ class DisposisiController extends BaseController
             ], 422);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE DISPOSISI
+        |--------------------------------------------------------------------------
+        */
+
         $this->disposisiModel->update(
             $id,
             [
@@ -879,10 +973,35 @@ class DisposisiController extends BaseController
             ]
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVITY LOG
+        |--------------------------------------------------------------------------
+        */
+
         $this->logActivity(
             'revisi',
             (int) $id,
             'Mengembalikan disposisi untuk revisi.'
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | NOTIFIKASI STAF
+        |--------------------------------------------------------------------------
+        */
+
+        $surat = $this->suratModel->find(
+            $disposisi['surat_masuk_id']
+        );
+
+        $this->createNotification(
+            (int) $disposisi['ke_user_id'],
+            'Disposisi surat "' .
+            ($surat['perihal'] ?? 'Surat Masuk') .
+            '" dikembalikan untuk revisi. Catatan: ' .
+            $catatanRevisi,
+            'revisi_disposisi'
         );
 
         return $this->respond([

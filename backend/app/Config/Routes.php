@@ -430,3 +430,51 @@ $routes->delete(
         'filter' => 'role:admin',
     ]
 );
+
+/*
+|--------------------------------------------------------------------------
+| NOTIFIKASI
+|--------------------------------------------------------------------------
+|
+| Semua user yang sudah login dapat mengakses notifikasi miliknya sendiri.
+|
+*/
+
+$routes->group(
+    'api/notifikasi',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+
+        // Daftar notifikasi milik user
+        $routes->get(
+            '',
+            'Api\NotifikasiController::index'
+        );
+
+        // Jumlah notifikasi belum dibaca
+        $routes->get(
+            'unread-count',
+            'Api\NotifikasiController::unreadCount'
+        );
+
+        // Tandai semua sebagai sudah dibaca
+        $routes->patch(
+            'read-all',
+            'Api\NotifikasiController::markAllAsRead'
+        );
+
+        // Tandai satu notifikasi sebagai sudah dibaca
+        $routes->patch(
+            '(:num)/read',
+            'Api\NotifikasiController::markAsRead/$1'
+        );
+
+        // Hapus notifikasi milik user
+        $routes->delete(
+            '(:num)',
+            'Api\NotifikasiController::delete/$1'
+        );
+    }
+);
