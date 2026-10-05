@@ -5,29 +5,29 @@ namespace App\Controllers\Api;
 use App\Controllers\BaseController;
 use App\Models\ActivityLogModel;
 use App\Models\AuthTokenModel;
+use App\Models\NotifikasiModel;
 use App\Models\SuratKeluarModel;
+use App\Models\UserModel;
 use CodeIgniter\API\ResponseTrait;
 
 class SuratKeluarController extends BaseController
 {
     use ResponseTrait;
 
-    protected SuratKeluarModel $suratKeluarModel;
-    protected AuthTokenModel $authTokenModel;
+    protected SuratKeluarModel $suratModel;
+    protected AuthTokenModel $tokenModel;
     protected ActivityLogModel $activityLogModel;
+    protected NotifikasiModel $notifikasiModel;
+    protected UserModel $userModel;
 
     public function __construct()
     {
-        $this->suratKeluarModel = new SuratKeluarModel();
-        $this->authTokenModel   = new AuthTokenModel();
+        $this->suratModel = new SuratKeluarModel();
+        $this->tokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
+        $this->notifikasiModel = new NotifikasiModel();
+        $this->userModel = new UserModel();
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CURRENT USER
-    |--------------------------------------------------------------------------
-    */
 
     private function getCurrentUserId(): ?int
     {
@@ -50,7 +50,7 @@ class SuratKeluarController extends BaseController
             $matches[1]
         );
 
-        $token = $this->authTokenModel
+        $token = $this->tokenModel
             ->where('token_hash', $tokenHash)
             ->where('revoked_at', null)
             ->first();
@@ -62,33 +62,52 @@ class SuratKeluarController extends BaseController
         return (int) $token['user_id'];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | ACTIVITY LOG
-    |--------------------------------------------------------------------------
-    */
-
     private function logActivity(
         string $aktivitas,
         ?int $referensiId = null,
         ?string $deskripsi = null
     ): void {
         $this->activityLogModel->insert([
-            'user_id'       => $this->getCurrentUserId(),
-            'aktivitas'     => $aktivitas,
-            'modul'         => 'surat_keluar',
-            'referensi_id'  => $referensiId,
-            'deskripsi'     => $deskripsi,
-            'ip_address'    => $this->request->getIPAddress(),
-            'created_at'    => date('Y-m-d H:i:s'),
+            'user_id' => $this->getCurrentUserId(),
+            'aktivitas' => $aktivitas,
+            'modul' => 'surat_keluar',
+            'referensi_id' => $referensiId,
+            'deskripsi' => $deskripsi,
+            'ip_address' => $this->request->getIPAddress(),
+            'created_at' => date('Y-m-d H:i:s'),
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET ALL
-    |--------------------------------------------------------------------------
-    */
+    private function notifyKepalaSeksi(
+        string $pesan,
+        string $tipe
+    ): void {
+        $kepalaList = $this->userModel
+            ->where('role', 'kepala_seksi')
+            ->where('status', 1)
+            ->findAll();
+
+        foreach ($kepalaList as $kepala) {
+            $this->notifikasiModel->insert([
+                'user_id' => (int) $kepala['id'],
+                'pesan' => $pesan,
+                'tipe' => $tipe,
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+    }
+
+    private function isValidDate(string $date): bool
+    {
+        $dateObject = \DateTime::createFromFormat(
+            'Y-m-d',
+            $date
+        );
+
+        return $dateObject &&
+            $dateObject->format('Y-m-d') === $date;
+    }
 
     public function index()
     {
@@ -112,12 +131,9 @@ class SuratKeluarController extends BaseController
             $perPage = 50;
         }
 
-        $this->suratKeluarModel
+        $this->suratModel
             ->select(
-                '
-                surat_keluar.*,
-                users.name AS created_by_name
-                '
+                'surat_keluar.*, users.name AS created_by_name'
             )
             ->join(
                 'users',
@@ -125,14 +141,8 @@ class SuratKeluarController extends BaseController
                 'left'
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | SEARCH
-        |--------------------------------------------------------------------------
-        */
-
         if ($search !== '') {
-            $this->suratKeluarModel
+            $this->suratModel
                 ->groupStart()
                 ->like(
                     'surat_keluar.no_agenda',
@@ -153,21 +163,15 @@ class SuratKeluarController extends BaseController
                 ->groupEnd();
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | FILTER KLASIFIKASI
-        |--------------------------------------------------------------------------
-        */
-
         if ($klasifikasi !== '') {
-            $this->suratKeluarModel
+            $this->suratModel
                 ->where(
                     'surat_keluar.klasifikasi',
                     $klasifikasi
                 );
         }
 
-        $data = $this->suratKeluarModel
+        $data = $this->suratModel
             ->orderBy(
                 'surat_keluar.id',
                 'DESC'
@@ -183,31 +187,24 @@ class SuratKeluarController extends BaseController
 
             'pagination' => [
                 'current_page' =>
-                    $this->suratKeluarModel
+                    $this->suratModel
                         ->pager
                         ->getCurrentPage(),
 
-                'per_page' =>
-                    $perPage,
+                'per_page' => $perPage,
 
                 'total' =>
-                    $this->suratKeluarModel
+                    $this->suratModel
                         ->pager
                         ->getTotal(),
 
                 'last_page' =>
-                    $this->suratKeluarModel
+                    $this->suratModel
                         ->pager
                         ->getPageCount(),
             ],
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | DETAIL
-    |--------------------------------------------------------------------------
-    */
 
     public function show($id = null)
     {
@@ -222,12 +219,9 @@ class SuratKeluarController extends BaseController
             ], 400);
         }
 
-        $surat = $this->suratKeluarModel
+        $surat = $this->suratModel
             ->select(
-                '
-                surat_keluar.*,
-                users.name AS created_by_name
-                '
+                'surat_keluar.*, users.name AS created_by_name'
             )
             ->join(
                 'users',
@@ -252,16 +246,9 @@ class SuratKeluarController extends BaseController
             'status' => true,
             'message' =>
                 'Detail surat keluar berhasil diambil.',
-            'data' =>
-                $surat,
+            'data' => $surat,
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE
-    |--------------------------------------------------------------------------
-    */
 
     public function create()
     {
@@ -310,12 +297,6 @@ class SuratKeluarController extends BaseController
             $data['klasifikasi'] ?? ''
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI REQUIRED
-        |--------------------------------------------------------------------------
-        */
-
         if (
             $noAgenda === '' ||
             $noSurat === '' ||
@@ -326,25 +307,11 @@ class SuratKeluarController extends BaseController
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'Nomor agenda, nomor surat, tanggal, tujuan, dan perihal wajib diisi.',
+                    'No agenda, no surat, tanggal, tujuan, dan perihal wajib diisi.',
             ], 422);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI TANGGAL
-        |--------------------------------------------------------------------------
-        */
-
-        $date = \DateTime::createFromFormat(
-            'Y-m-d',
-            $tanggal
-        );
-
-        if (
-            !$date ||
-            $date->format('Y-m-d') !== $tanggal
-        ) {
+        if (!$this->isValidDate($tanggal)) {
             return $this->respond([
                 'status' => false,
                 'message' =>
@@ -352,21 +319,14 @@ class SuratKeluarController extends BaseController
             ], 422);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | NOMOR AGENDA UNIQUE
-        |--------------------------------------------------------------------------
-        */
-
-        $existingAgenda = $this
-            ->suratKeluarModel
+        $duplicate = $this->suratModel
             ->where(
                 'no_agenda',
                 $noAgenda
             )
             ->first();
 
-        if ($existingAgenda) {
+        if ($duplicate) {
             return $this->respond([
                 'status' => false,
                 'message' =>
@@ -374,40 +334,19 @@ class SuratKeluarController extends BaseController
             ], 409);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | INSERT
-        |--------------------------------------------------------------------------
-        */
-
-        $id = $this->suratKeluarModel
-            ->insert([
-                'created_by' =>
-                    $userId,
-
-                'no_agenda' =>
-                    $noAgenda,
-
-                'no_surat' =>
-                    $noSurat,
-
-                'tanggal' =>
-                    $tanggal,
-
-                'tujuan' =>
-                    $tujuan,
-
-                'perihal' =>
-                    $perihal,
-
-                'klasifikasi' =>
-                    $klasifikasi !== ''
-                        ? $klasifikasi
-                        : null,
-
-                'file_path' =>
-                    null,
-            ], true);
+        $id = $this->suratModel->insert([
+            'created_by' => $userId,
+            'no_agenda' => $noAgenda,
+            'no_surat' => $noSurat,
+            'tanggal' => $tanggal,
+            'tujuan' => $tujuan,
+            'perihal' => $perihal,
+            'klasifikasi' =>
+                $klasifikasi !== ''
+                    ? $klasifikasi
+                    : null,
+            'file_path' => null,
+        ], true);
 
         if (!$id) {
             return $this->respond([
@@ -420,26 +359,28 @@ class SuratKeluarController extends BaseController
         $this->logActivity(
             'create',
             (int) $id,
-            'Menambahkan surat keluar dengan nomor agenda ' .
-            $noAgenda . '.'
+            'Menambahkan surat keluar nomor agenda ' .
+            $noAgenda
+        );
+
+        $this->notifyKepalaSeksi(
+            'Surat keluar baru dibuat dengan nomor agenda "' .
+            $noAgenda .
+            '" dan perihal "' .
+            $perihal .
+            '".',
+            'surat_keluar_baru'
         );
 
         return $this->respondCreated([
             'status' => true,
             'message' =>
                 'Surat keluar berhasil ditambahkan.',
-
             'data' =>
-                $this->suratKeluarModel
+                $this->suratModel
                     ->find($id),
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE
-    |--------------------------------------------------------------------------
-    */
 
     public function update($id = null)
     {
@@ -454,8 +395,7 @@ class SuratKeluarController extends BaseController
             ], 400);
         }
 
-        $surat = $this
-            ->suratKeluarModel
+        $surat = $this->suratModel
             ->find($id);
 
         if (!$surat) {
@@ -473,39 +413,90 @@ class SuratKeluarController extends BaseController
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'Tidak ada data yang diperbarui.',
+                    'Request harus menggunakan format JSON.',
             ], 400);
         }
 
+        $allowedFields = [
+            'no_agenda',
+            'no_surat',
+            'tanggal',
+            'tujuan',
+            'perihal',
+            'klasifikasi',
+        ];
+
         $updateData = [];
 
-        /*
-        |--------------------------------------------------------------------------
-        | NO AGENDA
-        |--------------------------------------------------------------------------
-        */
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                if (
+                    is_string($data[$field])
+                ) {
+                    $updateData[$field] =
+                        trim($data[$field]);
+                } else {
+                    $updateData[$field] =
+                        $data[$field];
+                }
+            }
+        }
 
-        if (array_key_exists(
+        if (!$updateData) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Tidak ada data yang dapat diperbarui.',
+            ], 422);
+        }
+
+        $requiredFields = [
             'no_agenda',
-            $data
-        )) {
-            $noAgenda = trim(
-                $data['no_agenda']
-            );
+            'no_surat',
+            'tanggal',
+            'tujuan',
+            'perihal',
+        ];
 
-            if ($noAgenda === '') {
+        foreach ($requiredFields as $field) {
+            if (
+                array_key_exists(
+                    $field,
+                    $updateData
+                ) &&
+                $updateData[$field] === ''
+            ) {
                 return $this->respond([
                     'status' => false,
                     'message' =>
-                        'Nomor agenda tidak boleh kosong.',
+                        $field .
+                        ' tidak boleh kosong.',
                 ], 422);
             }
+        }
 
-            $existing = $this
-                ->suratKeluarModel
+        if (
+            isset($updateData['tanggal']) &&
+            !$this->isValidDate(
+                $updateData['tanggal']
+            )
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Format tanggal harus YYYY-MM-DD.',
+            ], 422);
+        }
+
+        if (
+            isset(
+                $updateData['no_agenda']
+            )
+        ) {
+            $duplicate = $this->suratModel
                 ->where(
                     'no_agenda',
-                    $noAgenda
+                    $updateData['no_agenda']
                 )
                 ->where(
                     'id !=',
@@ -513,164 +504,30 @@ class SuratKeluarController extends BaseController
                 )
                 ->first();
 
-            if ($existing) {
+            if ($duplicate) {
                 return $this->respond([
                     'status' => false,
                     'message' =>
                         'Nomor agenda sudah digunakan.',
                 ], 409);
             }
-
-            $updateData['no_agenda'] =
-                $noAgenda;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | NO SURAT
-        |--------------------------------------------------------------------------
-        */
-
-        if (array_key_exists(
-            'no_surat',
-            $data
-        )) {
-            $noSurat = trim(
-                $data['no_surat']
-            );
-
-            if ($noSurat === '') {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        'Nomor surat tidak boleh kosong.',
-                ], 422);
-            }
-
-            $updateData['no_surat'] =
-                $noSurat;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | TANGGAL
-        |--------------------------------------------------------------------------
-        */
-
-        if (array_key_exists(
-            'tanggal',
-            $data
-        )) {
-            $tanggal = trim(
-                $data['tanggal']
-            );
-
-            $date = \DateTime::createFromFormat(
-                'Y-m-d',
-                $tanggal
-            );
-
-            if (
-                !$date ||
-                $date->format('Y-m-d') !==
-                    $tanggal
-            ) {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        'Format tanggal harus YYYY-MM-DD.',
-                ], 422);
-            }
-
-            $updateData['tanggal'] =
-                $tanggal;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | TUJUAN
-        |--------------------------------------------------------------------------
-        */
-
-        if (array_key_exists(
-            'tujuan',
-            $data
-        )) {
-            $tujuan = trim(
-                $data['tujuan']
-            );
-
-            if ($tujuan === '') {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        'Tujuan tidak boleh kosong.',
-                ], 422);
-            }
-
-            $updateData['tujuan'] =
-                $tujuan;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | PERIHAL
-        |--------------------------------------------------------------------------
-        */
-
-        if (array_key_exists(
-            'perihal',
-            $data
-        )) {
-            $perihal = trim(
-                $data['perihal']
-            );
-
-            if ($perihal === '') {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        'Perihal tidak boleh kosong.',
-                ], 422);
-            }
-
-            $updateData['perihal'] =
-                $perihal;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | KLASIFIKASI
-        |--------------------------------------------------------------------------
-        */
-
-        if (array_key_exists(
-            'klasifikasi',
-            $data
-        )) {
-            $klasifikasi = trim(
-                $data['klasifikasi'] ?? ''
-            );
-
-            $updateData['klasifikasi'] =
-                $klasifikasi !== ''
-                    ? $klasifikasi
-                    : null;
-        }
-
-        if (empty($updateData)) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Tidak ada data valid untuk diperbarui.',
-            ], 422);
-        }
-
-        $this->suratKeluarModel
-            ->update(
-                $id,
+        if (
+            array_key_exists(
+                'klasifikasi',
                 $updateData
-            );
+            ) &&
+            $updateData['klasifikasi'] === ''
+        ) {
+            $updateData['klasifikasi'] =
+                null;
+        }
+
+        $this->suratModel->update(
+            $id,
+            $updateData
+        );
 
         $this->logActivity(
             'update',
@@ -682,18 +539,11 @@ class SuratKeluarController extends BaseController
             'status' => true,
             'message' =>
                 'Surat keluar berhasil diperbarui.',
-
             'data' =>
-                $this->suratKeluarModel
+                $this->suratModel
                     ->find($id),
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPLOAD FILE
-    |--------------------------------------------------------------------------
-    */
 
     public function uploadFile($id = null)
     {
@@ -708,8 +558,7 @@ class SuratKeluarController extends BaseController
             ], 400);
         }
 
-        $surat = $this
-            ->suratKeluarModel
+        $surat = $this->suratModel
             ->find($id);
 
         if (!$surat) {
@@ -725,20 +574,15 @@ class SuratKeluarController extends BaseController
 
         if (
             !$file ||
-            !$file->isValid()
+            !$file->isValid() ||
+            $file->hasMoved()
         ) {
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'File lampiran wajib diunggah.',
+                    'File tidak valid atau tidak ditemukan.',
             ], 422);
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | MAX 10 MB
-        |--------------------------------------------------------------------------
-        */
 
         if (
             $file->getSize() >
@@ -750,12 +594,6 @@ class SuratKeluarController extends BaseController
                     'Ukuran file maksimal 10 MB.',
             ], 422);
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | EXTENSION
-        |--------------------------------------------------------------------------
-        */
 
         $allowedExtensions = [
             'pdf',
@@ -780,66 +618,58 @@ class SuratKeluarController extends BaseController
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'Format file tidak diperbolehkan.',
+                    'Format file tidak didukung.',
             ], 422);
         }
 
-        $uploadPath =
+        $uploadDirectory =
             WRITEPATH .
             'uploads/surat_keluar';
 
-        if (!is_dir($uploadPath)) {
+        if (
+            !is_dir($uploadDirectory)
+        ) {
             mkdir(
-                $uploadPath,
-                0755,
+                $uploadDirectory,
+                0775,
                 true
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | HAPUS FILE LAMA
-        |--------------------------------------------------------------------------
-        */
+        $newName = $file
+            ->getRandomName();
+
+        $file->move(
+            $uploadDirectory,
+            $newName
+        );
 
         if (
             !empty($surat['file_path'])
         ) {
             $oldFile =
                 WRITEPATH .
+                'uploads/' .
                 $surat['file_path'];
 
-            if (is_file($oldFile)) {
+            if (
+                is_file($oldFile)
+            ) {
                 unlink($oldFile);
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | SIMPAN FILE
-        |--------------------------------------------------------------------------
-        */
-
-        $newName =
-            $file->getRandomName();
-
-        $file->move(
-            $uploadPath,
-            $newName
-        );
-
-        $relativePath =
-            'uploads/surat_keluar/' .
+        $filePath =
+            'surat_keluar/' .
             $newName;
 
-        $this->suratKeluarModel
-            ->update(
-                $id,
-                [
-                    'file_path' =>
-                        $relativePath,
-                ]
-            );
+        $this->suratModel->update(
+            $id,
+            [
+                'file_path' =>
+                    $filePath,
+            ]
+        );
 
         $this->logActivity(
             'upload_file',
@@ -850,20 +680,13 @@ class SuratKeluarController extends BaseController
         return $this->respond([
             'status' => true,
             'message' =>
-                'Lampiran berhasil diunggah.',
-
+                'File surat keluar berhasil diunggah.',
             'data' => [
                 'file_path' =>
-                    $relativePath,
+                    $filePath,
             ],
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | DOWNLOAD FILE
-    |--------------------------------------------------------------------------
-    */
 
     public function downloadFile($id = null)
     {
@@ -878,8 +701,7 @@ class SuratKeluarController extends BaseController
             ], 400);
         }
 
-        $surat = $this
-            ->suratKeluarModel
+        $surat = $this->suratModel
             ->find($id);
 
         if (!$surat) {
@@ -896,21 +718,28 @@ class SuratKeluarController extends BaseController
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'Surat keluar belum memiliki lampiran.',
+                    'Surat belum memiliki lampiran.',
             ], 404);
         }
 
         $filePath =
             WRITEPATH .
+            'uploads/' .
             $surat['file_path'];
 
         if (!is_file($filePath)) {
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'File lampiran tidak ditemukan.',
+                    'File tidak ditemukan di server.',
             ], 404);
         }
+
+        $this->logActivity(
+            'download_file',
+            (int) $id,
+            'Mengunduh lampiran surat keluar.'
+        );
 
         return $this->response
             ->download(
@@ -918,12 +747,6 @@ class SuratKeluarController extends BaseController
                 null
             );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE
-    |--------------------------------------------------------------------------
-    */
 
     public function delete($id = null)
     {
@@ -938,8 +761,7 @@ class SuratKeluarController extends BaseController
             ], 400);
         }
 
-        $surat = $this
-            ->suratKeluarModel
+        $surat = $this->suratModel
             ->find($id);
 
         if (!$surat) {
@@ -950,17 +772,12 @@ class SuratKeluarController extends BaseController
             ], 404);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | HAPUS FILE
-        |--------------------------------------------------------------------------
-        */
-
         if (
             !empty($surat['file_path'])
         ) {
             $filePath =
                 WRITEPATH .
+                'uploads/' .
                 $surat['file_path'];
 
             if (is_file($filePath)) {
@@ -968,17 +785,14 @@ class SuratKeluarController extends BaseController
             }
         }
 
-        $noAgenda =
-            $surat['no_agenda'];
-
-        $this->suratKeluarModel
+        $this->suratModel
             ->delete($id);
 
         $this->logActivity(
             'delete',
             (int) $id,
-            'Menghapus surat keluar dengan nomor agenda ' .
-            $noAgenda . '.'
+            'Menghapus surat keluar nomor agenda ' .
+            $surat['no_agenda']
         );
 
         return $this->respond([
