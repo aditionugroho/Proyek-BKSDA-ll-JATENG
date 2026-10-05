@@ -568,3 +568,45 @@ $routes->group(
         );
     }
 );
+
+/*
+|--------------------------------------------------------------------------
+| LAPORAN PDF
+|--------------------------------------------------------------------------
+|
+| Hanya Admin dan Kepala Seksi.
+|
+*/
+
+$routes->group(
+    'api/laporan',
+    [
+        'filter' => 'role:admin,kepala_seksi',
+    ],
+    static function ($routes) {
+
+        // Laporan Surat Masuk
+        $routes->get(
+            'surat-masuk',
+            'Api\LaporanController::suratMasuk'
+        );
+
+        // Laporan Surat Keluar
+        $routes->get(
+            'surat-keluar',
+            'Api\LaporanController::suratKeluar'
+        );
+
+        // Laporan Disposisi
+        $routes->get(
+            'disposisi',
+            'Api\LaporanController::disposisi'
+        );
+
+        // Laporan Kinerja Pegawai
+        $routes->get(
+            'kinerja',
+            'Api\LaporanController::kinerja'
+        );
+    }
+);
