@@ -478,3 +478,33 @@ $routes->group(
         );
     }
 );
+
+/*
+|--------------------------------------------------------------------------
+| RIWAYAT LOGIN
+|--------------------------------------------------------------------------
+|
+| Hanya Admin yang dapat melihat riwayat login pengguna.
+|
+*/
+
+$routes->group(
+    'api/login-history',
+    [
+        'filter' => 'role:admin',
+    ],
+    static function ($routes) {
+
+        // Daftar riwayat login
+        $routes->get(
+            '',
+            'Api\LoginHistoryController::index'
+        );
+
+        // Detail riwayat login
+        $routes->get(
+            '(:num)',
+            'Api\LoginHistoryController::show/$1'
+        );
+    }
+);
