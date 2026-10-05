@@ -610,3 +610,45 @@ $routes->group(
         );
     }
 );
+
+/*
+|--------------------------------------------------------------------------
+| BACKUP & RESTORE DATABASE
+|--------------------------------------------------------------------------
+|
+| Hanya Admin.
+|
+*/
+
+$routes->group(
+    'api/backup',
+    [
+        'filter' => 'role:admin',
+    ],
+    static function ($routes) {
+
+        // Daftar backup
+        $routes->get(
+            '',
+            'Api\BackupController::index'
+        );
+
+        // Backup manual
+        $routes->post(
+            '',
+            'Api\BackupController::create'
+        );
+
+        // Download backup
+        $routes->get(
+            'download/(:segment)',
+            'Api\BackupController::download/$1'
+        );
+
+        // Restore database
+        $routes->post(
+            'restore',
+            'Api\BackupController::restore'
+        );
+    }
+);
