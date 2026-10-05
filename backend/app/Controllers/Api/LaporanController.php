@@ -3,6 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
+use App\Models\ActivityLogModel;
+use App\Models\AuthTokenModel;
 use CodeIgniter\API\ResponseTrait;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -12,10 +14,14 @@ class LaporanController extends BaseController
     use ResponseTrait;
 
     protected $db;
+    protected ActivityLogModel $activityLogModel;
+    protected AuthTokenModel $authTokenModel;
 
     public function __construct()
     {
         $this->db = db_connect();
+        $this->activityLogModel = new ActivityLogModel();
+        $this->authTokenModel = new AuthTokenModel();
     }
 
     /*
@@ -319,6 +325,85 @@ class LaporanController extends BaseController
 
     /*
     |--------------------------------------------------------------------------
+    | CURRENT USER
+    |--------------------------------------------------------------------------
+    */
+
+    private function getCurrentUserId(): ?int
+    {
+        $authorization = $this->request
+            ->getHeaderLine('Authorization');
+
+        if (
+            !$authorization ||
+            !preg_match(
+                '/^Bearer\s+(\S+)$/i',
+                $authorization,
+                $matches
+            )
+        ) {
+            return null;
+        }
+
+        $tokenHash = hash(
+            'sha256',
+            $matches[1]
+        );
+
+        $token = $this->authTokenModel
+            ->where(
+                'token_hash',
+                $tokenHash
+            )
+            ->where(
+                'revoked_at',
+                null
+            )
+            ->first();
+
+        if (!$token) {
+            return null;
+        }
+
+        return (int) $token['user_id'];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTIVITY LOG
+    |--------------------------------------------------------------------------
+    */
+
+    private function logActivity(
+        string $aktivitas,
+        ?int $referensiId = null,
+        ?string $deskripsi = null
+    ): void {
+        $this->activityLogModel->insert([
+            'user_id' =>
+                $this->getCurrentUserId(),
+
+            'aktivitas' =>
+                $aktivitas,
+
+            'modul' =>
+                'laporan',
+
+            'referensi_id' =>
+                $referensiId,
+
+            'deskripsi' =>
+                $deskripsi,
+
+            'ip_address' =>
+                $this->request->getIPAddress(),
+
+            'created_at' =>
+                date('Y-m-d H:i:s'),
+        ]);
+    }
+    /*
+    |--------------------------------------------------------------------------
     | GENERATE PDF
     |--------------------------------------------------------------------------
     */
@@ -354,6 +439,13 @@ class LaporanController extends BaseController
         );
 
         $dompdf->render();
+
+        $this->logActivity(
+            'download',
+            null,
+            'Mengunduh laporan PDF: ' .
+            $filename
+        );
 
         return $this->response
             ->setStatusCode(200)
