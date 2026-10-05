@@ -508,3 +508,63 @@ $routes->group(
         );
     }
 );
+
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD SISTEM
+|--------------------------------------------------------------------------
+|
+| Dapat diakses oleh seluruh user yang sudah login.
+|
+*/
+
+$routes->group(
+    'api/dashboard',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+
+        // Ringkasan Dashboard
+        $routes->get(
+            'summary',
+            'Api\DashboardController::summary'
+        );
+
+        // Grafik tren surat per bulan
+        $routes->get(
+            'trend',
+            'Api\DashboardController::trend'
+        );
+    }
+);
+
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD KINERJA PEGAWAI
+|--------------------------------------------------------------------------
+|
+| Data monitoring kinerja hanya untuk Admin dan Kepala Seksi.
+|
+*/
+
+$routes->group(
+    'api/dashboard',
+    [
+        'filter' => 'role:admin,kepala_seksi',
+    ],
+    static function ($routes) {
+
+        // Daftar kinerja seluruh pegawai
+        $routes->get(
+            'kinerja',
+            'Api\DashboardController::kinerja'
+        );
+
+        // Detail kinerja satu pegawai
+        $routes->get(
+            'kinerja/(:num)',
+            'Api\DashboardController::kinerjaDetail/$1'
+        );
+    }
+);
