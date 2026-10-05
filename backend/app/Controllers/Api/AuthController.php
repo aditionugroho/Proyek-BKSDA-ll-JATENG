@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Models\AuthTokenModel;
+use App\Models\LoginLogModel;
 use App\Models\PasswordResetOtpModel;
 use App\Models\UserModel;
 use App\Services\OtpService;
@@ -17,13 +18,15 @@ class AuthController extends BaseController
     protected AuthTokenModel $tokenModel;
     protected PasswordResetOtpModel $otpModel;
     protected OtpService $otpService;
+    protected LoginLogModel $loginLogModel;
 
     public function __construct()
     {
-        $this->userModel  = new UserModel();
+        $this->userModel = new UserModel();
         $this->tokenModel = new AuthTokenModel();
-        $this->otpModel   = new PasswordResetOtpModel();
+        $this->otpModel = new PasswordResetOtpModel();
         $this->otpService = new OtpService();
+        $this->loginLogModel = new LoginLogModel();
     }
 
     /*
@@ -38,7 +41,7 @@ class AuthController extends BaseController
 
         if (!$data) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' => 'Request harus menggunakan format JSON.',
             ], 400);
         }
@@ -55,8 +58,9 @@ class AuthController extends BaseController
             $password === ''
         ) {
             return $this->respond([
-                'status'  => false,
-                'message' => 'Username dan password wajib diisi.',
+                'status' => false,
+                'message' =>
+                    'Username dan password wajib diisi.',
             ], 422);
         }
 
@@ -88,7 +92,7 @@ class AuthController extends BaseController
             )
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Terlalu banyak percobaan login. Coba kembali dalam 15 menit.',
             ], 429);
@@ -111,7 +115,7 @@ class AuthController extends BaseController
             )
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Username atau password salah.',
             ], 401);
@@ -143,6 +147,10 @@ class AuthController extends BaseController
                 ->getUserAgent()
                 ->getAgentString();
 
+        /*
+         * Simpan token autentikasi
+         */
+
         $this->tokenModel->insert([
             'user_id' =>
                 $user['id'],
@@ -170,8 +178,27 @@ class AuthController extends BaseController
                 null,
         ]);
 
+        /*
+         * Catat riwayat login
+         */
+
+        $this->loginLogModel->insert([
+            'user_id' =>
+                (int) $user['id'],
+
+            'ip_address' =>
+                $ipAddress,
+
+            'login_at' =>
+                date('Y-m-d H:i:s'),
+
+            'logout_at' =>
+                null,
+        ]);
+
         return $this->respond([
-            'status'  => true,
+            'status' => true,
+
             'message' =>
                 'Login berhasil.',
 
@@ -236,7 +263,7 @@ class AuthController extends BaseController
             )
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Token autentikasi tidak ditemukan.',
             ], 401);
@@ -262,11 +289,40 @@ class AuthController extends BaseController
 
         if (!$token) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Token tidak valid atau sudah tidak aktif.',
             ], 401);
         }
+
+        /*
+         * Cari riwayat login aktif
+         * milik user dari IP yang sama.
+         */
+
+        $loginLog =
+            $this->loginLogModel
+                ->where(
+                    'user_id',
+                    $token['user_id']
+                )
+                ->where(
+                    'ip_address',
+                    $token['ip_address']
+                )
+                ->where(
+                    'logout_at',
+                    null
+                )
+                ->orderBy(
+                    'id',
+                    'DESC'
+                )
+                ->first();
+
+        /*
+         * Revoke token
+         */
 
         $this->tokenModel->update(
             $token['id'],
@@ -276,8 +332,22 @@ class AuthController extends BaseController
             ]
         );
 
+        /*
+         * Catat waktu logout
+         */
+
+        if ($loginLog) {
+            $this->loginLogModel->update(
+                $loginLog['id'],
+                [
+                    'logout_at' =>
+                        date('Y-m-d H:i:s'),
+                ]
+            );
+        }
+
         return $this->respond([
-            'status'  => true,
+            'status' => true,
             'message' =>
                 'Logout berhasil.',
         ]);
@@ -502,7 +572,7 @@ class AuthController extends BaseController
 
         if (!$data) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Request tidak valid.',
             ], 400);
@@ -525,7 +595,7 @@ class AuthController extends BaseController
             $otp === ''
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Email dan OTP wajib diisi.',
             ], 422);
@@ -545,7 +615,7 @@ class AuthController extends BaseController
 
         if (!$user) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'OTP tidak valid atau sudah kedaluwarsa.',
             ], 400);
@@ -573,7 +643,7 @@ class AuthController extends BaseController
 
         if (!$otpRecord) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'OTP tidak valid atau sudah kedaluwarsa.',
             ], 400);
@@ -589,7 +659,7 @@ class AuthController extends BaseController
             )
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'OTP sudah pernah digunakan.',
             ], 400);
@@ -605,7 +675,7 @@ class AuthController extends BaseController
             ) < time()
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'OTP sudah kedaluwarsa.',
             ], 400);
@@ -621,7 +691,7 @@ class AuthController extends BaseController
             >= 5
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Batas percobaan OTP telah tercapai. Silakan minta OTP baru.',
             ], 429);
@@ -649,7 +719,7 @@ class AuthController extends BaseController
             );
 
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'OTP tidak valid.',
             ], 400);
@@ -699,7 +769,7 @@ class AuthController extends BaseController
         );
 
         return $this->respond([
-            'status'  => true,
+            'status' => true,
 
             'message' =>
                 'OTP berhasil diverifikasi.',
@@ -729,7 +799,7 @@ class AuthController extends BaseController
 
         if (!$data) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Request tidak valid.',
             ], 400);
@@ -752,7 +822,7 @@ class AuthController extends BaseController
             $confirmPassword === ''
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Semua field wajib diisi.',
             ], 422);
@@ -763,7 +833,7 @@ class AuthController extends BaseController
             $confirmPassword
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Konfirmasi password tidak sama.',
             ], 422);
@@ -777,7 +847,7 @@ class AuthController extends BaseController
             strlen($newPassword) < 8
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Password minimal 8 karakter.',
             ], 422);
@@ -799,7 +869,7 @@ class AuthController extends BaseController
 
         if (!$otpRecord) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Reset token tidak valid.',
             ], 400);
@@ -815,7 +885,7 @@ class AuthController extends BaseController
             )
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'OTP belum diverifikasi.',
             ], 400);
@@ -838,7 +908,7 @@ class AuthController extends BaseController
             ) < time()
         ) {
             return $this->respond([
-                'status'  => false,
+                'status' => false,
                 'message' =>
                     'Reset token sudah kedaluwarsa.',
             ], 400);
@@ -901,7 +971,7 @@ class AuthController extends BaseController
             );
 
         return $this->respond([
-            'status'  => true,
+            'status' => true,
             'message' =>
                 'Password berhasil diubah. Silakan login kembali.',
         ]);
