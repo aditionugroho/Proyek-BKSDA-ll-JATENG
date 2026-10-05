@@ -544,6 +544,167 @@ class ArsipController extends BaseController
     |--------------------------------------------------------------------------
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | RESOLVE FILE PATH
+    |--------------------------------------------------------------------------
+    */
+
+    private function resolveFilePath(
+        string $storedPath
+    ): ?string {
+        $storedPath = trim($storedPath);
+
+        if ($storedPath === '') {
+            return null;
+        }
+
+        if (is_file($storedPath)) {
+            $realPath = realpath($storedPath);
+
+            return $realPath !== false
+                ? $realPath
+                : $storedPath;
+        }
+
+        $relativePath = ltrim(
+            str_replace(
+                [
+                    '/',
+                    '\\',
+                ],
+                DIRECTORY_SEPARATOR,
+                $storedPath
+            ),
+            DIRECTORY_SEPARATOR
+        );
+
+        $candidates = [
+            WRITEPATH . $relativePath,
+            ROOTPATH . $relativePath,
+            FCPATH . $relativePath,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!is_file($candidate)) {
+                continue;
+            }
+
+            $realPath = realpath($candidate);
+
+            if ($realPath !== false) {
+                return $realPath;
+            }
+        }
+
+        return null;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOWNLOAD FILE ARSIP
+    |--------------------------------------------------------------------------
+    */
+
+    public function downloadFile($id = null)
+    {
+        if (
+            !$id ||
+            !ctype_digit((string) $id)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'ID arsip tidak valid.',
+            ], 400);
+        }
+
+        $arsip = $this->arsipModel
+            ->find($id);
+
+        if (!$arsip) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Arsip tidak ditemukan.',
+            ], 404);
+        }
+
+        if (
+            $arsip['jenis'] ===
+            'surat_masuk'
+        ) {
+            $surat = $this->suratMasukModel
+                ->find(
+                    $arsip['referensi_id']
+                );
+        } elseif (
+            $arsip['jenis'] ===
+            'surat_keluar'
+        ) {
+            $surat = $this->suratKeluarModel
+                ->find(
+                    $arsip['referensi_id']
+                );
+        } else {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Jenis arsip tidak valid.',
+            ], 422);
+        }
+
+        if (!$surat) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Data surat asal tidak ditemukan.',
+            ], 404);
+        }
+
+        if (empty($surat['file_path'])) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Dokumen arsip belum memiliki file.',
+            ], 404);
+        }
+
+        $filePath =
+            $this->resolveFilePath(
+                $surat['file_path']
+            );
+
+        if (
+            $filePath === null ||
+            !is_file($filePath)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'File dokumen arsip tidak ditemukan.',
+            ], 404);
+        }
+
+        $this->logActivity(
+            'download',
+            (int) $id,
+            'Mengunduh file arsip ' .
+            $arsip['jenis'] .
+            ' dengan referensi ID ' .
+            $arsip['referensi_id'] .
+            '.'
+        );
+
+        return $this->response
+            ->download(
+                $filePath,
+                null
+            )
+            ->setFileName(
+                basename($filePath)
+            );
+    }
     public function update($id = null)
     {
         if (

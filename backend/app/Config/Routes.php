@@ -652,3 +652,18 @@ $routes->group(
         );
     }
 );
+
+/*
+|--------------------------------------------------------------------------
+| ARSIP DOWNLOAD - FINAL AUDIT
+|--------------------------------------------------------------------------
+*/
+
+$routes->get(
+    'api/arsip/(:num)/file',
+    'Api\ArsipController::downloadFile/$1',
+    [
+        'filter' =>
+            'role:admin,kepala_seksi,staf',
+    ]
+);

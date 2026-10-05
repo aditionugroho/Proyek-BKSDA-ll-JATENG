@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Models\ActivityLogModel;
+use App\Models\ArsipModel;
 use App\Models\AuthTokenModel;
 use App\Models\DisposisiModel;
 use App\Models\NotifikasiModel;
@@ -21,6 +22,7 @@ class DisposisiController extends BaseController
     protected AuthTokenModel $tokenModel;
     protected ActivityLogModel $activityLogModel;
     protected NotifikasiModel $notifikasiModel;
+    protected ArsipModel $arsipModel;
 
     public function __construct()
     {
@@ -30,6 +32,7 @@ class DisposisiController extends BaseController
         $this->tokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
         $this->notifikasiModel = new NotifikasiModel();
+        $this->arsipModel = new ArsipModel();
     }
 
     /*
@@ -732,6 +735,72 @@ class DisposisiController extends BaseController
     |--------------------------------------------------------------------------
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | AUTO ARCHIVE SURAT MASUK
+    |--------------------------------------------------------------------------
+    */
+
+    private function archiveSuratMasukIfNeeded(
+        int $suratMasukId
+    ): ?int {
+        $existing = $this->arsipModel
+            ->where(
+                'jenis',
+                'surat_masuk'
+            )
+            ->where(
+                'referensi_id',
+                $suratMasukId
+            )
+            ->first();
+
+        if ($existing) {
+            return (int) $existing['id'];
+        }
+
+        $surat = $this->suratModel
+            ->find($suratMasukId);
+
+        if (!$surat) {
+            return null;
+        }
+
+        $arsipId = $this->arsipModel
+            ->insert([
+                'jenis' => 'surat_masuk',
+                'referensi_id' => $suratMasukId,
+                'kategori' =>
+                    !empty($surat['klasifikasi'])
+                        ? $surat['klasifikasi']
+                        : null,
+                'tanggal_arsip' =>
+                    date('Y-m-d H:i:s'),
+            ], true);
+
+        if (!$arsipId) {
+            return null;
+        }
+
+        $user = $this->getCurrentUser();
+
+        $this->activityLogModel->insert([
+            'user_id' => $user['id'] ?? null,
+            'aktivitas' => 'auto_archive',
+            'modul' => 'arsip',
+            'referensi_id' => (int) $arsipId,
+            'deskripsi' =>
+                'Surat masuk ID ' .
+                $suratMasukId .
+                ' otomatis diarsipkan setelah disposisi selesai.',
+            'ip_address' =>
+                $this->request->getIPAddress(),
+            'created_at' =>
+                date('Y-m-d H:i:s'),
+        ]);
+
+        return (int) $arsipId;
+    }
     public function selesai($id = null)
     {
         $user = $this->getCurrentUser();
@@ -844,6 +913,15 @@ class DisposisiController extends BaseController
             [
                 'status' => 'selesai',
             ]
+        );
+        /*
+        |--------------------------------------------------------------------------
+        | AUTO ARCHIVE SURAT MASUK
+        |--------------------------------------------------------------------------
+        */
+
+        $this->archiveSuratMasukIfNeeded(
+            (int) $disposisi['surat_masuk_id']
         );
 
         /*
