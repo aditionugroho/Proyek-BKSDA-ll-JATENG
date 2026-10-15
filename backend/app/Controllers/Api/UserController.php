@@ -48,9 +48,27 @@ class UserController extends BaseController
             $perPage = 100;
         }
 
-        $this->userModel->select(
-            'id, name, username, email, no_whatsapp, role, jabatan, status, created_at, updated_at'
-        );
+        $this->userModel
+    ->select(
+        'users.id,
+         users.name,
+         users.username,
+         users.email,
+         users.no_whatsapp,
+         users.role,
+         users.jabatan,
+         users.resort_id,
+         resorts.nama AS resort_nama,
+         resorts.kode AS resort_kode,
+         users.status,
+         users.created_at,
+         users.updated_at'
+    )
+    ->join(
+        'resorts',
+        'resorts.id = users.resort_id',
+        'left'
+    );
 
         if ($search !== '') {
             $this->userModel
@@ -74,7 +92,7 @@ class UserController extends BaseController
         }
 
         $users = $this->userModel
-            ->orderBy('id', 'DESC')
+            ->orderBy('users.id', 'DESC')
             ->paginate($perPage);
 
         return $this->respond([
@@ -117,10 +135,27 @@ class UserController extends BaseController
         }
 
         $user = $this->userModel
-            ->select(
-                'id, name, username, email, no_whatsapp, role, jabatan, status, created_at, updated_at'
-            )
-            ->find($id);
+    ->select(
+        'users.id,
+         users.name,
+         users.username,
+         users.email,
+         users.no_whatsapp,
+         users.role,
+         users.jabatan,
+         users.resort_id,
+         resorts.nama AS resort_nama,
+         resorts.kode AS resort_kode,
+         users.status,
+         users.created_at,
+         users.updated_at'
+    )
+    ->join(
+        'resorts',
+        'resorts.id = users.resort_id',
+        'left'
+    )
+    ->find($id);
 
         if (!$user) {
             return $this->respond([
@@ -316,6 +351,34 @@ class UserController extends BaseController
         | INSERT
         |--------------------------------------------------------------------------
         */
+$resortId = null;
+
+if (array_key_exists('resort_id', $data)) {
+    if ($data['resort_id'] !== null) {
+
+        if (
+            !is_int($data['resort_id']) ||
+            $data['resort_id'] < 1
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'ID resort tidak valid.',
+            ], 422);
+        }
+
+        $resortId = $data['resort_id'];
+
+        $resort = (new \App\Models\ResortModel())
+            ->find($resortId);
+
+        if (!$resort || (int) $resort['status'] !== 1) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Resort tidak ditemukan atau tidak aktif.',
+            ], 422);
+        }
+    }
+}
 
         $insertData = [
             'name' =>
@@ -350,6 +413,8 @@ class UserController extends BaseController
 
             'status' =>
                 1,
+            'resort_id' =>
+                $resortId,
         ];
 
         $userId = $this->userModel
@@ -412,6 +477,39 @@ class UserController extends BaseController
         }
 
         $updateData = [];
+
+        
+if (array_key_exists('resort_id', $data)) {
+
+    if ($data['resort_id'] === null) {
+        // Mengizinkan pelepasan penempatan resort
+        $updateData['resort_id'] = null;
+    } else {
+
+        if (
+            !is_int($data['resort_id']) ||
+            $data['resort_id'] < 1
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'ID resort tidak valid.',
+            ], 422);
+        }
+
+        $resort = (new \App\Models\ResortModel())
+            ->find($data['resort_id']);
+
+        if (!$resort || (int) $resort['status'] !== 1) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Resort tidak ditemukan atau tidak aktif.',
+            ], 422);
+        }
+
+        $updateData['resort_id'] =
+            (int) $data['resort_id'];
+    }
+}
 
         /*
         |--------------------------------------------------------------------------

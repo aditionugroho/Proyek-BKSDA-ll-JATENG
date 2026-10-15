@@ -12,16 +12,19 @@ class UserModel extends Model
 
     protected $returnType = 'array';
 
-    protected $allowedFields = [
-        'name',
-        'username',
-        'email',
-        'no_whatsapp',
-        'password',
-        'role',
-        'jabatan',
-        'status',
-    ];
+    
+protected $allowedFields = [
+    'name',
+    'username',
+    'email',
+    'no_whatsapp',
+    'password',
+    'role',
+    'jabatan',
+    'resort_id',
+    'status',
+];
+
 
     protected $useTimestamps = true;
 
