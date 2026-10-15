@@ -667,3 +667,64 @@ $routes->get(
             'role:admin,kepala_seksi,staf',
     ]
 );
+
+
+/*
+|--------------------------------------------------------------------------
+| E02 - MANAJEMEN RESORT
+|--------------------------------------------------------------------------
+*/
+
+// Baca resort: semua role terautentikasi
+$routes->group(
+    'api/resorts',
+    [
+        'filter' => 'role:admin,kepala_seksi,staf',
+    ],
+    static function ($routes) {
+        $routes->get('', 'Api\ResortController::index');
+        $routes->get('(:num)', 'Api\ResortController::show/$1');
+    }
+);
+
+// Kelola resort: hanya Admin
+$routes->group(
+    'api/resorts',
+    [
+        'filter' => 'role:admin',
+    ],
+    static function ($routes) {
+        $routes->post('', 'Api\ResortController::create');
+        $routes->put('(:num)', 'Api\ResortController::update/$1');
+        $routes->patch('(:num)', 'Api\ResortController::update/$1');
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| E02 - PENEMPATAN PENGGUNA KE RESORT
+|--------------------------------------------------------------------------
+| Hanya Admin yang boleh melihat dan mengubah
+| penempatan resort pengguna.
+*/
+
+$routes->group(
+    'api/users',
+    [
+        'filter' => 'role:admin',
+    ],
+    static function ($routes) {
+
+        $routes->get(
+            '(:num)/resort',
+            'Api\UserResortController::show/$1'
+        );
+
+        $routes->patch(
+            '(:num)/resort',
+            'Api\UserResortController::update/$1'
+        );
+
+    }
+);
