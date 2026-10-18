@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Arsip - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/detail-generic.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten ===== -->
+  <main class="main-content">
+
+    <nav class="dg-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span class="dg-breadcrumb-sep">&gt;</span>
+      <a href="arsip.html">Arsip</a>
+      <span class="dg-breadcrumb-sep">&gt;</span>
+      <span class="dg-breadcrumb-current" id="dg-crumb">Detail Arsip</span>
+    </nav>
+
+    <a href="arsip.html" class="dg-back">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Kembali ke Arsip
+    </a>
+
+    <section class="dg-card">
+      <div class="dg-title-row">
+        <div>
+          <h1 class="dg-title" id="dg-title">Memuat...</h1>
+          <p class="dg-sub" id="dg-sub"></p>
+        </div>
+        <span class="dg-badge dg-badge--green">Diarsipkan</span>
+      </div>
+      <div class="dg-grid" id="dg-info"></div>
+    </section>
+
+  </main>
+
+  <footer class="pg-footer">&copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.</footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module">
+    import { arsipPgData } from "../../assets/js/data/arsip-pegawai.js";
+
+    const id = Number(new URLSearchParams(location.search).get("id"));
+    const d = arsipPgData.find((x) => x.id === id) || arsipPgData[0];
+
+    document.getElementById("dg-crumb").textContent = d.nomor;
+    document.getElementById("dg-title").textContent = d.nama;
+    document.getElementById("dg-sub").textContent = `${d.jenis} \u2022 ${d.tanggal} \u2022 ${d.sub || ""}`;
+
+    const rows = [
+      ["Nomor Dokumen", d.nomor, true],
+      ["Jenis Dokumen", d.jenis],
+      ["Tanggal Dokumen", `${d.tanggal} (${d.tahun})`],
+      ["Diarsipkan Oleh", d.oleh],
+      ["Tanggal Diarsipkan", d.diarsipkan],
+      ["Status", d.status]
+    ];
+
+    document.getElementById("dg-info").innerHTML = rows
+      .map(([l, v, mono]) => `
+        <div class="dg-field">
+          <p class="dg-label">${l}</p>
+          <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
+        </div>`)
+      .join("");
+
+    document.title = `${d.nama} - E-Office SKSDA`;
+  </script>
+</body>
+</html>

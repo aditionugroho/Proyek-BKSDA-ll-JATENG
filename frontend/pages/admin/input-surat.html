@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input Surat - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-input-surat.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="page-head">
+      <div class="page-head-text">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-link">Dashboard</a>
+          <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+          <span class="breadcrumb-current">Input Surat</span>
+        </nav>
+        <h1 class="page-title">Input Surat</h1>
+        <p class="page-desc">Registrasikan surat masuk dan surat keluar ke dalam sistem e-Office BKSDA Jawa Tengah.</p>
+      </div>
+      <div class="page-head-actions">
+        <button type="button" class="btn btn--outline">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Riwayat Input
+        </button>
+        <button type="button" class="btn btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          Panduan Registrasi
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 2. CARD ALUR INPUT SURAT ===== -->
+    <section class="flow-card">
+      <h2 class="card-title">Alur Input Surat</h2>
+      <div class="flow-grid">
+
+        <!-- Langkah 01 (aktif) -->
+        <div class="flow-step">
+          <span class="flow-number is-active">01</span>
+          <div>
+            <p class="flow-step-title">Pilih Jenis Surat</p>
+            <p class="flow-step-desc">Tentukan masuk atau keluar.</p>
+          </div>
+        </div>
+
+        <span class="flow-arrow" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+
+        <!-- Langkah 02 -->
+        <div class="flow-step">
+          <span class="flow-number">02</span>
+          <div>
+            <p class="flow-step-title">Lengkapi Data Surat</p>
+            <p class="flow-step-desc">Isi nomor, pengirim, &amp; perihal.</p>
+          </div>
+        </div>
+
+        <span class="flow-arrow" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+
+        <!-- Langkah 03 -->
+        <div class="flow-step">
+          <span class="flow-number">03</span>
+          <div>
+            <p class="flow-step-title">Preview &amp; Periksa</p>
+            <p class="flow-step-desc">Validasi berkas lampiran PDF.</p>
+          </div>
+        </div>
+
+        <span class="flow-arrow" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+
+        <!-- Langkah 04 -->
+        <div class="flow-step">
+          <span class="flow-number">04</span>
+          <div>
+            <p class="flow-step-title">Registrasikan</p>
+            <p class="flow-step-desc">Simpan ke database e-Office.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== 3. SECTION JENIS SURAT ===== -->
+    <section class="jenis-section">
+      <h2 class="section-title">Jenis Surat</h2>
+      <p class="section-desc">Pilih jenis surat yang ingin Anda input.</p>
+
+      <div class="jenis-grid">
+
+        <!-- Kartu SURAT MASUK (seluruh kartu clickable) -->
+        <a href="form-surat-masuk.html" class="jenis-card">
+          <span class="jenis-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </span>
+
+          <div class="jenis-badges">
+            <span class="tag-outline">MODUL EKSTERNAL</span>
+            <span class="tag-active"><span class="tag-active-dot"></span>Aktif</span>
+          </div>
+
+          <h3 class="jenis-title">SURAT MASUK</h3>
+          <p class="jenis-desc">Registrasikan surat yang diterima dari kementerian, lembaga, pemerintah daerah, instansi, atau pihak eksternal lainnya.</p>
+
+          <div class="jenis-footer">
+            <span class="jenis-link">Input Surat Masuk &rarr;</span>
+            <span class="jenis-chevron" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Kartu SURAT KELUAR (seluruh kartu clickable) -->
+        <a href="form-surat-keluar.html" class="jenis-card">
+          <span class="jenis-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </span>
+
+          <div class="jenis-badges">
+            <span class="tag-outline">MODUL INTERNAL</span>
+            <span class="tag-active"><span class="tag-active-dot"></span>Aktif</span>
+          </div>
+
+          <h3 class="jenis-title">SURAT KELUAR</h3>
+          <p class="jenis-desc">Registrasikan surat resmi yang akan dikirim oleh BKSDA Jawa Tengah kepada kementerian, lembaga, pemerintah daerah, instansi, atau pihak eksternal.</p>
+
+          <div class="jenis-footer">
+            <span class="jenis-link">Input Surat Keluar &rarr;</span>
+            <span class="jenis-chevron" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ===== 4. SECTION SURAT TERAKHIR DIINPUT ===== -->
+    <section class="table-card">
+      <div class="table-head">
+        <div>
+          <h2 class="card-title">Surat Terakhir Diinput</h2>
+          <p class="section-desc">Daftar registrasi surat masuk dan keluar terbaru dalam sistem.</p>
+        </div>
+        <div class="table-tools">
+          <div class="mini-search">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="search" id="table-search" placeholder="Cari tabel..." aria-label="Cari surat" />
+          </div>
+          <button type="button" class="btn btn--outline btn--sm">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            Filter
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="surat-table">
+          <thead>
+            <tr>
+              <th>Nomor Surat</th>
+              <th>Jenis</th>
+              <th>Pengirim / Penerima</th>
+              <th>Perihal</th>
+              <th>Tanggal</th>
+              <th>Status</th>
+              <th class="th-actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="surat-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="table-foot">
+        <span id="table-count" class="table-foot-text">Menampilkan 3 surat terbaru</span>
+        <a href="export-data.html" class="table-foot-link">Lihat Semua Surat &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/admin-input-surat.js"></script>
+</body>
+</html>

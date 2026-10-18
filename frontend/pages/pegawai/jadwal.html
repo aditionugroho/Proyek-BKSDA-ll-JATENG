@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jadwal - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-jadwal.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="pgj-head">
+      <div>
+        <h1 class="pgj-title">Jadwal</h1>
+        <p class="pgj-desc">Kelola agenda kegiatan pribadi dan jadwal seksi Anda.</p>
+      </div>
+      <div class="pgj-head-actions">
+        <button type="button" class="pgj-btn pgj-btn--outline" id="btn-filter">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          Filter
+        </button>
+        <button type="button" class="pgj-btn pgj-btn--primary" id="btn-tambah">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Tambah Agenda Pribadi
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 2. STAT CARD (render via JS) ===== -->
+    <section class="pgj-stats" id="pgj-stats" aria-label="Ringkasan jadwal"></section>
+
+    <!-- ===== 3. GRID DUA KOLOM ===== -->
+    <section class="pgj-grid">
+
+      <!-- KIRI: kalender -->
+      <div class="pgj-card">
+        <div class="pgj-card-head">
+          <h2 class="pgj-card-title">Kalender</h2>
+          <div class="pgj-view-pills" role="tablist" aria-label="Tampilan kalender">
+            <button type="button" class="pgj-view-pill is-active" data-view="bulan">Bulan</button>
+            <button type="button" class="pgj-view-pill" data-view="minggu">Minggu</button>
+            <button type="button" class="pgj-view-pill" data-view="hari">Hari</button>
+          </div>
+        </div>
+
+        <!-- Navigasi bulan -->
+        <div class="pgj-month-nav">
+          <button type="button" class="pgj-month-btn" id="pgj-prev-month" aria-label="Bulan sebelumnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="pgj-month-label" id="pgj-month-label"></span>
+          <button type="button" class="pgj-month-btn" id="pgj-next-month" aria-label="Bulan berikutnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+
+        <!-- Header hari -->
+        <div class="pgj-daynames">
+          <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+        </div>
+
+        <!-- Grid tanggal (digenerate via JS) -->
+        <div class="pgj-days" id="pgj-days"></div>
+
+        <!-- Legend -->
+        <div class="pgj-legend">
+          <span class="pgj-legend-item"><span class="pgj-legend-dot pgj-legend-dot--green"></span>Selesai</span>
+          <span class="pgj-legend-item"><span class="pgj-legend-dot pgj-legend-dot--blue"></span>Terjadwal</span>
+          <span class="pgj-legend-item"><span class="pgj-legend-dot pgj-legend-dot--orange"></span>Mendatang</span>
+          <span class="pgj-legend-item"><span class="pgj-legend-dot pgj-legend-dot--gray"></span>Dibatalkan</span>
+        </div>
+      </div>
+
+      <!-- KANAN: agenda tanggal terpilih -->
+      <div class="pgj-card">
+        <div class="pgj-card-head">
+          <h2 class="pgj-card-title">Agenda Hari Ini</h2>
+          <span class="pgj-agenda-date" id="pgj-agenda-date"></span>
+        </div>
+        <div id="pgj-agenda-list"></div>
+
+        <a href="#" class="pgj-all-link">
+          Lihat semua jadwal
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/jadwal-pg.js"></script>
+</body>
+</html>

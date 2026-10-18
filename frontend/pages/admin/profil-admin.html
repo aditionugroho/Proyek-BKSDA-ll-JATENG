@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profil Admin - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-profil.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="page-head">
+      <div class="page-head-text">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-link">Dashboard</a>
+          <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+          <span class="breadcrumb-current">Profil Admin</span>
+        </nav>
+        <h1 class="page-title">Profil Admin</h1>
+        <p class="page-desc">Kelola informasi akun dan keamanan Administrator sistem e-Office BKSDA Jawa Tengah.</p>
+      </div>
+      <a href="edit-profil-admin.html" class="btn btn--primary">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        Edit Profil
+      </a>
+    </section>
+
+    <!-- ===== 2. HERO CARD PROFIL (render via JS) ===== -->
+    <section id="profil-hero" class="hero-card" aria-label="Ringkasan profil"></section>
+
+    <!-- ===== 3. GRID UTAMA ===== -->
+    <section class="profil-columns">
+
+      <!-- ===== KOLOM KIRI ===== -->
+      <div class="column-left">
+
+        <!-- Card 1: informasi akun -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><circle cx="8.5" cy="10.5" r="2.5"></circle><line x1="14" y1="9" x2="19" y2="9"></line><line x1="14" y1="13" x2="19" y2="13"></line></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Informasi Akun</h2>
+                <p class="panel-sub">Rincian identitas dinas administrator yang terdaftar.</p>
+              </div>
+            </div>
+            <span class="readonly-badge">Read-Only</span>
+          </div>
+
+          <div class="info-grid" id="info-grid"></div>
+
+          <div class="info-foot">
+            <div>
+              <p class="foot-label">Terakhir Diperbarui</p>
+              <p class="foot-value" id="info-updated">13 September 2026</p>
+            </div>
+            <p class="foot-verified">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Terverifikasi oleh BKSDA Center
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 2: hak akses -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--green">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Hak Akses Administrator</h2>
+                <p class="panel-sub">Kewenangan penuh modul administrasi dan manajemen data operasional.</p>
+              </div>
+            </div>
+            <span class="fullaccess-badge">Akses Penuh</span>
+          </div>
+
+          <div class="akses-grid" id="akses-grid"></div>
+
+          <p class="akses-foot">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Hak akses ditentukan secara otomatis berdasarkan role Administrator kedinasan.
+          </p>
+        </div>
+
+        <!-- Card 3: aktivitas terbaru -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--orange">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Aktivitas Admin Terbaru</h2>
+                <p class="panel-sub">Log rekam jejak aktivitas operasional akun administrator.</p>
+              </div>
+            </div>
+            <a href="#" class="panel-link">Lihat Semua Aktivitas &rarr;</a>
+          </div>
+
+          <div class="aktivitas-list" id="aktivitas-list"></div>
+
+          <a href="#" class="center-link">Lihat Semua Aktivitas &rarr;</a>
+        </div>
+      </div>
+
+      <!-- ===== KOLOM KANAN ===== -->
+      <div class="column-right">
+
+        <!-- Card: informasi login -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Informasi Login</h2>
+                <p class="panel-sub">Sesi dan perangkat akses aktif.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="kv-list" id="login-list"></div>
+
+          <div class="note-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Anda sedang menggunakan akun Administrator dengan hak kontrol sistem penuh.
+          </div>
+        </div>
+
+        <!-- Card: keamanan akun -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Keamanan Akun</h2>
+                <p class="panel-sub">Kredensial dan proteksi akun dinas.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="security-box">
+            <div>
+              <p class="security-title">Status Password</p>
+              <p class="security-sub">Terakhir diubah: 01 Agustus 2026</p>
+            </div>
+            <span class="badge badge--green">Aman</span>
+          </div>
+
+          <a href="edit-profil-admin.html" class="btn btn--primary btn--block">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            Ubah Password
+          </a>
+          <a href="edit-profil-admin.html" class="btn btn--muted btn--block">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Pengaturan Keamanan
+          </a>
+        </div>
+
+        <!-- Card: status akun -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--green">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Status Akun</h2>
+                <p class="panel-sub">Kondisi verifikasi dan operasional.</p>
+              </div>
+            </div>
+          </div>
+
+          <p class="status-verified">
+            <span class="status-dot"></span>
+            Aktif &amp; Terverifikasi
+          </p>
+          <p class="status-text">Akun dapat digunakan untuk mengakses seluruh fitur sesuai hak akses Administrator BKSDA Jawa Tengah.</p>
+
+          <div class="status-foot">
+            <span class="foot-label">Verifikasi Terakhir</span>
+            <span class="foot-value">13 September 2026</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 4. CARD AKSI CEPAT ===== -->
+    <section class="quick-card">
+      <div class="quick-left">
+        <span class="quick-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+        </span>
+        <div>
+          <h2 class="quick-title">Aksi Cepat Pengaturan Akun</h2>
+          <p class="quick-sub">Navigasi langsung ke modul pengelolaan profil, keamanan, dan log audit.</p>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <a href="edit-profil-admin.html" class="btn btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Edit Profil
+        </a>
+        <a href="edit-profil-admin.html" class="btn btn--muted">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Keamanan Akun
+        </a>
+        <a href="edit-profil-admin.html" class="btn btn--muted">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Lihat Aktivitas
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/admin-profil.js"></script>
+</body>
+</html>

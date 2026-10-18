@@ -1,0 +1,857 @@
+/* ============================================
+   HALAMAN SURAT (MASUK & KELUAR) KS — E-Office
+   Dipakai bersama surat-masuk.html dan
+   surat-keluar.html
+   ============================================ */
+
+/* ===== 1. HEADER ===== */
+.kss-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kss-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.kss-desc {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+.kss-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tombol */
+.kss-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.kss-btn svg { width: 15px; height: 15px; }
+
+.kss-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.kss-btn--outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.kss-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.kss-btn--primary:hover { background: var(--color-primary-hover); }
+
+/* ===== 2. STAT CARD (icon kiri, teks kanan) ===== */
+.kss-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.kss-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.kss-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.kss-stat-icon svg { width: 21px; height: 21px; }
+
+.kss-stat-icon--blue { background: #DBEAFE; color: #2563EB; }
+.kss-stat-icon--red { background: #FEE2E2; color: #DC2626; }
+.kss-stat-icon--amber { background: #FEF3C7; color: #D97706; }
+.kss-stat-icon--green { background: #D1FAE5; color: #059669; }
+
+.kss-stat-body { flex: 1; min-width: 0; }
+
+.kss-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kss-stat-label {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6B7280;
+  white-space: nowrap;
+}
+
+.kss-stat-meta {
+  font-size: 11px;
+  color: #6B7280;
+  white-space: nowrap;
+}
+
+.kss-stat-meta--red { color: #DC2626; font-weight: 700; }
+.kss-stat-meta--green { color: #059669; font-weight: 700; }
+
+.kss-stat-value {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ===== 3. CARD TABEL ===== */
+.kss-card {
+  margin-top: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+/* Baris tab */
+.kss-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.kss-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 15px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #6B7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.kss-tab:hover { color: var(--color-primary); }
+
+/* Tab aktif: biru bold + underline 3px */
+.kss-tab.is-active {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.kss-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-primary);
+}
+
+/* Badge angka pada tab */
+.kss-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.kss-tab-badge--red { color: #DC2626; background: #FEE2E2; }
+.kss-tab-badge--amber { color: #B45309; background: #FEF3C7; }
+
+/* Baris tools */
+.kss-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+}
+
+.kss-search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.kss-search svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+.kss-search input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kss-search input::placeholder { color: #9CA3AF; }
+
+.kss-search input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+.kss-tools-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kss-showing {
+  font-size: 12.5px;
+  color: #6B7280;
+  white-space: nowrap;
+}
+
+.kss-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #374151;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.kss-page-btn svg { width: 15px; height: 15px; }
+
+.kss-page-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.kss-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Tabel */
+.kss-table-scroll { overflow-x: auto; }
+
+.kss-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+}
+
+.kss-table th {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #6B7280;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.kss-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.kss-table tbody tr { transition: background-color 0.15s ease; }
+.kss-table tbody tr:hover { background: #F8FAFC; }
+.kss-table tbody tr:last-child td { border-bottom: none; }
+
+.th-check { width: 40px; }
+
+.kss-table input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* Sel nomor surat + tanggal */
+.cell-nomor-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.cell-nomor {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cell-nomor:hover { text-decoration: underline; }
+
+.cell-tanggal {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: #9CA3AF;
+  white-space: nowrap;
+}
+
+/* Sel pengirim */
+.cell-pengirim {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.cell-pengirim-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: #9CA3AF;
+  white-space: nowrap;
+}
+
+/* Sel perihal */
+.cell-perihal {
+  font-size: 13px;
+  color: #374151;
+  min-width: 220px;
+}
+
+/* Badge prioritas & status */
+.kss-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.kss-badge svg { width: 11px; height: 11px; }
+
+.kss-badge--red { color: #DC2626; background: #FEE2E2; }
+.kss-badge--blue { color: #2563EB; background: #DBEAFE; }
+.kss-badge--amber { color: #B45309; background: #FEF3C7; }
+.kss-badge--gray { color: #4B5563; background: #F1F5F9; }
+.kss-badge--solid { color: #ffffff; background: var(--color-primary); }
+
+/* Outline hijau (✓ Selesai) */
+.kss-badge--outline-green {
+  color: #059669;
+  background: transparent;
+  border: 1px solid #A7F3D0;
+}
+
+/* Baris kosong */
+.kss-empty td {
+  padding: 36px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+/* ===== MODAL ===== */
+.kss-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.kss-modal-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kss-modal-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 26px;
+  background: var(--color-surface);
+  border-radius: 16px;
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+
+.kss-modal-backdrop.is-open .kss-modal-card { transform: scale(1); }
+
+.kss-modal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #DBEAFE;
+  color: var(--color-primary);
+}
+
+.kss-modal-icon svg { width: 20px; height: 20px; }
+
+.kss-modal-title {
+  margin: 14px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.kss-modal-desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+.kss-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .kss-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .kss-stats { grid-template-columns: 1fr; }
+  .kss-head { flex-direction: column; }
+  .kss-head-actions { width: 100%; }
+  .kss-head-actions .kss-btn { flex: 1; }
+}
+
+/* ============================================
+   TAMBAHAN: DETAIL SURAT MASUK
+   (tetap pada file CSS bersama ini)
+   ============================================ */
+
+/* ===== 1. HEADER DETAIL ===== */
+.dsm-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 10px;
+}
+
+.dsm-back-link:hover { color: var(--color-primary); }
+
+.dsm-back-link svg { width: 14px; height: 14px; }
+
+.dsm-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dsm-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.dsm-nomor {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  color: #6B7280;
+}
+
+.dsm-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ===== 2. GRID DETAIL ===== */
+.dsm-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.dsm-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.dsm-card {
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.dsm-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dsm-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #DBEAFE;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.dsm-card-icon svg { width: 16px; height: 16px; }
+
+.dsm-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Baris info + pemisah */
+.dsm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 13px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.dsm-row:last-child { border-bottom: none; padding-bottom: 4px; }
+
+.dsm-row-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+
+.dsm-row-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dsm-row-value--red {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #DC2626;
+}
+
+.dsm-row-value--red svg { width: 14px; height: 14px; }
+
+.dsm-row-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+/* Atribut surat (label atas, teks bawah) */
+.dsm-attr {
+  padding: 12px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.dsm-attr:last-child { border-bottom: none; padding-bottom: 4px; }
+
+.dsm-attr-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+
+.dsm-attr-value {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #111827;
+}
+
+.dsm-attr-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* ===== VIEWER PDF ===== */
+.dsm-viewer {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dsm-viewer.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  margin: 0;
+  border-radius: 0;
+}
+
+.dsm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.dsm-file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #FEE2E2;
+  color: #DC2626;
+  flex-shrink: 0;
+}
+
+.dsm-file-icon svg { width: 16px; height: 16px; }
+
+.dsm-file-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.dsm-file-size {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.dsm-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.dsm-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  color: #6B7280;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dsm-tool-btn:hover {
+  background: #DBEAFE;
+  color: var(--color-primary);
+}
+
+.dsm-tool-btn svg { width: 16px; height: 16px; }
+
+.dsm-zoom-label {
+  min-width: 42px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #374151;
+}
+
+/* Area kertas */
+.dsm-area {
+  flex: 1;
+  padding: 24px;
+  background: #F1F5F9;
+  overflow: auto;
+}
+
+.dsm-viewer.fullscreen .dsm-area {
+  height: calc(100% - 59px);
+}
+
+.dsm-paper {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 56px;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.8;
+  zoom: var(--doc-scale, 1);
+}
+
+/* Watermark SALINAN */
+.dsm-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(0, 0, 0, 0.08);
+  transform: translate(-50%, -50%) rotate(-30deg);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Isi dokumen */
+.doc-kop {
+  text-align: center;
+  padding-bottom: 14px;
+  border-bottom: 3px solid #000000;
+}
+
+.doc-kop-1 { margin: 0; font-size: 18px; font-weight: 700; }
+.doc-kop-2 { margin: 2px 0 0; font-size: 14px; font-weight: 700; }
+.doc-kop-3 { margin: 4px 0 0; font-size: 11px; }
+
+.doc-body {
+  margin-top: 22px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.doc-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.doc-indent { margin-left: 28px; }
+
+.doc-bold { font-weight: 700; }
+
+.doc-justify {
+  text-align: justify;
+  margin: 14px 0 0;
+}
+
+/* ===== 3. BAR AKSI BAWAH ===== */
+.dsm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* Responsive detail */
+@media (max-width: 1024px) {
+  .dsm-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .dsm-paper { padding: 28px 22px; }
+  .dsm-actions .kss-btn { flex: 1; }
+}

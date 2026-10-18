@@ -1,0 +1,432 @@
+/* ============================================
+   LAYOUT ADMIN — E-Office SKSDA
+   Sidebar + navbar + main + footer
+   Dipakai oleh semua halaman pages/admin/
+   ============================================ */
+
+/* ===== Struktur body (ruang sidebar & navbar) ===== */
+body {
+  margin-left: 260px;  /* ruang untuk sidebar */
+  padding-top: 64px;   /* ruang untuk navbar */
+  background: var(--color-bg-page);
+}
+
+.main-content {
+  padding: 24px 32px;
+  min-height: calc(100vh - 64px);
+}
+
+/* ===== SIDEBAR ===== */
+.admin-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  z-index: 40;
+  transition: transform 0.25s ease;
+  overflow: hidden;
+}
+
+/* Brand di atas sidebar */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-brand img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #DCFCE7;
+}
+
+.sidebar-brand-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.sidebar-brand-name strong {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.sidebar-brand-name span {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+/* Badge status sistem */
+.sidebar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 16px 4px;
+  padding: 8px 12px;
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.status-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-success);
+  background: var(--color-success-light);
+  border-radius: 999px;
+}
+
+/* Menu */
+.sidebar-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 16px;
+}
+
+.sidebar-section {
+  margin-bottom: 18px;
+}
+
+.sidebar-section-label {
+  padding: 0 12px;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #374151;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: var(--color-bg-hover);
+}
+
+/* Item aktif: biru, teks putih */
+.sidebar-link.is-active {
+  background: var(--color-primary);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Link keluar sesi (merah) */
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 12px 16px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-error);
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-logout svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-logout:hover {
+  background: var(--color-error-light);
+}
+
+/* ===== NAVBAR ===== */
+.admin-navbar {
+  position: fixed;
+  top: 0;
+  left: 260px;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 32px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 30;
+  transition: left 0.25s ease;
+}
+
+/* Tombol hamburger (hanya tampil < 1024px) */
+.sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.sidebar-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Search pill */
+.navbar-search {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.navbar-search svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.navbar-search input {
+  width: 100%;
+  padding: 9px 16px 9px 40px;
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.navbar-search input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.navbar-search input:focus {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+/* Aksi kanan */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.navbar-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.navbar-bell:hover {
+  background: var(--color-bg-hover);
+}
+
+.navbar-bell svg {
+  width: 20px;
+  height: 20px;
+}
+
+.bell-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger-dot);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+/* User chip */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.navbar-user:hover {
+  background: var(--color-bg-hover);
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.user-avatar svg {
+  width: 18px;
+  height: 18px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.user-badge {
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ===== FOOTER ===== */
+.admin-footer {
+  padding: 16px 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Backdrop sidebar (mobile) ===== */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  z-index: 35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* ===== Responsive: sidebar collapsible < 1024px ===== */
+@media (max-width: 1024px) {
+  body {
+    margin-left: 0;
+  }
+
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+
+  body.sidebar-open .admin-sidebar {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(15, 23, 42, 0.15);
+  }
+
+  .admin-navbar {
+    left: 0;
+  }
+
+  .sidebar-toggle {
+    display: inline-flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Ponsel kecil: sembunyikan teks user chip, sisakan avatar + badge */
+@media (max-width: 640px) {
+  .main-content {
+    padding: 16px;
+  }
+
+  .user-info {
+    display: none;
+  }
+}

@@ -1,0 +1,513 @@
+/* ============================================
+   PENGUMUMAN BERJALAN (ADMIN) — E-Office SKSDA
+   Form kelola running text + preview live
+   ============================================ */
+
+/* ===== HEADER ===== */
+.pgm-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.pgm-breadcrumb-link { color: var(--color-text-secondary); }
+.pgm-breadcrumb-link:hover { color: var(--color-primary); }
+.pgm-breadcrumb-sep { color: var(--color-text-muted); }
+.pgm-breadcrumb-current { font-weight: 700; color: var(--color-primary); }
+
+.pgm-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.pgm-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.pgm-desc {
+  margin: 5px 0 0;
+  max-width: 620px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* Badge status dinamis */
+.pgm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pgm-status-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pgm-status-badge--on { color: var(--color-success); background: var(--color-success-light); }
+.pgm-status-badge--off { color: var(--color-text-secondary); background: var(--color-bg-hover); }
+
+/* ===== GRID ===== */
+.pgm-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.pgm-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Card umum */
+.pgm-card {
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.pgm-card-title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pgm-card-sub {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+/* ===== FORM ===== */
+.pgm-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.pgm-toggle-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pgm-toggle-desc {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+/* Toggle switch custom */
+.pgm-switch {
+  display: inline-flex;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pgm-switch input { display: none; }
+
+.pgm-switch-track {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #CBD5E1;
+  transition: background-color 0.2s ease;
+}
+
+.pgm-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.pgm-switch input:checked + .pgm-switch-track {
+  background: var(--color-primary);
+}
+
+.pgm-switch input:checked + .pgm-switch-track .pgm-switch-knob {
+  transform: translateX(20px);
+}
+
+/* Field */
+.pgm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 20px;
+}
+
+.pgm-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pgm-req { color: var(--color-error); }
+
+.pgm-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pgm-field textarea::placeholder { color: var(--color-text-muted); }
+
+.pgm-field textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+.pgm-field textarea.is-error { border-color: var(--color-error) !important; }
+
+.pgm-text-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pgm-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-error);
+}
+
+.pgm-counter {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* Radio kartu kecepatan */
+.pgm-speed-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pgm-speed-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.pgm-speed-card:hover { border-color: #CBD5E1; }
+
+.pgm-speed-card input { display: none; }
+
+.pgm-speed-card.is-active {
+  border-color: var(--color-primary);
+  background: #EFF6FF;
+}
+
+.pgm-speed-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--color-bg-hover);
+  color: #475569;
+}
+
+.pgm-speed-card.is-active .pgm-speed-icon {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.pgm-speed-icon svg { width: 17px; height: 17px; }
+
+.pgm-speed-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pgm-speed-val {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+/* Check aktif pojok */
+.pgm-speed-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.pgm-speed-check svg { width: 10px; height: 10px; }
+
+.pgm-speed-card.is-active .pgm-speed-check { display: inline-flex; }
+
+/* ===== AUDIENS CHECKBOX CARD ===== */
+.pgm-audience-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pgm-audience-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.pgm-audience-card:hover { border-color: #CBD5E1; }
+
+.pgm-audience-card input { display: none; }
+
+.pgm-audience-card.is-active {
+  border-color: var(--color-primary);
+  background: #EFF6FF;
+}
+
+.pgm-audience-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-bg-hover);
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.pgm-audience-card.is-active .pgm-audience-icon {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.pgm-audience-icon svg { width: 15px; height: 15px; }
+
+.pgm-audience-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pgm-audience-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.pgm-audience-check svg { width: 10px; height: 10px; }
+
+.pgm-audience-card.is-active .pgm-audience-check { display: inline-flex; }
+
+/* Tombol */
+.pgm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pgm-btn svg { width: 15px; height: 15px; }
+
+.pgm-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.pgm-btn--primary:hover { background: var(--color-primary-hover); }
+
+.pgm-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.pgm-btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+.pgm-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+/* Info terakhir diperbarui */
+.pgm-updated {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ===== PREVIEW ===== */
+.pgm-preview-bar {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  margin-top: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.pgm-preview-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 100%;
+  align-self: stretch;
+  background: var(--color-primary);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.pgm-preview-label svg { width: 16px; height: 16px; }
+
+.pgm-preview-viewport {
+  flex: 1;
+  overflow: hidden;
+  padding: 0 12px;
+}
+
+.pgm-preview-track {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #374151;
+  animation: pgm-marquee var(--marquee-speed, 30s) linear infinite;
+  will-change: transform;
+}
+
+.pgm-preview-track.is-static {
+  display: block;
+  width: 100%;
+  text-align: center;
+  animation: none;
+}
+
+@keyframes pgm-marquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ===== PANDUAN ===== */
+.pgm-tips {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.pgm-tips li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.pgm-tips li::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border-radius: 50%;
+  background-color: var(--color-success-light);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316A34A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .pgm-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pgm-speed-cards { grid-template-columns: 1fr; }
+  .pgm-audience-cards { grid-template-columns: 1fr; }
+  .pgm-head { flex-direction: column; }
+  .pgm-actions { flex-direction: column; align-items: stretch; }
+}

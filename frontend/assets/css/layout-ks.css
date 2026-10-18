@@ -1,0 +1,424 @@
+/* ============================================
+   LAYOUT KEPALA SEKSI — E-Office SKSDA
+   Sidebar 260px + navbar 64px + main + footer
+   Dipakai oleh semua halaman pages/kepala-seksi/
+   ============================================ */
+
+/* ===== Struktur body ===== */
+body {
+  margin-left: 260px;  /* ruang sidebar */
+  padding-top: 64px;   /* ruang navbar */
+  background: var(--color-bg-page);
+}
+
+.main-content {
+  padding: 24px 32px;
+  min-height: calc(100vh - 64px);
+}
+
+/* ===== SIDEBAR ===== */
+.ks-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  z-index: 40;
+  transform: translateX(0); /* desktop: SELALU terlihat */
+  transition: transform 0.25s ease;
+}
+
+/* Brand + logo di atas sidebar */
+.ks-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ks-brand img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #DCFCE7;
+  flex-shrink: 0;
+}
+
+.ks-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.ks-brand-text strong {
+  font-size: 13.5px;
+  color: var(--color-text);
+}
+
+.ks-brand-text span {
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+}
+
+/* Card user di atas menu (dengan pemisah bawah) */
+.ks-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ks-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ks-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ks-user-name {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.ks-user-role {
+  display: block;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+/* Menu flat (tanpa grouping) */
+.ks-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 12px 12px;
+}
+
+.ks-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #374151;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ks-menu-link svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.ks-menu-link:hover {
+  background: var(--color-bg-hover);
+}
+
+/* Item aktif: biru solid */
+.ks-menu-link.is-active {
+  background: var(--color-primary);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Box status sistem (hijau muda) */
+.ks-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 16px 12px;
+  padding: 10px 14px;
+  background: #F0FDF4;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  color: #10B981;
+}
+
+.ks-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  flex-shrink: 0;
+}
+
+/* Link bawah: Settings & Logout */
+.ks-bottom {
+  padding: 8px 16px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ks-bottom-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ks-bottom-link svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.ks-bottom-link:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.ks-bottom-link--logout {
+  color: var(--color-error);
+}
+
+.ks-bottom-link--logout:hover {
+  background: var(--color-error-light);
+  color: var(--color-error);
+}
+
+/* ===== NAVBAR ===== */
+.ks-navbar {
+  position: fixed;
+  top: 0;
+  left: 260px;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 32px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 30;
+  transition: left 0.25s ease;
+}
+
+/* Tombol hamburger (tampil < 1024px) */
+.ks-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.ks-sidebar-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ks-navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Search */
+.ks-search {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.ks-search svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.ks-search input {
+  width: 100%;
+  padding: 9px 16px 9px 40px;
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.ks-search input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.ks-search input:focus {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+/* Aksi kanan: bell / gear / help / avatar */
+.ks-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ks-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover: abu → biru */
+.ks-icon-btn:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.ks-icon-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ks-icon-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger-dot);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.ks-help-btn {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Avatar navbar 36px (tanpa nama) */
+.ks-nav-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-left: 6px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.ks-nav-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===== FOOTER ===== */
+.ks-footer {
+  padding: 16px 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Backdrop (mobile) ===== */
+.ks-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  z-index: 35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* ===== Responsive: sidebar collapsible < 1024px ===== */
+@media (max-width: 1024px) {
+  body {
+    margin-left: 0;
+  }
+
+  .ks-sidebar {
+    transform: translateX(-100%);
+  }
+
+  body.ks-sidebar-open .ks-sidebar {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(15, 23, 42, 0.15);
+  }
+
+  .ks-navbar {
+    left: 0;
+  }
+
+  .ks-sidebar-toggle {
+    display: inline-flex;
+  }
+
+  .ks-backdrop {
+    display: block;
+  }
+
+  body.ks-sidebar-open .ks-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-content {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,136 @@
+/* ============================================
+   LOGIN PAGE — E-Office SKSDA
+   CSS murni, self-contained, tanpa Tailwind.
+   ============================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  color: #111827; background: #F8FAFC; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex; flex-direction: column; min-height: 100vh;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button, input, select { font-family: inherit; }
+
+/* ===== NAVBAR ===== */
+.nav { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid #e5e7eb; }
+.nav-inner { max-width: 1140px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.nav-brand { display: flex; align-items: center; gap: 12px; }
+.nav-logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #DCFCE7; }
+.nav-brand-name { display: block; font-size: 14px; font-weight: 700; }
+.nav-brand-sub { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6B7280; }
+.nav-menu { display: none; align-items: center; gap: 32px; }
+.nav-link { font-size: 14px; font-weight: 600; color: #6B7280; }
+.nav-link:hover { color: #2563EB; }
+.nav-link.active { color: #2563EB; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.lang-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; color: #6B7280; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
+
+/* ===== MAIN ===== */
+.login-main {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 64px 16px;
+  background: linear-gradient(180deg, #F1F5F9 0%, #fff 50%, #F8FAFC 100%);
+}
+
+/* ===== CARD ===== */
+.login-card {
+  width: 100%; max-width: 440px; padding: 40px;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(17,24,39,.06); text-align: center;
+}
+.login-title { font-size: 24px; font-weight: 800; color: #111827; }
+.login-subtitle { margin-top: 8px; font-size: 14px; color: #6B7280; }
+
+/* ===== FORM ===== */
+.login-form { margin-top: 32px; text-align: left; }
+.form-field { margin-bottom: 20px; }
+.label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.form-label { font-size: 14px; font-weight: 600; color: #374151; }
+.req { color: #DC2626; }
+.forgot-link { font-size: 13px; font-weight: 600; color: #3B82F6; }
+.forgot-link:hover { text-decoration: underline; }
+
+.input-wrap { position: relative; }
+.input-wrap input {
+  width: 100%; padding: 12px 16px 12px 44px; font-size: 14px;
+  color: #111827; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.input-wrap input::placeholder { color: #9CA3AF; }
+.input-wrap input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.input-wrap input#password { padding-right: 48px; }
+
+.input-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: #9CA3AF; pointer-events: none;
+}
+.input-icon svg { width: 18px; height: 18px; }
+
+.toggle-pw {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  padding: 4px; background: none; border: none; color: #9CA3AF; cursor: pointer;
+}
+.toggle-pw:hover { color: #374151; }
+.toggle-pw svg { width: 18px; height: 18px; }
+
+/* Select */
+.select-wrap select {
+  width: 100%; padding: 12px 16px; font-size: 14px;
+  color: #111827; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  outline: none; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.select-wrap select:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+
+/* Checkbox */
+.check-label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #6B7280; cursor: pointer; }
+.check-label input { width: 16px; height: 16px; accent-color: #2563EB; cursor: pointer; }
+
+/* Error */
+.form-error { margin: 4px 0 0; font-size: 12px; color: #DC2626; display: none; }
+.form-error.show { display: block; }
+.input-error { border-color: #DC2626 !important; }
+
+/* Submit */
+.submit-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px; margin-top: 24px; font-size: 14px; font-weight: 700; color: #fff;
+  background: #2563EB; border: none; border-radius: 10px;
+  transition: background .15s;
+}
+.submit-btn:hover { background: #1D4ED8; }
+.submit-btn:disabled { background: #9CA3AF; cursor: not-allowed; }
+.submit-btn svg { width: 18px; height: 18px; }
+
+/* Badges */
+.badges { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; font-size: 12px; color: #6B7280; }
+.badge-item { display: inline-flex; align-items: center; gap: 6px; }
+.badge-item svg { width: 13px; height: 13px; }
+.badge-sep { color: #CBD5E1; }
+
+/* Help */
+.help-text { margin-top: 12px; font-size: 14px; color: #6B7280; text-align: center; }
+.help-link { font-weight: 600; color: #2563EB; }
+.help-link:hover { text-decoration: underline; }
+
+/* ===== FOOTER ===== */
+.footer { background: #fff; border-top: 1px solid #e5e7eb; }
+.footer-inner { max-width: 1140px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 16px; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; }
+.footer-link { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6B7280; }
+.footer-link:hover { color: #2563EB; }
+.footer-copy { font-size: 12px; color: #6B7280; text-align: center; }
+
+/* ===== RESPONSIVE ===== */
+@media (min-width: 768px) {
+  .footer-inner { flex-direction: row; }
+  .nav-menu { display: flex; }
+}
+@media (max-width: 480px) {
+  .login-card { padding: 24px; }
+}

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arsip - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-arsip.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="pga-head">
+      <div>
+        <h1 class="pga-title">Arsip</h1>
+        <p class="pga-desc">Kelola dan temukan kembali dokumen yang telah diarsipkan.</p>
+      </div>
+    </section>
+
+    <!-- ===== 2. CARD TAB FILTER ===== -->
+    <nav class="pga-tab-card" id="pga-tabs" aria-label="Filter jenis arsip">
+      <button type="button" class="pga-tab is-active" data-jenis="all">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        Semua Arsip
+      </button>
+      <button type="button" class="pga-tab" data-jenis="Surat Masuk">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        Arsip Surat Masuk
+      </button>
+      <button type="button" class="pga-tab" data-jenis="Surat Keluar">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        Arsip Surat Keluar
+      </button>
+      <button type="button" class="pga-tab" data-jenis="Laporan">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+        Arsip Laporan
+      </button>
+      <button type="button" class="pga-tab" data-jenis="Lainnya">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+        Arsip Lainnya
+      </button>
+    </nav>
+
+    <!-- ===== 3. CARD UTAMA ===== -->
+    <section class="pga-card">
+
+      <!-- Baris filter -->
+      <div class="pga-filters">
+        <div class="pga-search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" id="pga-search" placeholder="Cari nama/nomor dokumen..." aria-label="Cari dokumen arsip" />
+        </div>
+        <select id="pga-jenis" class="pga-select" aria-label="Filter jenis dokumen">
+          <option value="all">Jenis Dokumen / Semua</option>
+          <option value="Surat Tugas">Surat Tugas</option>
+          <option value="Surat Masuk">Surat Masuk</option>
+          <option value="Surat Keluar">Surat Keluar</option>
+          <option value="Laporan">Laporan</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+        <select id="pga-tahun" class="pga-select" aria-label="Filter tahun">
+          <option value="all">Tahun / Semua</option>
+          <option value="2026">2026</option>
+        </select>
+        <select id="pga-status" class="pga-select" aria-label="Filter status">
+          <option value="all">Status / Semua</option>
+          <option value="Diarsipkan">Diarsipkan</option>
+        </select>
+        <button type="button" class="pga-reset" id="pga-reset">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Reset Filter
+        </button>
+      </div>
+
+      <!-- Tabel -->
+      <div class="pga-table-scroll">
+        <table class="pga-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Dokumen</th>
+              <th>Jenis Dokumen</th>
+              <th>Nomor Dokumen</th>
+              <th>Tanggal Dokumen</th>
+              <th>Tahun</th>
+              <th>Status</th>
+              <th>Diarsipkan Oleh</th>
+              <th>Tanggal Diarsipkan</th>
+              <th class="th-actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="pga-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="pga-foot">
+        <span id="pga-showing">Menampilkan 1-5 dari 52 data</span>
+        <div class="pga-pagination">
+          <button type="button" class="pga-page-nav" id="pga-prev" disabled aria-label="Sebelumnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button type="button" class="pga-page-num is-active" data-page="1">1</button>
+          <button type="button" class="pga-page-num" data-page="2">2</button>
+          <button type="button" class="pga-page-num" data-page="3">3</button>
+          <button type="button" class="pga-page-num" data-page="4">4</button>
+          <button type="button" class="pga-page-num" data-page="5">5</button>
+          <span class="pga-page-ellipsis">...</span>
+          <button type="button" class="pga-page-nav" id="pga-next" aria-label="Berikutnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/arsip-pg.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Disposisi - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-disposisi.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <a href="disposisi-saya.html" class="pgdd-back-link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Kembali ke Daftar Disposisi
+    </a>
+
+    <!-- ===== 2. CARD JUDUL ATAS ===== -->
+    <section class="pgdd-hero">
+      <div class="pgdd-hero-left">
+        <div class="pgdd-badge-row">
+          <span class="pgdd-badge pgdd-badge--red">Prioritas Tinggi</span>
+          <span class="pgdd-badge pgdd-badge--gray" id="pgdd-status">Belum Diterima</span>
+        </div>
+        <h1 class="pgdd-judul" id="pgdd-judul">Memuat disposisi...</h1>
+        <p class="pgdd-pemberi" id="pgdd-pemberi"></p>
+      </div>
+      <div class="pgdd-tenggat">
+        <span class="pgdd-tenggat-label">Tenggat Waktu</span>
+        <span class="pgdd-tenggat-waktu" id="pgdd-tenggat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span id="pgdd-tenggat-text"></span>
+        </span>
+      </div>
+    </section>
+
+    <!-- ===== 3. GRID DUA KOLOM ===== -->
+    <section class="pgdd-grid">
+
+      <!-- ===== KIRI ===== -->
+      <div class="pgdd-left">
+
+        <!-- Card instruksi pimpinan -->
+        <div class="pgdd-card pgdd-card--instruksi">
+          <div class="pgdd-card-head">
+            <span class="pgdd-icon pgdd-icon--circle">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </span>
+            <h2 class="pgdd-card-title">Instruksi Pimpinan</h2>
+          </div>
+          <div class="pgdd-instruksi-box" id="pgdd-instruksi"></div>
+        </div>
+
+        <!-- Card detail surat asal -->
+        <div class="pgdd-card">
+          <div class="pgdd-card-head">
+            <div class="pgdd-card-head-left">
+              <span class="pgdd-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              </span>
+              <h2 class="pgdd-card-title">Detail Surat Asal</h2>
+            </div>
+          </div>
+
+          <div class="pgdd-info-row-2">
+            <div>
+              <p class="pgdd-info-label">Nomor Surat</p>
+              <p class="pgdd-info-value pgdd-info-value--big" id="pgdd-surat-nomor"></p>
+            </div>
+            <div>
+              <p class="pgdd-info-label">Tanggal Surat</p>
+              <p class="pgdd-info-value pgdd-info-value--big" id="pgdd-surat-tanggal"></p>
+            </div>
+          </div>
+
+          <div class="pgdd-info">
+            <p class="pgdd-info-label">Pengirim</p>
+            <p class="pgdd-info-value" id="pgdd-surat-pengirim"></p>
+          </div>
+          <div class="pgdd-info">
+            <p class="pgdd-info-label">Perihal</p>
+            <p class="pgdd-info-value" id="pgdd-surat-perihal"></p>
+          </div>
+
+          <!-- Lampiran dokumen -->
+          <div class="pgdd-info">
+            <p class="pgdd-info-label">Lampiran Dokumen</p>
+            <div class="pgdd-file-list" id="pgdd-files"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== KANAN: card tindakan ===== -->
+      <div class="pgdd-card pgdd-card--action">
+        <h2 class="pgdd-action-title">Tindakan</h2>
+        <p class="pgdd-action-text">Silakan konfirmasi penerimaan disposisi ini untuk mengubah status menjadi 'Sedang Dikerjakan'.</p>
+
+        <button type="button" class="pgdd-btn pgdd-btn--primary pgdd-btn--block" id="btn-terima">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span id="btn-terima-label">Terima Disposisi</span>
+        </button>
+
+        <button type="button" class="pgdd-btn pgdd-btn--outline pgdd-btn--block" id="btn-klarifikasi">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          Minta Klarifikasi
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/detail-disposisi.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-dashboard.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HERO BANNER ===== -->
+    <section class="dash-hero">
+      <div class="hero-main">
+        <span class="hero-badge"><span class="hero-badge-dot"></span>ADMINISTRATOR SISTEM</span>
+        <p class="hero-date">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span id="hero-date">Memuat tanggal...</span>
+        </p>
+        <h1 class="hero-title">Selamat Datang, Administrator Sistem</h1>
+        <p class="hero-desc">Pusat kendali operasional korespondensi digital, manajemen akses aparatur, dan integritas infrastruktur data BKSDA Provinsi Jawa Tengah.</p>
+      </div>
+
+      <!-- Tombol aksi cepat -->
+      <div class="hero-actions">
+        <a href="data-pengguna.html" class="hero-btn hero-btn--white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          Tambah Pengguna
+        </a>
+        <a href="input-surat.html" class="hero-btn hero-btn--ghost">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Registrasi Surat Masuk
+        </a>
+        <a href="backup-data.html" class="hero-btn hero-btn--orange">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Backup Instan
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 2. BARIS STAT CARD (render via JS) ===== -->
+    <section class="stat-grid" id="stat-grid" aria-label="Statistik ringkas"></section>
+
+    <!-- ===== 3. GRID DUA KOLOM: CHART + AUDIT TRAIL ===== -->
+    <section class="dash-columns">
+
+      <!-- Panel chart korespondensi -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-label panel-label--blue">ANALISIS VOLUME REGISTRASI</p>
+            <h2 class="panel-title">Statistik &amp; Tren Korespondensi Bulanan</h2>
+          </div>
+          <button type="button" class="btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Ekspor PDF
+          </button>
+        </div>
+
+        <!-- Tab (render via JS) -->
+        <div class="chart-tabs" id="chart-tabs"></div>
+
+        <!-- Bar chart CSS murni (render via JS) -->
+        <div class="chart-plot" id="chart-plot"></div>
+
+        <!-- Legend -->
+        <div class="chart-legend">
+          <div class="legend-items">
+            <span class="legend-item"><span class="legend-dot legend-dot--blue"></span>Terverifikasi / Terdistribusi</span>
+            <span class="legend-item"><span class="legend-dot legend-dot--gray"></span>Menunggu Konfirmasi</span>
+          </div>
+          <span class="legend-realtime">PEMBARUAN REAL-TIME: 1 MENIT LALU</span>
+        </div>
+      </div>
+
+      <!-- Panel audit trail -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-label panel-label--orange">AUDIT TRAIL</p>
+            <h2 class="panel-title">Aktivitas Terbaru Sistem</h2>
+          </div>
+          <a href="#" class="panel-link">Lihat Semua &rarr;</a>
+        </div>
+
+        <ul class="audit-list" id="audit-list"></ul>
+
+        <a href="#" class="btn-outline btn-outline--block">Buka Riwayat Lengkap Aktivitas</a>
+      </div>
+
+    </section>
+
+    <!-- ===== 4. KESEHATAN SISTEM ===== -->
+    <section class="health-section">
+      <div class="health-header">
+        <div>
+          <p class="panel-label panel-label--green">INTEGRITAS LAYANAN</p>
+          <h2 class="panel-title">Kesehatan &amp; Status Sistem</h2>
+        </div>
+        <span class="health-status">
+          <span class="health-status-dot"></span>
+          Semua Kluster Layanan Beroperasi Optimal
+        </span>
+      </div>
+
+      <div class="health-grid" id="health-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/admin-dashboard.js"></script>
+</body>
+</html>

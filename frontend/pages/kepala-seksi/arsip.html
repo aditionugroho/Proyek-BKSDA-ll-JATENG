@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arsip Dokumen - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/kepala-seksi/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/ks-arsip.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="ks-sidebar"></aside>
+  <header id="ks-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <nav class="ar-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="ar-breadcrumb-current">Arsip</span>
+    </nav>
+
+    <section class="ar-head">
+      <div>
+        <h1 class="ar-title">Arsip Dokumen</h1>
+        <p class="ar-desc">Kelola dan temukan kembali surat serta dokumen yang telah diarsipkan secara sistematis.</p>
+      </div>
+      <div class="ar-head-actions">
+        <button type="button" class="ar-btn ar-btn--outline" id="btn-sinkron">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Sinkronisasi Arsip
+        </button>
+        <button type="button" class="ar-btn ar-btn--primary" id="btn-cari-cepat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Cari Dokumen Cepat
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 2. STAT CARD (render via JS) ===== -->
+    <section class="ar-stats" id="ar-stats" aria-label="Ringkasan arsip"></section>
+
+    <!-- ===== 3. CARD UTAMA ===== -->
+    <section class="ar-card">
+
+      <!-- Baris filter -->
+      <div class="ar-filters">
+        <div class="ar-search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" id="ar-search" placeholder="Cari nomor surat, perihal, atau pengirim..." aria-label="Cari dokumen arsip" />
+        </div>
+        <select id="ar-jenis" class="ar-select" aria-label="Filter jenis">
+          <option value="all">Semua Jenis</option>
+          <option value="Surat Masuk">Surat Masuk</option>
+          <option value="Surat Keluar">Surat Keluar</option>
+          <option value="Disposisi">Disposisi</option>
+          <option value="Laporan">Laporan</option>
+        </select>
+        <select id="ar-tahun" class="ar-select" aria-label="Filter tahun">
+          <option value="all">Semua Tahun</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+        <select id="ar-status" class="ar-select" aria-label="Filter status">
+          <option value="all">Semua Status</option>
+          <option value="Diarsipkan">Diarsipkan</option>
+          <option value="Selesai">Selesai</option>
+        </select>
+        <button type="button" class="ar-reset-btn" id="ar-reset" title="Reset filter" aria-label="Reset filter">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
+      </div>
+
+      <!-- Baris bawah filter -->
+      <div class="ar-filter-info">
+        <span class="ar-count"><strong id="ar-count-num">8</strong> dari 1,248 dokumen diarsipkan</span>
+        <div class="ar-toggle" role="tablist" aria-label="Mode tampilan">
+          <button type="button" class="ar-toggle-pill is-active" data-mode="tabel">Tabel</button>
+          <button type="button" class="ar-toggle-pill" data-mode="grid">Grid</button>
+        </div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="ar-table-scroll" id="ar-table-wrap">
+        <table class="ar-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nomor Dokumen</th>
+              <th>Tanggal</th>
+              <th>Jenis</th>
+              <th>Perihal</th>
+              <th>Asal / Tujuan</th>
+              <th>Status</th>
+              <th class="th-actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="ar-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Grid kartu dokumen -->
+      <div class="ar-grid" id="ar-grid" hidden></div>
+
+      <!-- Footer -->
+      <div class="ar-foot">
+        <span class="ar-showing" id="ar-showing">Menampilkan 1-8 dari 1,248 dokumen</span>
+        <div class="ar-pagination" id="ar-pagination">
+          <button type="button" class="ar-page-nav" id="ar-prev" disabled>&#8249; Sebelumnya</button>
+          <button type="button" class="ar-page-num is-active">1</button>
+          <button type="button" class="ar-page-num" data-dummy>2</button>
+          <button type="button" class="ar-page-num" data-dummy>3</button>
+          <span class="ar-page-ellipsis">...</span>
+          <button type="button" class="ar-page-num" data-dummy>156</button>
+          <button type="button" class="ar-page-nav" id="ar-next">Selanjutnya &#8250;</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="ks-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
+  <script type="module" src="../../assets/js/pages/arsip.js"></script>
+</body>
+</html>

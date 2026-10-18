@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form Surat Masuk - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-form-surat.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <form id="form-surat" novalidate>
+
+      <!-- ===== 1. HEADER ===== -->
+      <section class="page-head">
+        <div class="page-head-text">
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="dashboard.html" class="breadcrumb-link">Dashboard</a>
+            <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+            <a href="input-surat.html" class="breadcrumb-link">Surat</a>
+            <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+            <a href="input-surat.html" class="breadcrumb-link">Pilih Jenis Surat</a>
+            <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+            <span class="breadcrumb-current">Surat Masuk</span>
+          </nav>
+          <h1 class="page-title">Form Surat Masuk</h1>
+          <p class="page-desc">Registrasikan surat masuk resmi dari instansi eksternal ke dalam sistem e-Office BKSDA Jawa Tengah.</p>
+        </div>
+        <span class="ssl-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Sesi Aman (SSL)
+        </span>
+      </section>
+
+      <!-- ===== 2. SECTION A: INFORMASI SURAT ===== -->
+      <section class="form-card form-card--blue">
+        <div class="form-card-head">
+          <div class="form-card-head-left">
+            <span class="form-card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            </span>
+            <div>
+              <h2 class="form-card-title">A. Informasi Surat</h2>
+              <p class="form-card-sub">Lengkapi detail administrasi fisik surat masuk</p>
+            </div>
+          </div>
+          <span class="form-badge form-badge--blue">Wajib Diisi</span>
+        </div>
+
+        <div class="form-grid">
+          <!-- Nomor Agenda (auto-generate) -->
+          <div class="form-field">
+            <label class="form-label" for="nomor-agenda">Nomor Agenda <span class="req">*</span></label>
+            <div class="input-wrap has-icon">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg></span>
+              <input type="text" id="nomor-agenda" name="nomor-agenda" readonly />
+            </div>
+            <p class="form-hint">Nomor urut pencatatan agenda balai.</p>
+          </div>
+
+          <!-- Nomor Surat -->
+          <div class="form-field">
+            <label class="form-label" for="nomor-surat">Nomor Surat <span class="req">*</span></label>
+            <div class="input-wrap has-icon">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
+              <input type="text" id="nomor-surat" name="nomor-surat" placeholder="Masukkan nomor surat" />
+            </div>
+            <p class="form-hint">Sesuai dengan kepala surat pengirim eksternal.</p>
+            <p class="form-error" id="nomor-surat-error" hidden>Wajib diisi</p>
+          </div>
+
+          <!-- Tanggal Surat -->
+          <div class="form-field">
+            <label class="form-label" for="tanggal-surat">Tanggal Surat <span class="req">*</span></label>
+            <div class="input-wrap">
+              <input type="date" id="tanggal-surat" name="tanggal-surat" />
+            </div>
+            <p class="form-error" id="tanggal-surat-error" hidden>Wajib diisi</p>
+          </div>
+
+          <!-- Tanggal Diterima -->
+          <div class="form-field">
+            <label class="form-label" for="tanggal-diterima">Tanggal Diterima <span class="req">*</span></label>
+            <div class="input-wrap">
+              <input type="date" id="tanggal-diterima" name="tanggal-diterima" />
+            </div>
+            <p class="form-error" id="tanggal-diterima-error" hidden>Wajib diisi</p>
+          </div>
+
+          <!-- Asal Surat -->
+          <div class="form-field">
+            <label class="form-label" for="asal-surat">Asal Surat <span class="req">*</span></label>
+            <div class="input-wrap has-icon">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="9" y1="22" x2="9" y2="18"></line><line x1="15" y1="22" x2="15" y2="18"></line><line x1="9" y1="6" x2="9" y2="10"></line><line x1="15" y1="6" x2="15" y2="10"></line><line x1="9" y1="13" x2="9" y2="13"></line><line x1="15" y1="13" x2="15" y2="13"></line></svg></span>
+              <input type="text" id="asal-surat" name="asal-surat" value="Dinas Lingkungan Hidup dan Kehutanan Prov. Jateng" />
+            </div>
+            <p class="form-error" id="asal-surat-error" hidden>Wajib diisi</p>
+          </div>
+
+          <!-- Sifat Surat -->
+          <div class="form-field">
+            <label class="form-label" for="sifat-surat">Sifat Surat <span class="req">*</span></label>
+            <div class="input-wrap has-icon">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>
+              <select id="sifat-surat" name="sifat-surat">
+                <option value="biasa">Biasa</option>
+                <option value="penting" selected>Penting</option>
+                <option value="segera">Segera</option>
+                <option value="rahasia">Rahasia</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Perihal (span 2 kolom) -->
+          <div class="form-field span-2">
+            <label class="form-label" for="perihal">Perihal <span class="req">*</span></label>
+            <div class="input-wrap">
+              <textarea id="perihal" name="perihal" rows="3">Koordinasi Pengamanan Kawasan Konservasi dan Penertiban Pemanfaatan Tumbuhan dan Satwa Liar di Wilayah Kabupaten Semarang</textarea>
+            </div>
+            <p class="form-error" id="perihal-error" hidden>Wajib diisi</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 3. SECTION B: INFORMASI DISPOSISI ===== -->
+      <section class="form-card form-card--green">
+        <div class="form-card-head">
+          <div class="form-card-head-left">
+            <span class="form-card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+            </span>
+            <div>
+              <h2 class="form-card-title">B. Informasi Disposisi</h2>
+              <p class="form-card-sub">Tentukan arah penanganan dan penerima disposisi awal</p>
+            </div>
+          </div>
+          <span class="form-badge form-badge--green">Routing Internal</span>
+        </div>
+
+        <div class="form-grid">
+          <!-- Ditujukan Kepada -->
+          <div class="form-field">
+            <label class="form-label" for="ditujukan">Ditujukan Kepada <span class="req">*</span></label>
+            <div class="input-wrap has-icon">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span>
+              <select id="ditujukan" name="ditujukan">
+                <option value="kepala-balai" selected>Kepala Balai Konservasi Sumber Daya Alam Jateng</option>
+                <option value="sekretaris">Sekretaris Balai</option>
+                <option value="kaswil-1">Kepala Seksi Konservasi Wilayah I</option>
+                <option value="kaswil-2">Kepala Seksi Konservasi Wilayah II</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Keterangan disposisi -->
+          <div class="form-field">
+            <label class="form-label" for="instruksi">Keterangan / Instruksi Disposisi</label>
+            <div class="input-wrap">
+              <textarea id="instruksi" name="instruksi" rows="3">Segera ditindaklanjuti dan dikoordinasikan dengan instansi terkait paling lambat 3 hari kerja.</textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 4. SECTION C: DOKUMEN DIGITAL ===== -->
+      <section class="form-card form-card--teal">
+        <div class="form-card-head">
+          <div class="form-card-head-left">
+            <span class="form-card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
+            </span>
+            <div>
+              <h2 class="form-card-title">C. Dokumen Digital Surat</h2>
+              <p class="form-card-sub">Unggah salinan digital berkas fisik (PDF, JPG, PNG - Maks. 25MB)</p>
+            </div>
+          </div>
+          <span class="form-badge form-badge--gray">Opsional / Disarankan</span>
+        </div>
+
+        <!-- Area drag & drop -->
+        <div class="dropzone" id="dropzone">
+          <span class="dropzone-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </span>
+          <p class="dropzone-title">
+            Drag &amp; drop file di sini atau
+            <button type="button" class="link-action" id="pick-file">pilih file</button>
+          </p>
+          <p class="dropzone-sub">Mendukung format PDF, JPG, atau PNG dengan ukuran maksimal 25 MB</p>
+          <button type="button" class="btn btn--outline" id="browse-btn">Telusuri Perangkat</button>
+          <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" hidden />
+        </div>
+
+        <!-- Daftar lampiran -->
+        <div class="attachment-section">
+          <h3 class="attachment-title">File Terlampir (<span id="attachment-count">1</span>)</h3>
+          <div id="attachment-list"></div>
+        </div>
+      </section>
+
+      <!-- ===== 5. TOMBOL BAWAH ===== -->
+      <div class="form-actions">
+        <button type="button" class="btn btn--outline" id="btn-cancel">Batal</button>
+        <button type="button" class="btn btn--blue-outline" id="btn-save-new">Simpan &amp; Tambah Baru</button>
+        <button type="submit" class="btn btn--primary" id="btn-save">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Simpan Surat
+        </button>
+      </div>
+
+    </form>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Toast notifikasi ===== -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toast-text">Surat berhasil disimpan</span>
+  </div>
+
+  <!-- ===== Modal konfirmasi hapus lampiran ===== -->
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <span class="modal-icon modal-icon--red">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+      </span>
+      <h2 class="modal-title" id="modal-title">Hapus Lampiran</h2>
+      <p class="modal-desc" id="modal-desc"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--outline" id="modal-cancel">Batal</button>
+        <button type="button" class="btn btn--danger" id="modal-confirm">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/form-surat-masuk.js"></script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backup Data - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-backup.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="page-head">
+      <div class="page-head-text">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-link">Dashboard</a>
+          <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+          <span class="breadcrumb-current">Backup Data</span>
+        </nav>
+        <h1 class="page-title">Backup Data</h1>
+        <p class="page-desc">Kelola pencadangan data sistem dan dokumen untuk menjaga keamanan serta ketersediaan informasi.</p>
+      </div>
+      <div class="head-tools">
+        <div class="tab-pills" id="tab-pills" role="tablist" aria-label="Simulasi status tabel">
+          <button type="button" class="tab-pill is-active" data-mode="normal">Normal</button>
+          <button type="button" class="tab-pill" data-mode="loading">Loading</button>
+          <button type="button" class="tab-pill" data-mode="empty">Kosong</button>
+          <button type="button" class="tab-pill" data-mode="error">Error</button>
+        </div>
+        <button type="button" class="btn btn--primary" id="btn-backup">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+          + Backup Sekarang
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 2. BARIS STAT CARD (render via JS) ===== -->
+    <section class="stats-grid" id="stats-grid" aria-label="Ringkasan backup"></section>
+
+    <!-- ===== 3. GRID DUA KOLOM ===== -->
+    <section class="backup-columns">
+
+      <!-- ===== KIRI ===== -->
+      <div class="column-left">
+
+        <!-- Card: status backup sistem -->
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Status Backup Sistem</h2>
+              <p class="panel-sub">Status pencadangan komponen utama sistem.</p>
+            </div>
+            <span class="sync-badge"><span class="badge-dot"></span>Seluruh Modul Sinkron</span>
+          </div>
+
+          <!-- Grid 2x2 modul (render via JS) -->
+          <div class="module-grid" id="module-grid"></div>
+        </div>
+
+        <!-- Card: riwayat backup -->
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Riwayat Backup Terbaru</h2>
+              <p class="panel-sub">Daftar arsip cadangan 4 snapshot terakhir dalam sistem.</p>
+            </div>
+            <a href="#" class="panel-link">Lihat Semua Riwayat &rarr;</a>
+          </div>
+
+          <div class="table-scroll">
+            <table class="backup-table">
+              <thead>
+                <tr>
+                  <th>Backup ID</th>
+                  <th>Tanggal &amp; Waktu</th>
+                  <th>Jenis</th>
+                  <th>Ukuran</th>
+                  <th>Status</th>
+                  <th>Dibuat Oleh</th>
+                  <th class="th-actions">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== KANAN: tumpukan 4 kartu ===== -->
+      <div class="column-right">
+
+        <!-- Kartu 1: penyimpanan -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <h3 class="side-card-title">Penyimpanan Backup</h3>
+            <button type="button" class="icon-add" title="Tambah penyimpanan" aria-label="Tambah penyimpanan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+          </div>
+
+          <div class="storage-top">
+            <div>
+              <span class="storage-big">64%</span>
+              <span class="storage-label">Kapasitas</span>
+            </div>
+            <span class="storage-right">1.28 TB / 2.0 TB</span>
+          </div>
+          <p class="storage-used">Terpakai</p>
+          <div class="storage-bar"><span style="width:64%"></span></div>
+
+          <div class="storage-split">
+            <div>
+              <span class="split-label">Terpakai</span>
+              <span class="split-value">1.28 TB</span>
+            </div>
+            <div>
+              <span class="split-label">Tersedia</span>
+              <span class="split-value split-value--green">720 GB</span>
+            </div>
+          </div>
+
+          <p class="storage-safe">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Penyimpanan masih tersedia &amp; aman.
+          </p>
+
+          <div class="node-foot">
+            <div>
+              <p class="node-label">Lokasi Node</p>
+              <p class="node-value">BKSDA Data Center / Jateng</p>
+            </div>
+            <span class="connected-badge"><span class="badge-dot"></span>Terhubung</span>
+          </div>
+        </div>
+
+        <!-- Kartu 2: detail backup terakhir (diisi ulang via JS) -->
+        <div class="side-card" id="detail-card">
+          <div class="side-card-head">
+            <h3 class="side-card-title">Backup Terakhir</h3>
+            <span class="status-badge status-badge--green" id="d-status">BERHASIL</span>
+          </div>
+
+          <div class="kv-list">
+            <div class="kv-row"><span class="kv-label">Backup ID</span><span class="kv-value mono" id="d-id">BKP-2026-09-13-0300</span></div>
+            <div class="kv-row"><span class="kv-label">Tipe Arsip</span><span class="kv-value"><span class="badge badge--blue" id="d-tipe">Scheduled</span></span></div>
+            <div class="kv-row"><span class="kv-label">Tanggal &amp; Waktu</span><span class="kv-value" id="d-waktu">13 Sep 2026, 03:00 WIB</span></div>
+            <div class="kv-row"><span class="kv-label">Durasi Proses</span><span class="kv-value" id="d-durasi">08 menit 42 detik</span></div>
+            <div class="kv-row"><span class="kv-label">Total Ukuran</span><span class="kv-value kv-value--bold" id="d-ukuran">2.4 GB</span></div>
+            <div class="kv-row"><span class="kv-label">Eksekutor</span><span class="kv-value" id="d-eksekutor">System (Automated)</span></div>
+          </div>
+
+          <div class="side-card-foot">
+            <button type="button" class="btn btn--outline btn--sm">Lihat Detail</button>
+            <a href="#" class="panel-link">Riwayat Lengkap</a>
+          </div>
+        </div>
+
+        <!-- Kartu 3: jadwal otomatis -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <div class="side-card-head-left">
+              <span class="side-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </span>
+              <h3 class="side-card-title">Jadwal Backup Otomatis</h3>
+            </div>
+            <span class="status-badge status-badge--green">AKTIF</span>
+          </div>
+
+          <div class="kv-list">
+            <div class="kv-row"><span class="kv-label">Frekuensi Rutin</span><span class="kv-value kv-value--bold">Setiap Hari, 03:00 WIB</span></div>
+            <div class="kv-row"><span class="kv-label">Tipe Snapshot</span><span class="kv-value">Full System Backup</span></div>
+            <div class="kv-row"><span class="kv-label">Jadwal Berikutnya</span><span class="kv-value kv-value--blue">14 Sep 2026, 03:00 WIB</span></div>
+          </div>
+
+          <div class="note-box">Backup otomatis berjalan setiap hari saat utilisasi lalu lintas surat dinas berada pada titik terendah.</div>
+        </div>
+
+        <!-- Kartu 4: keamanan backup -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <div class="side-card-head-left">
+              <span class="side-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </span>
+              <h3 class="side-card-title">Keamanan Backup</h3>
+            </div>
+          </div>
+
+          <ul class="secure-list">
+            <li>Data backup terenkripsi standar AES-256</li>
+            <li>Disimpan pada isolasi fisik server sekunder BKSDA</li>
+            <li>Setiap siklus backup terekam otentik pada audit trail</li>
+            <li>Toleransi retensi 30 hari rotasi siklus arsip</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Toast notifikasi ===== -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toast-text"></span>
+  </div>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/admin-backup.js"></script>
+</body>
+</html>

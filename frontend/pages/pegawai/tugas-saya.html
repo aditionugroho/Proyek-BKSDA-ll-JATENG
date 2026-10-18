@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tugas Saya - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-tugas.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="pgt-head">
+      <div>
+        <h1 class="pgt-title">Tugas Saya</h1>
+        <p class="pgt-desc">Kelola dan pantau seluruh tugas dan disposisi yang diberikan kepada Anda.</p>
+      </div>
+      <button type="button" class="pgt-btn pgt-btn--muted" id="btn-tugas-baru">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Tugas Baru
+      </button>
+    </section>
+
+    <!-- ===== 2. CARD TABEL ===== -->
+    <section class="pgt-card">
+
+      <!-- Baris atas: tab + tools -->
+      <div class="pgt-top">
+        <nav class="pgt-tabs" id="pgt-tabs" aria-label="Filter status tugas">
+          <button type="button" class="pgt-tab is-active" data-filter="all">
+            Semua
+            <span class="pgt-tab-badge" id="pgt-tab-count">13</span>
+          </button>
+          <button type="button" class="pgt-tab" data-filter="Belum Mulai">Belum Mulai</button>
+          <button type="button" class="pgt-tab" data-filter="Berjalan">Berjalan</button>
+          <button type="button" class="pgt-tab" data-filter="Menunggu Review">Menunggu Review</button>
+          <button type="button" class="pgt-tab" data-filter="Selesai">Selesai</button>
+        </nav>
+
+        <div class="pgt-tools">
+          <div class="pgt-search">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="search" id="pgt-search" placeholder="Cari tugas..." aria-label="Cari tugas" />
+          </div>
+          <button type="button" class="pgt-filter-btn" title="Filter" aria-label="Filter">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="pgt-table-scroll">
+        <table class="pgt-table">
+          <thead>
+            <tr>
+              <th>Nama Tugas</th>
+              <th>Pemberi Tugas</th>
+              <th>Prioritas</th>
+              <th>Deadline</th>
+              <th>Progress</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="pgt-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="pgt-foot">
+        <span id="pgt-showing">Menampilkan 1-4 dari 12 tugas</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/tugas-saya.js"></script>
+</body>
+</html>

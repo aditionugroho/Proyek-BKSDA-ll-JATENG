@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifikasi - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-notifikasi.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="pgn-head">
+      <div>
+        <h1 class="pgn-title">Notifikasi</h1>
+        <p class="pgn-desc">Pantau informasi dan aktivitas terbaru pada sistem.</p>
+      </div>
+      <button type="button" class="pgn-mark-all" id="btn-mark-all">Tandai semua dibaca</button>
+    </section>
+
+    <!-- ===== 2. BARIS TAB ===== -->
+    <nav class="pgn-tabs" id="pgn-tabs" aria-label="Filter notifikasi">
+      <button type="button" class="pgn-tab is-active" data-filter="all">Semua</button>
+      <button type="button" class="pgn-tab" data-filter="unread">Belum Dibaca</button>
+      <button type="button" class="pgn-tab" data-filter="surat">Surat</button>
+      <button type="button" class="pgn-tab" data-filter="tugas">Tugas</button>
+      <button type="button" class="pgn-tab" data-filter="sistem">Sistem</button>
+    </nav>
+
+    <!-- ===== 3. GRID DUA KOLOM ===== -->
+    <section class="pgn-grid">
+
+      <!-- KIRI: list notifikasi -->
+      <div class="pgn-card">
+        <div class="pgn-card-head">
+          <h2 class="pgn-card-title">Notifikasi Terbaru</h2>
+          <span class="pgn-card-sub" id="pgn-unread-sub">3 notifikasi belum dibaca</span>
+        </div>
+        <div id="pgn-list"></div>
+      </div>
+
+      <!-- KANAN: ringkasan -->
+      <div class="pgn-card">
+        <h2 class="pgn-card-title">Ringkasan</h2>
+
+        <div class="pgn-stats">
+          <div class="pgn-stat-box pgn-stat-box--blue">
+            <div>
+              <span class="pgn-stat-label">Belum Dibaca</span>
+              <span class="pgn-stat-value" id="pgn-unread-count">3</span>
+            </div>
+            <span class="pgn-big-dot" aria-hidden="true"></span>
+          </div>
+          <div class="pgn-stat-box">
+            <div>
+              <span class="pgn-stat-label">Surat</span>
+              <span class="pgn-stat-value" id="pgn-surat-count">0</span>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </div>
+          <div class="pgn-stat-box">
+            <div>
+              <span class="pgn-stat-label">Tugas</span>
+              <span class="pgn-stat-value" id="pgn-tugas-count">0</span>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          </div>
+        </div>
+
+        <div class="pgn-preferensi">
+          <p class="pgn-preferensi-title">Preferensi Notifikasi</p>
+          <p class="pgn-preferensi-text">Atur jenis pemberitahuan yang ingin diterima.</p>
+        </div>
+
+        <button type="button" class="pgn-setting-btn" id="btn-pengaturan">
+          Pengaturan Notifikasi
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/notifikasi-pg.js"></script>
+</body>
+</html>

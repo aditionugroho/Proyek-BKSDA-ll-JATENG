@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laporan - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/kepala-seksi/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/ks-laporan.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="ks-sidebar"></aside>
+  <header id="ks-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <nav class="lp-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="lp-breadcrumb-current">Laporan</span>
+    </nav>
+
+    <section class="lp-head">
+      <div>
+        <div class="lp-title-row">
+          <h1 class="lp-title">Laporan</h1>
+          <span class="lp-seksi-badge">SEKSI WILAYAH I</span>
+        </div>
+        <p class="lp-desc">Ringkasan kegiatan dan perkembangan pekerjaan seksi.</p>
+      </div>
+      <div class="lp-head-actions">
+        <button type="button" class="lp-btn lp-btn--outline" id="btn-simulasi">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          Simulasi Kosong
+        </button>
+        <button type="button" class="lp-btn lp-btn--outline" id="btn-cetak">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Cetak Cepat
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 2. BAR FILTER PERIODE ===== -->
+    <section class="lp-filter-card">
+      <div class="lp-filter-left">
+        <span class="lp-filter-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </span>
+        <span class="lp-filter-label">Filter Periode:</span>
+        <select id="lp-tahun" class="lp-select" aria-label="Tahun">
+          <option value="2026" selected>2026</option>
+        </select>
+        <select id="lp-bulan" class="lp-select" aria-label="Bulan">
+          <option value="09" selected>September</option>
+          <option value="08">Agustus</option>
+        </select>
+        <button type="button" class="lp-btn lp-btn--primary" id="btn-tampilkan">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          &#9660; Tampilkan
+        </button>
+      </div>
+      <div class="lp-filter-info" id="lp-filter-info">
+        <span class="lp-green-dot"></span>
+        <span id="lp-info-text">Menampilkan data: September 2026 &#8226; Terakhir diperbarui hari ini, 09:30 WIB</span>
+      </div>
+    </section>
+
+    <!-- ===== 3. STAT CARD (render via JS) ===== -->
+    <section class="lp-stats" id="lp-stats" aria-label="Statistik laporan"></section>
+
+    <!-- ===== 4. GRID DUA KOLOM ===== -->
+    <section class="lp-grid">
+
+      <!-- KIRI -->
+      <div class="lp-left">
+
+        <!-- Perkembangan pekerjaan -->
+        <div class="lp-card">
+          <div class="lp-card-head">
+            <div>
+              <h2 class="lp-card-title">Perkembangan Pekerjaan</h2>
+              <p class="lp-card-sub">Tingkat penyelesaian target kegiatan seksi bulan ini.</p>
+            </div>
+            <span class="lp-predikat-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Predikat A (Sangat Baik)
+            </span>
+          </div>
+          <div id="lp-progress"></div>
+          <p class="lp-progress-foot">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Target ketepatan waktu seksi tercapai dengan predikat Sangat Baik (A). Sisa 6 tugas berstatus on-schedule.
+          </p>
+        </div>
+
+        <!-- Aktivitas terbaru -->
+        <div class="lp-card">
+          <div class="lp-card-head">
+            <div>
+              <h2 class="lp-card-title">Aktivitas Terbaru</h2>
+              <p class="lp-card-sub">Catatan riwayat kegiatan dan pembaruan berkas seksi terkini.</p>
+            </div>
+            <span class="lp-count-badge">5 Aktivitas Terakhir</span>
+          </div>
+          <table class="lp-aktivitas-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Kegiatan / Berkas</th>
+              </tr>
+            </thead>
+            <tbody id="lp-aktivitas"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KANAN -->
+      <div class="lp-right">
+
+        <!-- Unduh laporan -->
+        <div class="lp-card">
+          <div class="lp-card-head">
+            <div class="lp-download-head">
+              <span class="lp-download-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              </span>
+              <h2 class="lp-card-title">Unduh Laporan</h2>
+            </div>
+          </div>
+          <p class="lp-download-text" id="lp-download-text"></p>
+          <button type="button" class="lp-btn lp-btn--primary lp-btn--block" id="btn-pdf">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            Unduh PDF Resmi
+          </button>
+          <button type="button" class="lp-btn lp-btn--outline lp-btn--block" id="btn-excel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+            Unduh Data Excel (.xlsx)
+          </button>
+          <button type="button" class="lp-print-link" id="btn-print-link">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Cetak Dokumen Sekarang
+          </button>
+          <div class="lp-tte-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Dokumen laporan resmi ini ditandatangani secara elektronik sesuai regulasi BKSDA Jateng.
+          </div>
+        </div>
+
+        <!-- Unit pelaksana -->
+        <div class="lp-card">
+          <p class="lp-unit-label">Unit Pelaksana Teknis</p>
+          <div class="lp-unit">
+            <span class="lp-unit-avatar">AR</span>
+            <div>
+              <p class="lp-unit-nama">Alex Rivera, S.Hut., M.Sc.</p>
+              <p class="lp-unit-jabatan">Kepala Seksi Konservasi Wilayah I</p>
+              <p class="lp-unit-nip">NIP. 19840715 200801 1 003</p>
+            </div>
+          </div>
+          <div class="lp-unit-foot">
+            <span class="lp-foot-label">Wilayah Kerja</span>
+            <span class="lp-foot-value">Jawa Tengah Bagian Timur</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="ks-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
+  <script type="module" src="../../assets/js/pages/laporan.js"></script>
+</body>
+</html>

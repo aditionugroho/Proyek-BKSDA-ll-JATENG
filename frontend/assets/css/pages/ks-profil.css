@@ -1,0 +1,438 @@
+/* ============================================
+   PROFIL SAYA (KS) — E-Office SKSDA
+   Kartu profil, informasi (read-only/edit),
+   keamanan akun, keluar sesi
+   ============================================ */
+
+/* ===== 1. HEADER ===== */
+.pf-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.pf-breadcrumb a { color: #6B7280; }
+.pf-breadcrumb a:hover { color: var(--color-primary); }
+.pf-breadcrumb-current { font-weight: 700; color: var(--color-primary); }
+
+.pf-head { margin-top: 10px; }
+
+.pf-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.pf-desc {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+/* ===== 2. CARD PROFIL ATAS ===== */
+.pf-top-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.pf-top-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.pf-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.pf-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pf-avatar-check {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #10B981;
+  color: #ffffff;
+  border: 3px solid var(--color-surface);
+}
+
+.pf-avatar-check svg { width: 10px; height: 10px; }
+
+.pf-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pf-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.pf-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #059669;
+  background: #D1FAE5;
+  border-radius: 999px;
+}
+
+.pf-status-badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pf-role {
+  margin: 3px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.pf-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #6B7280;
+}
+
+.pf-meta svg { width: 14px; height: 14px; color: #9CA3AF; }
+
+.pf-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tombol */
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pf-btn svg { width: 15px; height: 15px; }
+
+.pf-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.pf-btn--primary:hover { background: var(--color-primary-hover); }
+
+.pf-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.pf-btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+.pf-btn--blue { color: var(--color-primary); }
+
+.pf-btn--danger {
+  color: #ffffff;
+  background: #DC2626;
+}
+
+.pf-btn--danger:hover { background: #B91C1C; }
+
+/* ===== 3. CARD INFORMASI PROFIL ===== */
+.pf-card {
+  margin-top: 24px;
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.pf-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pf-card-head-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.pf-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #DBEAFE;
+  color: var(--color-primary);
+}
+
+.pf-card-icon svg { width: 17px; height: 17px; }
+
+.pf-card-title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pf-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  background: transparent;
+  border: 1px solid #A7F3D0;
+  border-radius: 999px;
+}
+
+.pf-verified-badge svg { width: 12px; height: 12px; }
+
+/* Grid field */
+.pf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
+  margin-top: 8px;
+}
+
+.pf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.pf-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pf-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+
+.pf-locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4B5563;
+  background: var(--color-bg-hover);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pf-locked-badge svg { width: 10px; height: 10px; }
+
+/* Input read-only */
+.pf-input-wrap { position: relative; }
+
+.pf-input-wrap input {
+  width: 100%;
+  padding: 11px 44px 11px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #374151;
+  background: #F8FAFC;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  outline: none;
+  cursor: default;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.pf-input-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+.pf-input-icon svg { width: 16px; height: 16px; }
+
+/* Mode edit: editable */
+.pf-input-wrap input.editable {
+  background: #ffffff;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+  cursor: text;
+}
+
+/* Field terkunci saat hover */
+.pf-input-wrap input[data-locked]:hover {
+  border-color: #CBD5E1;
+}
+
+.pf-error {
+  margin: 0;
+  font-size: 12px;
+  color: #DC2626;
+}
+
+/* ===== 4. KEAMANAN AKUN ===== */
+.pf-password-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: var(--color-bg-page);
+  border-radius: 10px;
+}
+
+.pf-password-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pf-password-dots {
+  margin-left: 8px;
+  letter-spacing: 2px;
+  color: #6B7280;
+}
+
+.pf-password-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.pf-password-meta svg { width: 13px; height: 13px; color: #10B981; }
+
+/* ===== 5. KELUAR SESI ===== */
+.pf-logout-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pf-logout-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pf-logout-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #FEE2E2;
+  color: #DC2626;
+  flex-shrink: 0;
+}
+
+.pf-logout-icon svg { width: 20px; height: 20px; }
+
+.pf-logout-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pf-logout-desc {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: #6B7280;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .pf-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pf-top-card { flex-direction: column; align-items: flex-start; }
+  .pf-top-actions { width: 100%; }
+  .pf-top-actions .pf-btn { flex: 1; }
+  .pf-password-box { flex-direction: column; align-items: flex-start; }
+  .pf-logout-card { flex-direction: column; align-items: flex-start; }
+  .pf-logout-card .pf-btn { width: 100%; }
+}
