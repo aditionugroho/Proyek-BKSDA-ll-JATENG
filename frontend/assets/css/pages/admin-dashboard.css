@@ -1,0 +1,654 @@
+/* ============================================
+   DASHBOARD ADMIN — E-Office SKSDA
+   Hero banner, stat cards, chart, audit trail,
+   kesehatan sistem
+   ============================================ */
+
+/* ===== 1. HERO BANNER ===== */
+.dash-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  color: #ffffff;
+}
+
+.hero-main {
+  min-width: 0;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.hero-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
+}
+
+.hero-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-date svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hero-title {
+  margin: 6px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.hero-desc {
+  margin: 10px 0 0;
+  max-width: 640px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Tombol aksi kanan */
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.hero-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hero-btn--white {
+  background: #ffffff;
+  color: #1E3A8A;
+}
+
+.hero-btn--white:hover {
+  background: #EFF6FF;
+}
+
+.hero-btn--ghost {
+  background: rgba(191, 219, 254, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+.hero-btn--ghost:hover {
+  background: rgba(191, 219, 254, 0.45);
+}
+
+.hero-btn--orange {
+  background: #EA580C;
+  color: #ffffff;
+}
+
+.hero-btn--orange:hover {
+  background: #C2410C;
+}
+
+/* ===== 2. STAT CARDS ===== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.stat-card {
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.stat-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Pojok kanan atas: panah / badge / gear */
+.stat-corner {
+  color: #94A3B8;
+}
+
+.stat-corner svg {
+  width: 14px;
+  height: 14px;
+}
+
+.stat-corner-badge {
+  padding: 2px 7px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-success);
+  background: var(--color-success-light);
+  border-radius: 999px;
+}
+
+.stat-label {
+  margin: 12px 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.stat-value {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.stat-sub {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.stat-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.stat-note--green { color: #16A34A; font-weight: 600; }
+.stat-note--blue { color: var(--color-primary); font-weight: 600; }
+.stat-note--orange { color: #EA580C; font-weight: 600; }
+
+.note-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.note-dot--blue { background: var(--color-primary); }
+.note-dot--orange { background: #EA580C; }
+
+/* Progress bar di kartu */
+.stat-progress {
+  margin-top: 10px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.stat-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+/* ===== 3. GRID DUA KOLOM (chart + audit) ===== */
+.dash-columns {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.panel {
+  padding: 20px 24px 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-label {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.panel-label--blue { color: var(--color-primary); }
+.panel-label--orange { color: #EA580C; }
+.panel-label--green { color: var(--color-success); }
+
+.panel-title {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.panel-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.panel-link:hover {
+  text-decoration: underline;
+}
+
+/* Tombol outline panel */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-outline svg {
+  width: 13px;
+  height: 13px;
+}
+
+.btn-outline--block {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* --- Tab chart --- */
+.chart-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.chart-tab {
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-hover);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.chart-tab:hover {
+  color: var(--color-primary);
+}
+
+.chart-tab.is-active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+/* --- Bar chart (CSS murni) --- */
+.chart-plot {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  height: 230px;
+  margin-top: 20px;
+}
+
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.chart-value {
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 64px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  border-radius: 6px 6px 0 0;
+}
+
+.chart-bar .seg {
+  width: 100%;
+  transition: height 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.seg--pending { background: var(--color-primary-light); }
+.seg--verified { background: var(--color-primary); }
+
+.chart-month {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* Legend chart */
+.chart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.legend-items {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.legend-dot--blue { background: var(--color-primary); }
+.legend-dot--gray { background: #CBD5E1; }
+
+.legend-realtime {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+
+/* --- Audit trail --- */
+.audit-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.audit-item {
+  display: flex;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.audit-item:last-child {
+  border-bottom: none;
+}
+
+.audit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.audit-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.audit-icon--blue { background: var(--color-primary-light); color: var(--color-primary); }
+.audit-icon--green { background: var(--color-success-light); color: var(--color-success); }
+.audit-icon--gray { background: var(--color-bg-hover); color: var(--color-text-secondary); }
+
+.audit-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.audit-detail {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.audit-time {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ===== 4. KESEHATAN SISTEM ===== */
+.health-section {
+  margin-top: 24px;
+}
+
+.health-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.health-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.health-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.health-card {
+  padding: 20px;
+  background: var(--color-bg-page);
+  border: 1px solid #EDF2F7;
+  border-radius: 12px;
+}
+
+.health-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.health-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.health-badge {
+  padding: 3px 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.health-badge--green { color: var(--color-success); background: var(--color-success-light); }
+.health-badge--blue { color: var(--color-primary); background: var(--color-primary-light); }
+
+.health-card-title {
+  margin: 12px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.health-card-desc {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.health-card-bottom {
+  margin-top: 14px;
+}
+
+/* Varian bawah kartu */
+.health-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.health-check svg {
+  width: 14px;
+  height: 14px;
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.health-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.health-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.health-pair {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .dash-columns { grid-template-columns: 1fr; }
+  .health-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .health-grid { grid-template-columns: 1fr; }
+  .hero-actions { width: 100%; }
+  .hero-btn { justify-content: center; }
+}

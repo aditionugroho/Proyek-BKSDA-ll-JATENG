@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jadwal - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/kepala-seksi/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/ks-jadwal.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="ks-sidebar"></aside>
+  <header id="ks-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="kj-head">
+      <div>
+        <h1 class="kj-title">Jadwal</h1>
+        <p class="kj-desc">Kelola dan pantau agenda kegiatan seksi.</p>
+      </div>
+      <div class="kj-head-actions">
+        <button type="button" class="kj-btn kj-btn--outline" id="btn-filter">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          Filter
+        </button>
+        <button type="button" class="kj-btn kj-btn--primary" id="btn-tambah">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Tambah Jadwal
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 2. STAT CARD (render via JS) ===== -->
+    <section class="kj-stats" id="kj-stats" aria-label="Ringkasan jadwal"></section>
+
+    <!-- ===== 3. GRID DUA KOLOM ===== -->
+    <section class="kj-grid">
+
+      <!-- KIRI: kalender -->
+      <div class="kj-card">
+        <div class="kj-card-head">
+          <h2 class="kj-card-title">Kalender</h2>
+          <div class="kj-view-pills" role="tablist" aria-label="Tampilan kalender">
+            <button type="button" class="kj-view-pill is-active" data-view="bulan">Bulan</button>
+            <button type="button" class="kj-view-pill" data-view="minggu">Minggu</button>
+            <button type="button" class="kj-view-pill" data-view="hari">Hari</button>
+          </div>
+        </div>
+
+        <!-- Navigasi bulan -->
+        <div class="kj-month-nav">
+          <button type="button" class="kj-month-btn" id="kj-prev-month" aria-label="Bulan sebelumnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="kj-month-label" id="kj-month-label">Mei 2024</span>
+          <button type="button" class="kj-month-btn" id="kj-next-month" aria-label="Bulan berikutnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+
+        <!-- Header hari -->
+        <div class="kj-daynames">
+          <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+        </div>
+
+        <!-- Grid tanggal (digenerate via JS) -->
+        <div class="kj-days" id="kj-days"></div>
+
+        <!-- Legend -->
+        <div class="kj-legend">
+          <span class="kj-legend-item"><span class="kj-legend-dot kj-legend-dot--green"></span>Selesai</span>
+          <span class="kj-legend-item"><span class="kj-legend-dot kj-legend-dot--blue"></span>Terjadwal</span>
+          <span class="kj-legend-item"><span class="kj-legend-dot kj-legend-dot--orange"></span>Mendatang</span>
+          <span class="kj-legend-item"><span class="kj-legend-dot kj-legend-dot--gray"></span>Dibatalkan</span>
+        </div>
+      </div>
+
+      <!-- KANAN: agenda hari terpilih -->
+      <div class="kj-card">
+        <div class="kj-card-head">
+          <h2 class="kj-card-title">Agenda Hari Ini</h2>
+          <span class="kj-agenda-date" id="kj-agenda-date">Rabu, 29 Mei 2024</span>
+        </div>
+        <div id="kj-agenda-list"></div>
+
+        <a href="#" class="kj-all-link">
+          Lihat semua jadwal
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="ks-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
+  <script type="module" src="../../assets/js/pages/jadwal.js"></script>
+</body>
+</html>

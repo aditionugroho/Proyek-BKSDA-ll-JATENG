@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pengumuman Berjalan - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-pengumuman.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <nav class="pgm-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html" class="pgm-breadcrumb-link">Dashboard</a>
+      <span class="pgm-breadcrumb-sep" aria-hidden="true">&gt;</span>
+      <span class="pgm-breadcrumb-current">Pengumuman</span>
+    </nav>
+
+    <section class="pgm-head">
+      <div>
+        <h1 class="pgm-title">Pengumuman Berjalan</h1>
+        <p class="pgm-desc">Kelola teks berjalan yang tampil di dashboard seluruh pegawai. Perubahan langsung aktif setelah disimpan.</p>
+      </div>
+      <span class="pgm-status-badge" id="pgm-status-badge"><span class="dot"></span><span id="pgm-status-text">Aktif</span></span>
+    </section>
+
+    <!-- ===== 2. GRID DUA KOLOM ===== -->
+    <section class="pgm-grid">
+
+      <!-- KIRI: form -->
+      <div class="pgm-card pgm-form-card">
+
+        <!-- a) Toggle tampilkan pengumuman -->
+        <div class="pgm-toggle-row">
+          <div>
+            <p class="pgm-toggle-title">Tampilkan Pengumuman</p>
+            <p class="pgm-toggle-desc">Nonaktifkan untuk menyembunyikan teks dari dashboard pegawai</p>
+          </div>
+          <label class="pgm-switch">
+            <input type="checkbox" id="pgm-enabled" checked />
+            <span class="pgm-switch-track"><span class="pgm-switch-knob"></span></span>
+          </label>
+        </div>
+
+        <!-- b) Isi teks -->
+        <div class="pgm-field">
+          <label class="pgm-label" for="pgm-text">Isi Teks Pengumuman <span class="pgm-req">*</span></label>
+          <textarea id="pgm-text" rows="4" maxlength="500" placeholder="Tulis pengumuman yang akan berjalan di dashboard pegawai..."></textarea>
+          <div class="pgm-text-meta">
+            <p class="pgm-error" id="pgm-text-error" hidden>Minimal 5 karakter</p>
+            <span class="pgm-counter"><span id="pgm-counter-num">0</span>/500</span>
+          </div>
+        </div>
+
+        <!-- c) Kecepatan -->
+        <div class="pgm-field">
+          <span class="pgm-label">Kecepatan Gerak</span>
+          <div class="pgm-speed-cards" id="pgm-speed-cards">
+            <label class="pgm-speed-card" data-speed="45">
+              <input type="radio" name="speed" value="45" />
+              <span class="pgm-speed-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 15 14"></polyline></svg>
+              </span>
+              <span class="pgm-speed-name">Lambat</span>
+              <span class="pgm-speed-val">45 detik</span>
+              <span class="pgm-speed-check" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </label>
+            <label class="pgm-speed-card" data-speed="30">
+              <input type="radio" name="speed" value="30" checked />
+              <span class="pgm-speed-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 4 12 12 16 14"></polyline></svg>
+              </span>
+              <span class="pgm-speed-name">Normal</span>
+              <span class="pgm-speed-val">30 detik</span>
+              <span class="pgm-speed-check" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </label>
+            <label class="pgm-speed-card" data-speed="15">
+              <input type="radio" name="speed" value="15" />
+              <span class="pgm-speed-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              </span>
+              <span class="pgm-speed-name">Cepat</span>
+              <span class="pgm-speed-val">15 detik</span>
+              <span class="pgm-speed-check" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- d) Audiens -->
+        <div class="pgm-field">
+          <span class="pgm-label">Tampilkan Untuk:</span>
+          <div class="pgm-audience-cards" id="pgm-audience-cards">
+            <label class="pgm-audience-card" data-role="pegawai">
+              <input type="checkbox" value="pegawai" checked />
+              <span class="pgm-audience-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </span>
+              <span class="pgm-audience-name">Semua Pegawai</span>
+              <span class="pgm-audience-check" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </label>
+            <label class="pgm-audience-card" data-role="kepala-seksi">
+              <input type="checkbox" value="kepala-seksi" />
+              <span class="pgm-audience-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </span>
+              <span class="pgm-audience-name">Kepala Seksi</span>
+              <span class="pgm-audience-check" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </label>
+            <label class="pgm-audience-card" data-role="admin">
+              <input type="checkbox" value="admin" />
+              <span class="pgm-audience-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </span>
+              <span class="pgm-audience-name">Admin</span>
+              <span class="pgm-audience-check" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </label>
+          </div>
+          <p class="pgm-error" id="pgm-audience-error" hidden>Minimal pilih 1 audiens</p>
+        </div>
+
+        <!-- e) Tombol -->
+        <div class="pgm-actions">
+          <button type="button" class="pgm-btn pgm-btn--primary" id="pgm-save">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <span id="pgm-save-label">Simpan &amp; Terapkan</span>
+          </button>
+          <button type="button" class="pgm-btn pgm-btn--outline" id="pgm-reset">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            Kembalikan Default
+          </button>
+        </div>
+
+        <!-- e) Info terakhir diperbarui -->
+        <p class="pgm-updated" id="pgm-updated"></p>
+      </div>
+
+      <!-- KANAN: preview & panduan -->
+      <div class="pgm-right">
+
+        <!-- Pratinjau -->
+        <div class="pgm-card">
+          <h2 class="pgm-card-title">Pratinjau</h2>
+          <p class="pgm-card-sub">Tampilan langsung dengan pengaturan saat ini (belum tentu tersimpan).</p>
+          <div class="pgm-preview-bar">
+            <span class="pgm-preview-label">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8v18L3 13v-2z"></path><line x1="11.6" y1="16.8" x2="15" y2="18.4"></line><line x1="11.6" y1="16.8" x2="11.6" y2="11.2"></line></svg>
+            </span>
+            <div class="pgm-preview-viewport">
+              <div class="pgm-preview-track" id="pgm-preview-track"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panduan -->
+        <div class="pgm-card">
+          <h2 class="pgm-card-title">Panduan</h2>
+          <ul class="pgm-tips">
+            <li>Pilih audiens untuk menentukan role mana yang melihat pengumuman</li>
+            <li>Teks akan berjalan di dashboard semua pegawai</li>
+            <li>Hover teks akan menghentikan gerakan sementara</li>
+            <li>Perubahan tersimpan di perangkat ini (demo frontend)</li>
+            <li>Maksimal 500 karakter</li>
+          </ul>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/pengumuman.js"></script>
+</body>
+</html>

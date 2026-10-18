@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profil Admin - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-profil.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="page-head">
+      <div class="page-head-text">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-link">Dashboard</a>
+          <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+          <a href="profil-admin.html" class="breadcrumb-link">Profil Admin</a>
+          <span class="breadcrumb-sep" aria-hidden="true">&gt;</span>
+          <span class="breadcrumb-current">Edit Profil</span>
+        </nav>
+        <div class="page-title-row">
+          <h1 class="page-title">Edit Profil</h1>
+          <span class="id-badge" id="page-id-badge">ADM-BKSDA-001</span>
+        </div>
+        <p class="page-desc">Perbarui informasi profil Administrator yang digunakan dalam sistem e-Office BKSDA Jawa Tengah.</p>
+      </div>
+      <a href="profil-admin.html" class="btn btn--outline">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Kembali ke Profil Admin
+      </a>
+    </section>
+
+    <!-- ===== Banner draf (muncul bila ada draf tersimpan) ===== -->
+    <div class="draft-banner" id="draft-banner" hidden>
+      <p class="draft-banner-text">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        Draf ditemukan, pulihkan?
+      </p>
+      <div class="draft-banner-actions">
+        <button type="button" class="btn btn--primary btn--xs" id="btn-restore">Pulihkan</button>
+        <button type="button" class="btn btn--muted btn--xs" id="btn-discard">Buang</button>
+      </div>
+    </div>
+
+    <!-- ===== 2. GRID UTAMA ===== -->
+    <section class="profil-columns">
+
+      <!-- ===== KOLOM KIRI: form ===== -->
+      <div class="column-left">
+        <form id="edit-form" class="panel" novalidate>
+
+          <!-- Header card -->
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><circle cx="8.5" cy="10.5" r="2.5"></circle><line x1="14" y1="9" x2="19" y2="9"></line><line x1="14" y1="13" x2="19" y2="13"></line></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Informasi Pribadi Kedinasan</h2>
+                <p class="panel-sub">Perbarui rincian akun Anda. Field berlabel gembok berstatus terkunci oleh pengelola sistem.</p>
+              </div>
+            </div>
+            <span class="authorized-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              DATA TEROTORISASI
+            </span>
+          </div>
+
+          <!-- a) Nama Lengkap -->
+          <div class="form-field">
+            <div class="label-row">
+              <label class="form-label" for="nama">Nama Lengkap <span class="req">*</span></label>
+              <span class="label-note">Wajib diisi</span>
+            </div>
+            <div class="input-wrap has-icon">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+              <input type="text" id="nama" name="nama" autocomplete="name" />
+            </div>
+            <p class="form-error" id="nama-error" hidden>Wajib diisi</p>
+            <p class="form-hint">Nama resmi kedinasan yang dicantumkan pada disposisi, lembar verifikasi, dan log sistem e-Office.</p>
+          </div>
+
+          <!-- b) Username (terkunci) -->
+          <div class="form-field">
+            <div class="label-row">
+              <label class="form-label" for="username">
+                Username Akun
+                <span class="label-lock" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+              </label>
+              <span class="badge-lock">LOCKED</span>
+            </div>
+            <div class="input-wrap has-icon has-icon-right">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg></span>
+              <input type="text" id="username" disabled />
+              <span class="input-icon input-icon--right" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <p class="form-hint form-hint--icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Username tidak dapat diubah (Konfigurasi Otoritas Pusat Pusdatin).
+            </p>
+          </div>
+
+          <!-- c) Grid 2 kolom: email & telepon -->
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="email">Email Kedinasan <span class="req">*</span></label>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
+                <input type="email" id="email" name="email" autocomplete="email" />
+              </div>
+              <p class="form-error" id="email-error" hidden>Wajib diisi</p>
+              <p class="form-hint">Digunakan untuk notifikasi agenda rapat, disposisi darurat, dan pemulihan kunci akun.</p>
+            </div>
+
+            <div class="form-field">
+              <div class="label-row">
+                <label class="form-label" for="telepon">No. Telepon / WhatsApp Dinas</label>
+                <span class="label-note">Opsional</span>
+              </div>
+              <div class="input-wrap has-icon">
+                <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></span>
+                <input type="tel" id="telepon" name="telepon" autocomplete="tel" />
+              </div>
+              <p class="form-hint">Akses cepat koordinasi darurat perlindungan satwa dan laporan lapangan 24/7.</p>
+            </div>
+          </div>
+
+          <!-- d) Label section -->
+          <p class="form-section-label">Status Hak Akses &amp; Penempatan</p>
+
+          <!-- e) Jabatan (terkunci) -->
+          <div class="form-field">
+            <div class="label-row">
+              <label class="form-label" for="jabatan">
+                Jabatan / Role Kedinasan
+                <span class="label-lock" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+              </label>
+              <span class="badge-access">HAK AKSES PENUH</span>
+            </div>
+            <div class="input-wrap has-icon has-icon-right">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+              <input type="text" id="jabatan" disabled />
+              <span class="input-icon input-icon--right" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+          </div>
+
+          <!-- f) Unit kerja (terkunci) -->
+          <div class="form-field">
+            <div class="label-row">
+              <label class="form-label" for="unit">
+                Unit Kerja Induk
+                <span class="label-lock" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+              </label>
+              <span class="badge-lock">LOCKED</span>
+            </div>
+            <div class="input-wrap has-icon has-icon-right">
+              <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="9" y1="22" x2="9" y2="18"></line><line x1="15" y1="22" x2="15" y2="18"></line><line x1="9" y1="6" x2="9" y2="10"></line><line x1="15" y1="6" x2="15" y2="10"></line></svg></span>
+              <input type="text" id="unit" disabled />
+              <span class="input-icon input-icon--right" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <p class="form-hint">Perubahan unit kerja operasional memerlukan Nota Dinas Kepegawaian Kementerian LHK.</p>
+          </div>
+
+          <!-- Footer card -->
+          <div class="form-foot">
+            <p class="draft-note">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+              Draf otomatis tersimpan lokal
+            </p>
+            <div class="form-foot-actions">
+              <button type="button" class="btn btn--muted" id="btn-cancel">Batal</button>
+              <button type="submit" class="btn btn--primary" id="btn-save">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                <span id="btn-save-text">Simpan Perubahan</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Kartu uji validasi -->
+        <div class="test-card">
+          <div class="test-card-left">
+            <span class="panel-icon panel-icon--blue">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+            </span>
+            <div>
+              <p class="test-card-title">Uji Validasi Form:</p>
+              <p class="test-card-sub">Simulasikan pengujian validitas form sebelum dikirim ke database.</p>
+            </div>
+          </div>
+          <div class="test-card-actions">
+            <button type="button" class="btn btn--muted" id="btn-invalid">Simulasi Input Invalid</button>
+            <button type="button" class="btn btn--muted" id="btn-reset">Reset Form</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== KOLOM KANAN ===== -->
+      <div class="column-right">
+
+        <!-- Card: foto profil -->
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Foto Profil</h2>
+            <span class="fullaccess-badge">&bull; Aktif</span>
+          </div>
+
+          <div class="photo-wrap">
+            <span class="photo-avatar" id="photo-avatar"></span>
+            <p class="photo-name" id="photo-name">Admin Sistem</p>
+            <p class="photo-role">Administrator Utama Wilayah Jawa Tengah</p>
+
+            <div class="photo-actions">
+              <button type="button" class="btn btn--outline btn--block" id="btn-photo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                Ubah Foto
+              </button>
+              <input type="file" id="file-photo" accept="image/jpeg,image/png,image/webp" hidden />
+              <button type="button" class="photo-reset" id="link-initials">&#10227; Gunakan Inisial Default</button>
+              <p class="file-error" id="photo-error" hidden></p>
+            </div>
+          </div>
+
+          <p class="photo-foot">Format yang didukung: JPG, PNG, WebP. Ukuran file maksimal 2.0 MB dengan rasio 1:1.</p>
+        </div>
+
+        <!-- Card: metrik akun -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+              </span>
+              <h2 class="panel-title">Metrik Akun Sistem</h2>
+            </div>
+          </div>
+
+          <div class="kv-list" id="metrik-list"></div>
+
+          <div class="note-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Informasi Role, NIP, dan Kuota Penugasan dikelola terpusat oleh Subbag Kepegawaian BKSDA Jateng.
+          </div>
+        </div>
+
+        <!-- Card: pemberitahuan keamanan -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-head-left">
+              <span class="panel-icon panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </span>
+              <div>
+                <h2 class="panel-title">Pemberitahuan Keamanan</h2>
+                <p class="sub-label-blue">AUDIT TRAIL TERINTEGRASI</p>
+              </div>
+            </div>
+          </div>
+
+          <p class="card-text">Setiap aktivitas perbaruan data profil akan dicatat secara otomatis dalam Log Audit Trail ISO 27001 sistem e-Office demi menjaga integritas data kedinasan.</p>
+          <p class="card-text">Ingin mengubah kata sandi kedinasan atau memperbarui kunci autentikasi multi-faktor (2FA)?</p>
+
+          <a href="#" class="security-link">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            Buka Menu Keamanan Akun
+            <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2024 Balai Konservasi Sumber Daya Alam Jawa Tengah (BKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Toast notifikasi ===== -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toast-text"></span>
+  </div>
+
+  <!-- ===== Modal konfirmasi buang perubahan ===== -->
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <h2 class="modal-title" id="modal-title">Buang perubahan?</h2>
+      <p class="modal-desc">Seluruh perubahan yang belum disimpan akan dihapus dan form dikembalikan ke nilai awal.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--outline" id="modal-keep">Lanjut Mengedit</button>
+        <button type="button" class="btn btn--danger" id="modal-discard">Ya, Buang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script type="module" src="../../assets/js/pages/edit-profil-admin.js"></script>
+</body>
+</html>

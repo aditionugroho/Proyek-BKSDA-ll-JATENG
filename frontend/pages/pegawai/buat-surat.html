@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buat Surat Keluar Baru - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-surat.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <nav class="pgb-breadcrumb" aria-label="Breadcrumb">
+      <a href="surat.html">Surat</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="pgb-breadcrumb-current">Buat Surat Keluar Baru</span>
+    </nav>
+
+    <section class="pgb-head">
+      <div>
+        <h1 class="pgb-title">Buat Surat Keluar Baru</h1>
+        <p class="pgb-desc">Lengkapi form di bawah ini untuk membuat draft surat keluar baru.</p>
+      </div>
+      <span class="pgb-draft-badge">DRAFT</span>
+    </section>
+
+    <!-- ===== 2. GRID DUA KOLOM ===== -->
+    <section class="pgb-grid">
+
+      <!-- ===== KIRI ===== -->
+      <div class="pgb-left">
+
+        <!-- Card 1: informasi dasar -->
+        <div class="pgb-card">
+          <div class="pgb-card-head">
+            <span class="pgb-card-icon pgb-card-icon--circle">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </span>
+            <h2 class="pgb-card-title">Informasi Dasar</h2>
+          </div>
+
+          <!-- Baris 2 kolom -->
+          <div class="pgb-row-2">
+            <div class="pgb-field">
+              <label class="pgb-label" for="f-nomor">Nomor Surat <span class="pgb-req">*</span></label>
+              <textarea id="f-nomor" rows="2" placeholder="Tinggalkan kosong untuk auto-generate"></textarea>
+              <p class="pgb-helper">Format: B-[No]/K.XX/TU/[Bulan]/[Tahun]</p>
+            </div>
+            <div class="pgb-field">
+              <label class="pgb-label" for="f-tanggal">Tanggal <span class="pgb-req">*</span></label>
+              <input type="date" id="f-tanggal" />
+              <p class="pgb-error" id="f-tanggal-error" hidden>Wajib diisi</p>
+            </div>
+          </div>
+
+          <div class="pgb-field">
+            <label class="pgb-label" for="f-penerima">Penerima (Kepada Yth.) <span class="pgb-req">*</span></label>
+            <input type="text" id="f-penerima" placeholder="Contoh: Kepala Balai Taman Nasional..." />
+            <p class="pgb-error" id="f-penerima-error" hidden>Wajib diisi</p>
+          </div>
+
+          <div class="pgb-field">
+            <label class="pgb-label" for="f-perihal">Perihal <span class="pgb-req">*</span></label>
+            <input type="text" id="f-perihal" placeholder="Ringkasan isi surat..." />
+            <p class="pgb-error" id="f-perihal-error" hidden>Wajib diisi</p>
+          </div>
+        </div>
+
+        <!-- Card 2: isi surat -->
+        <div class="pgb-card">
+          <div class="pgb-card-head">
+            <div class="pgb-card-head-left">
+              <span class="pgb-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 0 1 3 3L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              </span>
+              <h2 class="pgb-card-title">Isi Surat</h2>
+            </div>
+            <div class="pgb-toolbar" role="toolbar" aria-label="Format isi surat">
+              <button type="button" class="pgb-tool" data-cmd="bold" title="Tebal"><span class="pgb-tool-b">B</span></button>
+              <button type="button" class="pgb-tool" data-cmd="italic" title="Miring"><span class="pgb-tool-i">I</span></button>
+              <button type="button" class="pgb-tool" data-cmd="insertUnorderedList" title="Daftar poin">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="pgb-editor-wrap">
+            <div class="pgb-editor" id="f-isi" contenteditable="true" data-placeholder="Ketikkan isi surat di sini..." role="textbox" aria-multiline="true" aria-label="Isi surat"></div>
+          </div>
+          <p class="pgb-error" id="f-isi-error" hidden>Wajib diisi</p>
+        </div>
+      </div>
+
+      <!-- ===== KANAN ===== -->
+      <div class="pgb-right">
+
+        <!-- Card: lampiran -->
+        <div class="pgb-card">
+          <div class="pgb-card-head">
+            <div class="pgb-card-head-left">
+              <span class="pgb-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              </span>
+              <h2 class="pgb-card-title">Lampiran</h2>
+            </div>
+          </div>
+
+          <div class="pgb-dropzone" id="pgb-dropzone" role="button" tabindex="0" aria-label="Unggah lampiran">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+            <p class="pgb-dropzone-title">Klik atau seret file ke sini</p>
+            <p class="pgb-dropzone-sub">PDF, DOCX, JPG (Max. 10MB)</p>
+            <input type="file" id="pgb-file" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png" hidden />
+          </div>
+          <p class="pgb-error" id="pgb-file-error" hidden></p>
+
+          <div class="pgb-file-list" id="pgb-file-list"></div>
+        </div>
+
+        <!-- Card: aksi -->
+        <div class="pgb-card">
+          <button type="button" class="pgb-action pgb-action--primary" id="btn-ajukan">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Ajukan Surat
+          </button>
+          <button type="button" class="pgb-action" id="btn-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Preview
+          </button>
+          <button type="button" class="pgb-action" id="btn-draft">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            Simpan Draft
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/buat-surat.js"></script>
+</body>
+</html>

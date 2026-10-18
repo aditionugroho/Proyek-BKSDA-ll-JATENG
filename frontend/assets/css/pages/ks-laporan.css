@@ -1,0 +1,635 @@
+/* ============================================
+   LAPORAN (KS) — E-Office SKSDA
+   Filter periode, stat, progress, aktivitas,
+   unduh laporan, unit pelaksana
+   ============================================ */
+
+/* ===== 1. HEADER ===== */
+.lp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.lp-breadcrumb a { color: #6B7280; }
+.lp-breadcrumb a:hover { color: var(--color-primary); }
+.lp-breadcrumb-current { font-weight: 700; color: var(--color-primary); }
+
+.lp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.lp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.lp-seksi-badge {
+  padding: 4px 11px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #4B5563;
+  background: var(--color-bg-hover);
+  border-radius: 999px;
+}
+
+.lp-desc {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+.lp-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tombol */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.lp-btn svg { width: 15px; height: 15px; }
+
+.lp-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.lp-btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+.lp-btn--outline.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: #EFF6FF;
+}
+
+.lp-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.lp-btn--primary:hover { background: var(--color-primary-hover); }
+
+.lp-btn--block {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ===== 2. BAR FILTER PERIODE ===== */
+.lp-filter-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.lp-filter-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-filter-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.lp-filter-icon svg { width: 16px; height: 16px; }
+
+.lp-filter-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lp-select {
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.lp-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+.lp-filter-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--color-bg-page);
+  border-radius: 10px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.lp-green-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  flex-shrink: 0;
+}
+
+/* ===== 3. STAT CARD ===== */
+.lp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.lp-stat {
+  position: relative;
+  padding: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.lp-stat-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lp-stat-badge--green { color: #059669; background: #D1FAE5; }
+.lp-stat-badge--blue { color: #2563EB; background: #DBEAFE; }
+.lp-stat-badge--gray { color: #4B5563; background: #F1F5F9; }
+
+.lp-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+}
+
+.lp-stat-icon svg { width: 19px; height: 19px; }
+
+.lp-stat-icon--blue { background: #DBEAFE; color: #2563EB; }
+.lp-stat-icon--green { background: #D1FAE5; color: #059669; }
+.lp-stat-icon--purple { background: #EDE9FE; color: #7C3AED; }
+
+.lp-stat-value {
+  margin: 12px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.lp-stat-label {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lp-stat-sub {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #6B7280;
+}
+
+/* ===== 4. GRID ===== */
+.lp-grid {
+  display: grid;
+  grid-template-columns: 2fr 380px;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.lp-left,
+.lp-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Card umum */
+.lp-card {
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.lp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-card-title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lp-card-sub {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+/* Badge header */
+.lp-predikat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #059669;
+  background: #D1FAE5;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lp-predikat-badge svg { width: 12px; height: 12px; }
+
+.lp-count-badge {
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4B5563;
+  background: var(--color-bg-hover);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ===== PROGRESS ===== */
+.lp-progress-item {
+  margin-top: 18px;
+}
+
+.lp-progress-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lp-progress-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lp-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lp-progress-dot--green { background: #10B981; }
+.lp-progress-dot--blue { background: #2563EB; }
+.lp-progress-dot--orange { background: #F59E0B; }
+
+.lp-progress-detail {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.lp-progress-detail--orange { color: #EA580C; }
+
+.lp-progress-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: #F1F5F9;
+  overflow: hidden;
+}
+
+.lp-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.lp-progress-empty {
+  margin: 16px 0 0;
+  padding: 18px;
+  font-size: 13px;
+  color: #6B7280;
+  background: var(--color-bg-page);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.lp-progress-foot {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #F1F5F9;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #6B7280;
+}
+
+.lp-progress-foot svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+/* ===== TABEL AKTIVITAS ===== */
+.lp-aktivitas-table {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+}
+
+.lp-aktivitas-table th {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #6B7280;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lp-aktivitas-table td {
+  padding: 12px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.lp-aktivitas-table tr:last-child td { border-bottom: none; }
+
+.lp-aktivitas-tanggal {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.lp-aktivitas-kegiatan {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.lp-aktivitas-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-bg-hover);
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.lp-aktivitas-icon svg { width: 15px; height: 15px; }
+
+.lp-nomor {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.lp-empty-row td {
+  padding: 28px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+/* ===== UNDUH LAPORAN ===== */
+.lp-download-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.lp-download-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.lp-download-icon svg { width: 17px; height: 17px; }
+
+.lp-download-text {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #6B7280;
+}
+
+.lp-download-text .lp-periode {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.lp-print-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.lp-print-link svg { width: 15px; height: 15px; }
+
+.lp-print-link:hover { text-decoration: underline; }
+
+.lp-tte-box {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--color-bg-page);
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #6B7280;
+}
+
+.lp-tte-box svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+/* ===== UNIT PELAKSANA ===== */
+.lp-unit-label {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.lp-unit {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 12px;
+}
+
+.lp-unit-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.lp-unit-nama {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.35;
+}
+
+.lp-unit-jabatan {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.lp-unit-nip {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #9CA3AF;
+}
+
+.lp-unit-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--color-border);
+}
+
+.lp-foot-label {
+  font-size: 11.5px;
+  color: #6B7280;
+}
+
+.lp-foot-value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .lp-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .lp-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .lp-stats { grid-template-columns: 1fr; }
+  .lp-head { flex-direction: column; }
+  .lp-filter-info { width: 100%; }
+}

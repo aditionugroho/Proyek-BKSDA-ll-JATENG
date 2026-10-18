@@ -1,0 +1,293 @@
+/* ============================================
+   NOTIFIKASI (PEGAWAI) — E-Office SKSDA
+   Tab box aktif, list notifikasi, ringkasan
+   dengan angka dari data
+   ============================================ */
+
+/* ===== 1. HEADER ===== */
+.pgn-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pgn-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.pgn-desc {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: #6B7280;
+}
+
+/* Link tandai semua dibaca */
+.pgn-mark-all {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pgn-mark-all:hover { text-decoration: underline; }
+
+/* State semua sudah dibaca: link abu nonaktif */
+.pgn-mark-all.is-done {
+  color: #9CA3AF;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ===== 2. TAB ===== */
+.pgn-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.pgn-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.pgn-tab:hover { color: #111827; }
+
+/* Aktif: kotak border biru, teks biru */
+.pgn-tab.is-active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ===== 3. GRID ===== */
+.pgn-grid {
+  display: grid;
+  grid-template-columns: 2fr 340px;
+  gap: 24px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+.pgn-card {
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.pgn-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pgn-card-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pgn-card-sub {
+  font-size: 12.5px;
+  color: #6B7280;
+}
+
+/* ===== ITEM NOTIFIKASI ===== */
+.pgn-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px 0;
+  border-bottom: 1px solid #F1F5F9;
+  cursor: pointer;
+}
+
+.pgn-item:last-child { border-bottom: none; }
+.pgn-item:hover { background: #F8FAFC; }
+
+.pgn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.pgn-icon svg { width: 19px; height: 19px; }
+
+.pgn-icon--blue { background: #DBEAFE; color: #2563EB; }
+.pgn-icon--amber { background: #FEF3C7; color: #D97706; }
+.pgn-icon--green { background: #D1FAE5; color: #059669; }
+.pgn-icon--gray { background: #F1F5F9; color: #6B7280; }
+
+.pgn-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pgn-judul {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pgn-teks {
+  margin: 3px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #6B7280;
+}
+
+.pgn-waktu {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+/* Titik biru unread kanan */
+.pgn-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+/* Kosong */
+.pgn-empty {
+  margin: 0;
+  padding: 32px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+/* ===== KANAN: RINGKASAN ===== */
+.pgn-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pgn-stat-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #F8FAFC;
+}
+
+/* Box belum dibaca: biru sangat muda */
+.pgn-stat-box--blue { background: #EFF6FF; }
+
+.pgn-stat-label {
+  display: block;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.pgn-stat-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 32px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.1;
+}
+
+/* Lingkaran biru besar kanan */
+.pgn-big-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.pgn-stat-box > svg {
+  width: 22px;
+  height: 22px;
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+/* Preferensi */
+.pgn-preferensi {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.pgn-preferensi-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pgn-preferensi-text {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: #6B7280;
+}
+
+/* Tombol pengaturan */
+.pgn-setting-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.pgn-setting-btn svg { width: 14px; height: 14px; }
+
+.pgn-setting-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .pgn-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pgn-head { flex-direction: column; }
+}

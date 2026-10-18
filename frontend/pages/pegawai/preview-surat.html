@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview Surat Keluar - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/pg-surat.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <nav class="pgv-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <a href="buat-surat.html">Buat Surat Keluar</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="pgv-breadcrumb-current">Preview</span>
+    </nav>
+
+    <h1 class="pgv-title">Preview Surat Keluar</h1>
+
+    <!-- ===== GRID ===== -->
+    <section class="pgv-grid">
+
+      <!-- ===== KIRI ===== -->
+      <div class="pgv-left">
+
+        <!-- Toolbar -->
+        <div class="pgv-toolbar-card">
+          <div class="pgv-toolbar-left">
+            <button type="button" class="pgv-tool-btn" id="pgv-zoom-out" title="Perkecil" aria-label="Perkecil">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><line x1="8" y1="11" x2="14" y2="11"></line><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
+            <button type="button" class="pgv-tool-btn" id="pgv-zoom-in" title="Perbesar" aria-label="Perbesar">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><line x1="8" y1="11" x2="14" y2="11"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
+            <button type="button" class="pgv-tool-btn" id="pgv-print" title="Cetak" aria-label="Cetak">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
+          <span class="pgv-page-info">Halaman 1 dari 1</span>
+        </div>
+
+        <!-- Kertas surat (render via JS) -->
+        <div class="pgv-paper-wrap">
+          <div class="pgv-paper" id="pgv-paper"></div>
+        </div>
+      </div>
+
+      <!-- ===== KANAN ===== -->
+      <div class="pgv-right">
+
+        <!-- Card aksi -->
+        <div class="pgv-card">
+          <button type="button" class="pgb-action pgb-action--primary" id="pgv-ajukan">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Ajukan Surat
+          </button>
+          <div class="pgv-action-row">
+            <a href="buat-surat.html" class="pgb-action">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 0 1 3 3L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              Edit
+            </a>
+            <a href="surat.html" class="pgb-action">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              Kembali
+            </a>
+          </div>
+        </div>
+
+        <!-- Card informasi dokumen -->
+        <div class="pgv-card">
+          <h2 class="pgv-card-title">Informasi Dokumen</h2>
+          <div class="pgv-kv">
+            <div class="pgv-kv-row">
+              <span class="pgv-kv-label">Jenis Surat</span>
+              <span class="pgv-kv-value">Surat Undangan Biasa</span>
+            </div>
+            <div class="pgv-kv-row">
+              <span class="pgv-kv-label">Pembuat</span>
+              <span class="pgv-kv-value pgv-kv-maker">
+                <span class="pgv-kv-avatar">BS</span>
+                Budi Santoso (Staf TU)
+              </span>
+            </div>
+            <div class="pgv-kv-row">
+              <span class="pgv-kv-label">Tanggal Dibuat</span>
+              <span class="pgv-kv-value">24 Okt 2023, 10:30 WIB</span>
+            </div>
+            <div class="pgv-kv-row">
+              <span class="pgv-kv-label">Status Saat Ini</span>
+              <span class="pgv-status-badge pgs-status-badge--amber">Draft</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card lampiran -->
+        <div class="pgv-card">
+          <div class="pgv-att-head">
+            <h2 class="pgv-card-title">Lampiran</h2>
+            <span class="pgv-att-count">1</span>
+          </div>
+          <div class="pgv-att-item">
+            <span class="pgv-att-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            </span>
+            <div class="pgv-att-info">
+              <span class="pgv-att-name">Jadwal_Rakor_Konservasi.pdf</span>
+              <span class="pgv-att-size">1.2 MB</span>
+            </div>
+            <button type="button" class="pgv-eye" id="pgv-att-eye" title="Pratinjau lampiran" aria-label="Pratinjau lampiran">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/preview-surat.js"></script>
+</body>
+</html>

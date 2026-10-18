@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Kepala Seksi - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/kepala-seksi/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/ks-dashboard.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="ks-sidebar"></aside>
+  <header id="ks-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== RUNNING TEXT (PENGUMUMAN) ===== -->
+    <section id="running-text-bar" class="running-text-bar">
+      <div class="running-text-label">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-8v18L3 13v-2z"></path><line x1="11.6" y1="16.8" x2="15" y2="18.4"></line><line x1="11.6" y1="16.8" x2="11.6" y2="11.2"></line></svg>
+        PENGUMUMAN
+      </div>
+      <div class="running-text-viewport">
+        <div id="running-text-track" class="running-text-track"></div>
+      </div>
+    </section>
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="ksd-head">
+      <div>
+        <h1 class="ksd-title">Dashboard Kepala Seksi</h1>
+        <p class="ksd-desc">Pantau surat, disposisi, tugas, dan aktivitas seksi.</p>
+      </div>
+      <div class="ksd-head-actions">
+        <a href="laporan.html" class="ksd-btn ksd-btn--outline">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Laporan
+        </a>
+        <a href="buat-tugas.html" class="ksd-btn ksd-btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Tugas Baru
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 2. STAT CARD (render via JS) ===== -->
+    <section class="ksd-stats" id="ksd-stats" aria-label="Ringkasan statistik"></section>
+
+    <!-- ===== 3. GRID DUA KOLOM ===== -->
+    <section class="ksd-columns">
+
+      <!-- KIRI: perlu tindakan -->
+      <div class="ksd-panel">
+        <div class="ksd-panel-head">
+          <div class="ksd-panel-head-left">
+            <span class="ksd-panel-icon ksd-panel-icon--blue">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </span>
+            <h2 class="ksd-panel-title">Perlu Tindakan</h2>
+          </div>
+          <span class="ksd-count-badge" id="ksd-actions-badge"></span>
+        </div>
+        <div id="ksd-actions"></div>
+      </div>
+
+      <!-- KANAN: 2 card bertumpuk -->
+      <div class="ksd-right">
+
+        <!-- Surat terbaru -->
+        <div class="ksd-panel">
+          <div class="ksd-panel-head">
+            <div class="ksd-panel-head-left">
+              <span class="ksd-panel-icon ksd-panel-icon--blue">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </span>
+              <h2 class="ksd-panel-title">Surat Terbaru</h2>
+            </div>
+          </div>
+          <div id="ksd-letters"></div>
+          <a href="surat-masuk.html" class="ksd-btn ksd-btn--muted ksd-btn--block">Lihat Semua Surat</a>
+        </div>
+
+        <!-- Jadwal hari ini -->
+        <div class="ksd-panel">
+          <div class="ksd-panel-head">
+            <div class="ksd-panel-head-left">
+              <span class="ksd-panel-icon ksd-panel-icon--orange">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </span>
+              <h2 class="ksd-panel-title">Jadwal Hari Ini</h2>
+            </div>
+            <button type="button" class="ksd-add-btn" aria-label="Tambah jadwal">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+          </div>
+          <div id="ksd-schedule"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== 4. PROGRESS PEKERJAAN SEKSI ===== -->
+    <section class="ksd-panel">
+      <div class="ksd-panel-head">
+        <h2 class="ksd-panel-title">Progress Pekerjaan Seksi</h2>
+        <a href="laporan.html" class="ksd-link">Lihat Detail</a>
+      </div>
+      <div id="ksd-progress"></div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="ks-footer">
+    &copy; 2024 e-Office BKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
+  <script type="module" src="../../assets/js/pages/ks-dashboard.js"></script>
+</body>
+</html>
