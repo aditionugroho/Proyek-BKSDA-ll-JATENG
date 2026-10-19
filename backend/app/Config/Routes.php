@@ -742,3 +742,15 @@ $routes->post(
         'filter' => 'role:admin',
     ]
 );
+
+// ======================================================
+// EKSTRAKSI NOMOR SURAT DARI PDF / GAMBAR / QR
+// ======================================================
+
+$routes->post(
+    'api/surat-masuk/extract',
+    'Api\SuratExtractController::extract',
+    [
+        'filter' => 'role:admin,staf',
+    ]
+);
