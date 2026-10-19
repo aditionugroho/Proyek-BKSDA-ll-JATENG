@@ -728,3 +728,17 @@ $routes->group(
 
     }
 );
+
+
+// ==========================================================
+// IMPORT DATA PEGAWAI CSV
+// ==========================================================
+// Hanya Admin yang boleh mengimpor data pegawai.
+
+$routes->post(
+    'api/users/import',
+    'Api\UserImportController::import',
+    [
+        'filter' => 'role:admin',
+    ]
+);
