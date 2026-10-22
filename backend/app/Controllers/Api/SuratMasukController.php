@@ -728,6 +728,123 @@ class SuratMasukController extends BaseController
     }
 
     // ==========================================
+    // PREVIEW FILE SURAT MASUK
+    // ==========================================
+
+public function previewFile($id = null)
+{
+    if (!$id || !ctype_digit((string) $id)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'ID surat masuk tidak valid.',
+        ], 400);
+    }
+
+    $surat = $this->suratModel->find($id);
+
+    if (!$surat) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Surat masuk tidak ditemukan.',
+        ], 404);
+    }
+
+    if (empty($surat['file_path'])) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Surat belum memiliki lampiran.',
+        ], 404);
+    }
+
+    $relativePath = str_replace(
+        '\\',
+        '/',
+        (string) $surat['file_path']
+    );
+
+    // Pastikan path berasal dari folder surat masuk.
+    if (!preg_match(
+        '#^surat_masuk/[A-Za-z0-9._-]+$#D',
+        $relativePath
+    )) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Path lampiran tidak valid.',
+        ], 404);
+    }
+
+    $extension = strtolower(
+        pathinfo($relativePath, PATHINFO_EXTENSION)
+    );
+
+    $allowedMimes = [
+        'pdf'  => 'application/pdf',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+    ];
+
+    if (!isset($allowedMimes[$extension])) {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Preview hanya mendukung PDF, JPG/JPEG, dan PNG.',
+        ], 415);
+    }
+
+    $uploadDir = realpath(
+        WRITEPATH . 'uploads/surat_masuk'
+    );
+
+    $filePath = realpath(
+        WRITEPATH . 'uploads/' . $relativePath
+    );
+
+    // Cegah akses file di luar folder upload.
+    if (
+        $uploadDir === false ||
+        $filePath === false ||
+        !is_file($filePath) ||
+        !str_starts_with(
+            $filePath,
+            $uploadDir . DIRECTORY_SEPARATOR
+        )
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'File tidak ditemukan di server.',
+        ], 404);
+    }
+
+    // Periksa tipe file sebenarnya.
+    $actualMime = (new \finfo(FILEINFO_MIME_TYPE))
+        ->file($filePath);
+
+    if ($actualMime !== $allowedMimes[$extension]) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Tipe isi file tidak valid untuk preview.',
+        ], 415);
+    }
+
+    $this->logActivity(
+        'preview_file',
+        (int) $id,
+        'Melihat preview surat masuk.'
+    );
+
+    return $this->response
+        ->download($filePath, null, true)
+        ->inline()
+        ->setHeader('Content-Type', $actualMime)
+        ->setHeader('X-Content-Type-Options', 'nosniff')
+        ->setHeader(
+            'Cache-Control',
+            'private, no-store, max-age=0'
+        );
+}
+
+    // ==========================================
     // DELETE SURAT MASUK
     // ==========================================
 

@@ -118,6 +118,11 @@ $routes->group(
     ],
     static function ($routes) {
 
+    $routes->get(
+    '(:num)/preview',
+    'Api\SuratMasukController::previewFile/$1'
+);
+
         $routes->get(
             '',
             'Api\SuratMasukController::index'
@@ -199,6 +204,12 @@ $routes->group(
         'filter' => 'role:admin,kepala_seksi,staf',
     ],
     static function ($routes) {
+
+
+        $routes->get(
+    '(:num)/preview',
+    'Api\SuratKeluarController::previewFile/$1'
+);
 
         $routes->get(
             '',
