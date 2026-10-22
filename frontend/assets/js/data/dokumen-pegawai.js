@@ -8,9 +8,9 @@ export const TOTAL_DOKUMEN_MOCK = 42;
 export const dokumenPgData = [
   {
     id: 1,
-    nama: "Laporan Survei Flora Fauna BKSDA 2023",
+    nama: "Laporan Survei Flora Fauna SKSDA 2023",
     icon: "doc",
-    nomor: "BKSDA-JT/09/23",
+    nomor: "SKSDA-JT/09/23",
     tanggal: "12 Sep 2023",
     kategori: "Laporan",
     status: { text: "Disetujui", tone: "green" }
@@ -28,7 +28,7 @@ export const dokumenPgData = [
     id: 3,
     nama: "Pengajuan Dana Patroli Kehutanan Bulan Oktober",
     icon: "mail",
-    nomor: "PD-10/BKSDA/23",
+    nomor: "PD-10/SKSDA/23",
     tanggal: "18 Sep 2023",
     kategori: "Pengajuan Dana",
     status: { text: "Terkirim", tone: "blue" }

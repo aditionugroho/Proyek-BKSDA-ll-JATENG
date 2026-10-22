@@ -13,9 +13,11 @@ export const ADMIN_MENU = [
       { label: "Dashboard", href: "dashboard.html", icon: "grid" },
       { label: "Data Pengguna", href: "data-pengguna.html", icon: "users" },
       { label: "Input Surat", href: "input-surat.html", icon: "mail" },
+      { label: "Panduan Input Surat", href: "panduan-input-surat.html", icon: "book" },
       { label: "Export Data & Laporan", href: "export-data.html", icon: "file" },
     { label: "Backup Data", href: "backup-data.html", icon: "refresh" },
-    { label: "Pengumuman", href: "pengumuman.html", icon: "megaphone" }
+    { label: "Pengumuman", href: "pengumuman.html", icon: "megaphone" },
+    { label: "Notifikasi", href: "notifikasi.html", icon: "bell" }
   ]
 },
   {
@@ -28,6 +30,10 @@ export const ADMIN_MENU = [
 
 /* ===== Kumpulan ikon SVG inline ===== */
 const ICONS = {
+  book:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>',
+  bell:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
   grid:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
   users:

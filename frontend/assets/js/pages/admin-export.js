@@ -10,7 +10,7 @@
 const STATS = [
   { label: "Surat Masuk", value: "1,248", badge: { text: "+8%", tone: "green" }, sub: "arsip", foot: "Total surat masuk", footRight: "Aktif" },
   { label: "Surat Keluar", value: "856", badge: { text: "+12%", tone: "green" }, sub: "arsip", foot: "Total surat keluar", footRight: "Tervalidasi" },
-  { label: "Data Pengguna", value: "148", badge: { text: "132 aktif", tone: "blue" }, sub: "personel", foot: "Pengguna terdaftar BKSDA Jateng" },
+  { label: "Data Pengguna", value: "148", badge: { text: "132 aktif", tone: "blue" }, sub: "personel", foot: "Pengguna terdaftar SKSDA Jateng" },
   { label: "Laporan Bulan Ini", value: "24", badge: { text: "Sep 2026", tone: "blue" }, sub: "file dibuat", foot: "Laporan terbit", footDot: "100% OK" }
 ];
 
@@ -21,7 +21,7 @@ const EXPORTS = [
     icon: "mail",
     badgeTop: "1,248 DATA TERSEDIA",
     title: "Surat Masuk",
-    desc: "Export data surat masuk yang telah diregistrasikan dan didistribusikan dalam sistem e-Office BKSDA Jawa Tengah.",
+    desc: "Export data surat masuk yang telah diregistrasikan dan didistribusikan dalam sistem e-Office SKSDA Jawa Tengah.",
     footIcon: "shield",
     footText: "Metadata & Disposisi",
     link: "Export Surat Masuk"

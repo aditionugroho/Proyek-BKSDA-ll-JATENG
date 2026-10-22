@@ -69,7 +69,7 @@ const pgDashboardData = {
       icon: "mail",
       judul: "Surat Undangan Rapat K",
       waktu: "09:00",
-      dari: "Dari: Kepala Balai BKSDA",
+      dari: "Dari: Kepala SKSDA",
       badge: { text: "INFORMASI", tone: "blue" }
     },
     {

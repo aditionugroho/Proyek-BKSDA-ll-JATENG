@@ -12,8 +12,8 @@ const PROFILE = {
   nama: "Alex Rivera",
   jabatan: "Kepala Seksi Konservasi Wilayah",
   nip: "198505122010011001",
-  unit: "BKSDA Jawa Tengah",
-  email: "alex.rivera@bksda-jateng.go.id",
+  unit: "SKSDA Jawa Tengah",
+  email: "alex.rivera@SKSDA-jateng.go.id",
   telepon: "0812-3456-7890"
 };
 

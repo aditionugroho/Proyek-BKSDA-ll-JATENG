@@ -13,7 +13,7 @@ export const stafData = [
     golongan: "Penata Muda Tk. I (Gol. III/b)",
     nip: "198705122010011001",
     jabatan: "Staf Pelaksana",
-    email: "andi.pratama@bksda-jateng.go.id",
+    email: "andi.pratama@SKSDA-jateng.go.id",
     telp: "0812-8871-0021",
     tugas: 4,
     status: "AKTIF"
@@ -24,7 +24,7 @@ export const stafData = [
     golongan: "Penata (Gol. III/c)",
     nip: "199002152015032002",
     jabatan: "Analis Konservasi Wilayah",
-    email: "siti.rahmawati@bksda-jateng.go.id",
+    email: "siti.rahmawati@SKSDA-jateng.go.id",
     telp: "0813-2290-1142",
     tugas: 3,
     status: "AKTIF"
@@ -35,7 +35,7 @@ export const stafData = [
     golongan: "Pengatur Tk. I (Gol. II/d)",
     nip: "198812102012031003",
     jabatan: "Pengadministrasi Persuratan",
-    email: "budi.santoso@bksda-jateng.go.id",
+    email: "budi.santoso@SKSDA-jateng.go.id",
     telp: "0857-4411-9876",
     tugas: 2,
     status: "AKTIF"
@@ -46,7 +46,7 @@ export const stafData = [
     golongan: "Penata Muda (Gol. III/a)",
     nip: "199105202016042004",
     jabatan: "Staf Pelaksana Kemitraan",
-    email: "rina.wulandari@bksda-jateng.go.id",
+    email: "rina.wulandari@SKSDA-jateng.go.id",
     telp: "0821-3345-7789",
     tugas: 5,
     status: "CUTI"
@@ -57,7 +57,7 @@ export const stafData = [
     golongan: "Penata Muda Tk. I (Gol. III/b)",
     nip: "198911182013041005",
     jabatan: "Staf Pelaksana Perlindungan",
-    email: "dedi.kurniawan@bksda-jateng.go.id",
+    email: "dedi.kurniawan@SKSDA-jateng.go.id",
     telp: "0811-9087-6543",
     tugas: 1,
     status: "AKTIF"
@@ -68,7 +68,7 @@ export const stafData = [
     golongan: "Penata Muda (Gol. III/a)",
     nip: "199304082018012006",
     jabatan: "Analis Data & Inventarisasi Fauna",
-    email: "maya.indrawati@bksda-jateng.go.id",
+    email: "maya.indrawati@SKSDA-jateng.go.id",
     telp: "0812-3301-4455",
     tugas: 4,
     status: "AKTIF"
@@ -79,7 +79,7 @@ export const stafData = [
     golongan: "Penata (Gol. III/c)",
     nip: "198607142009021007",
     jabatan: "Pengadministrasi Keuangan Seksi",
-    email: "eko.wahyudi@bksda-jateng.go.id",
+    email: "eko.wahyudi@SKSDA-jateng.go.id",
     telp: "0852-7711-2233",
     tugas: 3,
     status: "AKTIF"
@@ -90,7 +90,7 @@ export const stafData = [
     golongan: "Pengatur Tk. I (Gol. II/d)",
     nip: "199211032017052008",
     jabatan: "Staf Pelaksana Polisi Kehutanan",
-    email: "tri.hastuti@bksda-jateng.go.id",
+    email: "tri.hastuti@SKSDA-jateng.go.id",
     telp: "0813-5566-7788",
     tugas: 2,
     status: "AKTIF"

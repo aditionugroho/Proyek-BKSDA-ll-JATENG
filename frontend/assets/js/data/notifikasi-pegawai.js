@@ -37,7 +37,7 @@ export const notifPgData = [
   {
     id: 4,
     judul: "Surat keluar telah disetujui",
-    teks: "Surat tugas dengan nomor ST/023/BKSDA/VI/2026 telah disetujui.",
+    teks: "Surat tugas dengan nomor ST/023/SKSDA/VI/2026 telah disetujui.",
     waktu: "2 hari yang lalu",
     kategori: "surat",
     icon: "minus",

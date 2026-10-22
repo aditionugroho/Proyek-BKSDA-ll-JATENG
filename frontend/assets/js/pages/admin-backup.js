@@ -11,7 +11,7 @@ const STATS = [
   { label: "Backup Terakhir", value: "13 Sep 2026", badge: "Berhasil", sub: "03:00 WIB", icon: "calendar", tone: "blue" },
   { label: "Status Backup", value: "Normal", sub: "Sistem Backup Aktif", dot: true, icon: "checkCircle", tone: "green" },
   { label: "Ukuran Terakhir", value: "2.4 GB", sub: "Full Backup Harian", icon: "box", tone: "blue" },
-  { label: "Total Cadangan", value: "28 Snapshot", sub: "Tersimpan di Cloud BKSDA", icon: "database", tone: "blue" },
+  { label: "Total Cadangan", value: "28 Snapshot", sub: "Tersimpan di Cloud SKSDA", icon: "database", tone: "blue" },
   { label: "Kapasitas Disk", value: "64%", sub: "1.28 / 2.0 TB", progress: 64, icon: "disk", tone: "blue" }
 ];
 

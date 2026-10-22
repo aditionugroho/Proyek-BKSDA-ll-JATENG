@@ -103,7 +103,7 @@ export const TUGAS_DETAIL_PG = {
   judul: "Laporan Pemantauan Satwa Liar TWA Ruteng",
   prioritas: { text: "Tinggi", tone: "red" },
   deskripsi:
-    "Melakukan pemantauan rutin populasi satwa liar endemik di kawasan Taman Wisata Alam Ruteng selama periode Q3 2023. Laporan harus mencakup data populasi, identifikasi ancaman, dan rekomendasi mitigasi sesuai standar operasional BKSDA.",
+    "Melakukan pemantauan rutin populasi satwa liar endemik di kawasan Taman Wisata Alam Ruteng selama periode Q3 2023. Laporan harus mencakup data populasi, identifikasi ancaman, dan rekomendasi mitigasi sesuai standar operasional SKSDA.",
   pemberi: { inisial: "KS", nama: "Kepala Seksi Wil II" },
   deadline: "24 Nov 2023",
   status: { text: "Sedang Dikerjakan", tone: "amber" },

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pencarian — E-Office SKSDA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+      color: #111827; background: #F8FAFC; line-height: 1.5;
+      -webkit-font-smoothing: antialiased; min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    .nav { background: #fff; border-bottom: 1px solid #E5E7EB; }
+    .nav-inner { max-width: 900px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    .nav-inner img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #DBEAFE; }
+    .nav-name { display: block; font-size: 12px; font-weight: 800; color: #1E3A8A; }
+    .nav-sub { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #2563EB; }
+    .nav-home { margin-left: auto; font-size: 12px; font-weight: 700; color: #2563EB; }
+    .nav-home:hover { text-decoration: underline; }
+
+    .main { flex: 1; width: 100%; max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+
+    .search-box {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px; background: #fff;
+      border: 1.5px solid #E5E7EB; border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(17,24,39,.05);
+    }
+    .search-box svg { width: 18px; height: 18px; color: #9CA3AF; flex-shrink: 0; }
+    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #111827; background: none; }
+    .search-box button {
+      padding: 10px 18px; font-size: 13px; font-weight: 700;
+      color: #fff; background: #2563EB; border: none; border-radius: 10px; cursor: pointer;
+    }
+    .search-box button:hover { background: #1D4ED8; }
+
+    .summary { margin: 18px 0 20px; font-size: 13px; color: #6B7280; }
+    .summary strong { color: #111827; }
+
+    .group { margin-bottom: 22px; }
+    .group-head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .group-title { font-size: 14px; font-weight: 800; }
+    .group-count {
+      padding: 2px 9px; font-size: 11px; font-weight: 800;
+      color: #2563EB; background: #DBEAFE; border-radius: 999px;
+    }
+    .group-more { margin-left: auto; font-size: 12px; font-weight: 700; color: #2563EB; }
+    .group-more:hover { text-decoration: underline; }
+
+    .result {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 13px 15px; margin-bottom: 8px;
+      background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+      transition: border-color .15s;
+    }
+    .result:hover { border-color: #93C5FD; }
+    .result-icon {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: #fff; background: #2563EB;
+    }
+    .result-icon.green { background: #16A34A; }
+    .result-icon.amber { background: #D97706; }
+    .result-icon.gray { background: #6B7280; }
+    .result-body { flex: 1; min-width: 0; }
+    .result-title { font-size: 13px; font-weight: 700; }
+    .result-meta { margin-top: 2px; font-size: 12px; color: #6B7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .result-sub { margin-top: 2px; font-size: 11.5px; color: #9CA3AF; }
+
+    mark { background: #FEF08A; padding: 0 2px; border-radius: 3px; }
+
+    .empty {
+      padding: 56px 20px; text-align: center;
+      background: #fff; border: 1px dashed #E5E7EB; border-radius: 14px;
+    }
+    .empty-title { font-size: 15px; font-weight: 800; color: #374151; }
+    .empty-text { margin-top: 6px; font-size: 13px; color: #6B7280; }
+
+    .foot { padding: 18px 20px; text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #E5E7EB; background: #fff; }
+  </style>
+</head>
+<body>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <img src="assets/js/images/logokehutanan.jpeg" alt="Logo SKSDA" />
+      <span>
+        <span class="nav-name">SKSDA WILAYAH II PEMALANG</span>
+        <span class="nav-sub">E-Office</span>
+      </span>
+      <a class="nav-home" href="javascript:history.back()">&larr; Kembali</a>
+    </div>
+  </header>
+
+  <main class="main">
+    <form class="search-box" id="form-cari">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="q" placeholder="Cari surat, tugas, atau staf..." aria-label="Cari" autofocus />
+      <button type="submit">Cari</button>
+    </form>
+
+    <p class="summary" id="summary" hidden></p>
+    <div id="hasil"></div>
+  </main>
+
+  <footer class="foot">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
+
+  <script type="module">
+    import { SURAT_MASUK } from "./assets/js/data/surat-masuk.js";
+    import { SURAT_KELUAR } from "./assets/js/data/surat-keluar.js";
+    import { stafData } from "./assets/js/data/staf.js";
+    import { TUGAS_SEKSI } from "./assets/js/data/tugas-seksi.js";
+
+    const qInput = document.getElementById("q");
+    const hasil = document.getElementById("hasil");
+    const summary = document.getElementById("summary");
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+    function highlight(text, q) {
+      const aman = esc(text);
+      try {
+        const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+        return aman.replace(re, "<mark>$1</mark>");
+      } catch (e) { return aman; }
+    }
+    function cocok(hay, q) {
+      return String(hay ?? "").toLowerCase().includes(q);
+    }
+
+    function cari(q) {
+      q = q.trim().toLowerCase();
+      if (!q) {
+        hasil.innerHTML = '<div class="empty"><p class="empty-title">Mulai mencari</p><p class="empty-text">Ketik nomor surat, perihal, nama staf, NIP, atau judul tugas lalu tekan Cari.</p></div>';
+        summary.hidden = true;
+        return;
+      }
+
+      const masuk = SURAT_MASUK.filter((s) => cocok(s.nomor, q) || cocok(s.pengirim, q) || cocok(s.perihal, q));
+      const keluar = SURAT_KELUAR.filter((s) => cocok(s.nomor, q) || cocok(s.pengirim, q) || cocok(s.perihal, q));
+      const staf = stafData.filter((s) => cocok(s.nama, q) || cocok(s.nip, q) || cocok(s.jabatan, q) || cocok(s.golongan, q));
+      const tugas = TUGAS_SEKSI.filter((s) => cocok(s.judul, q) || cocok(s.kode, q) || cocok(s.pic, q));
+
+      const total = masuk.length + keluar.length + staf.length + tugas.length;
+      summary.hidden = false;
+      summary.innerHTML = 'Ditemukan <strong>' + total + ' hasil</strong> untuk kata kunci "<strong>' + esc(q) + '</strong>".';
+
+      if (!total) {
+        hasil.innerHTML = '<div class="empty"><p class="empty-title">Tidak ada hasil</p><p class="empty-text">Coba kata kunci lain, misalnya nomor surat, nama pengirim, nama staf, atau judul tugas.</p></div>';
+        return;
+      }
+
+      let html = "";
+
+      if (masuk.length) {
+        html += '<section class="group"><div class="group-head"><span class="group-title">Surat Masuk</span><span class="group-count">' + masuk.length + '</span><a class="group-more" href="pages/kepala-seksi/surat-masuk.html">Lihat semua &rarr;</a></div>';
+        masuk.slice(0, 5).forEach((s) => {
+          html += '<div class="result"><span class="result-icon">SM</span><div class="result-body"><p class="result-title">' + highlight(s.nomor, q) + '</p><p class="result-meta">' + highlight(s.perihal, q) + '</p><p class="result-sub">Pengirim: ' + highlight(s.pengirim, q) + ' &bull; ' + esc(s.tanggal) + '</p></div></div>';
+        });
+        html += "</section>";
+      }
+
+      if (keluar.length) {
+        html += '<section class="group"><div class="group-head"><span class="group-title">Surat Keluar</span><span class="group-count">' + keluar.length + '</span><a class="group-more" href="pages/kepala-seksi/surat-keluar.html">Lihat semua &rarr;</a></div>';
+        keluar.slice(0, 5).forEach((s) => {
+          html += '<div class="result"><span class="result-icon green">SK</span><div class="result-body"><p class="result-title">' + highlight(s.nomor, q) + '</p><p class="result-meta">' + highlight(s.perihal, q) + '</p><p class="result-sub">Tujuan/Pengirim: ' + highlight(s.pengirim, q) + ' &bull; ' + esc(s.tanggal) + '</p></div></div>';
+        });
+        html += "</section>";
+      }
+
+      if (tugas.length) {
+        html += '<section class="group"><div class="group-head"><span class="group-title">Tugas Seksi</span><span class="group-count">' + tugas.length + '</span><a class="group-more" href="pages/kepala-seksi/tugas-seksi.html">Lihat semua &rarr;</a></div>';
+        tugas.slice(0, 5).forEach((s) => {
+          html += '<div class="result"><span class="result-icon amber">TG</span><div class="result-body"><p class="result-title">' + highlight(s.judul, q) + '</p><p class="result-meta">' + highlight(s.kode, q) + '</p><p class="result-sub">PIC: ' + highlight(s.pic, q) + '</p></div></div>';
+        });
+        html += "</section>";
+      }
+
+      if (staf.length) {
+        html += '<section class="group"><div class="group-head"><span class="group-title">Staf / Pegawai</span><span class="group-count">' + staf.length + '</span><a class="group-more" href="pages/kepala-seksi/direktori-staf.html">Lihat semua &rarr;</a></div>';
+        staf.slice(0, 5).forEach((s) => {
+          html += '<div class="result"><span class="result-icon gray">' + esc((s.nama || "?").split(" ").map((x) => x[0]).slice(0, 2).join("")) + '</span><div class="result-body"><p class="result-title">' + highlight(s.nama, q) + '</p><p class="result-meta">' + esc(s.jabatan || "-") + '</p><p class="result-sub">NIP: ' + highlight(s.nip, q) + '</p></div></div>';
+        });
+        html += "</section>";
+      }
+
+      hasil.innerHTML = html;
+    }
+
+    document.getElementById("form-cari").addEventListener("submit", function(e) {
+      e.preventDefault();
+      cari(qInput.value);
+      const u = new URL(location.href);
+      u.searchParams.set("q", qInput.value.trim());
+      history.replaceState(null, "", u);
+    });
+
+    const q = new URLSearchParams(location.search).get("q") || "";
+    qInput.value = q;
+    cari(q);
+  </script>
+</body>
+</html>

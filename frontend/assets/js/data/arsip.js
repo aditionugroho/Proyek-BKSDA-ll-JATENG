@@ -83,7 +83,7 @@ export const arsipData = [
     tahun: "2024",
     jenis: "Laporan",
     perihal: "Laporan Penanganan Konflik Satwa Liar dengan Masyarakat Lokal",
-    asal: "Tim Reaksi Cepat BKSDA",
+    asal: "Tim Reaksi Cepat SKSDA",
     status: "Diarsipkan"
   }
 ];

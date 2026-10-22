@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifikasi Admin - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-notifikasi.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <nav class="nt-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="nt-breadcrumb-current">Notifikasi</span>
+    </nav>
+
+    <section class="nt-head">
+      <div>
+        <h1 class="nt-title">Notifikasi</h1>
+        <p class="nt-desc">Pembaruan sistem, registrasi akun, dan aktivitas administrasi terbaru.</p>
+      </div>
+      <button type="button" class="nt-btn nt-btn--outline" id="btn-read-all">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L7 17l-4-4"></path><path d="M22 10l-7.5 7.5L12 15"></path></svg>
+        Tandai Semua Dibaca
+      </button>
+    </section>
+
+    <!-- ===== 2. STAT CARD ===== -->
+    <section class="nt-stats" id="nt-stats" aria-label="Ringkasan notifikasi">
+      <div class="nt-stat">
+        <span class="nt-stat-icon blue">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </span>
+        <div>
+          <p class="nt-stat-value" id="nt-total">0</p>
+          <p class="nt-stat-label">Total Notifikasi</p>
+        </div>
+      </div>
+      <div class="nt-stat">
+        <span class="nt-stat-icon amber">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
+        <div>
+          <p class="nt-stat-value" id="nt-unread">0</p>
+          <p class="nt-stat-label">Belum Dibaca</p>
+        </div>
+      </div>
+      <div class="nt-stat">
+        <span class="nt-stat-icon green">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        </span>
+        <div>
+          <p class="nt-stat-value" id="nt-regcount">0</p>
+          <p class="nt-stat-label">Registrasi Akun</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. BAR FILTER ===== -->
+    <section class="nt-filter-card">
+      <nav class="nt-tabs" id="nt-tabs" aria-label="Filter kategori notifikasi">
+        <button type="button" class="nt-tab is-active" data-filter="all">Semua</button>
+        <button type="button" class="nt-tab" data-filter="unread">Belum Dibaca</button>
+        <button type="button" class="nt-tab" data-filter="Registrasi">Registrasi</button>
+        <button type="button" class="nt-tab" data-filter="Surat">Surat</button>
+        <button type="button" class="nt-tab" data-filter="Sistem">Sistem</button>
+      </nav>
+
+      <div class="nt-filter-right">
+        <div class="nt-search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" id="nt-search" placeholder="Cari dalam notifikasi..." aria-label="Cari notifikasi" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. LIST NOTIFIKASI ===== -->
+    <section class="nt-list" id="nt-list" aria-label="Daftar notifikasi"></section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2026 Seksi Konservasi Sumber Daya Alam Jawa Tengah (SKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script>
+    /* ===== Data notifikasi admin (mock + registrasi live) ===== */
+    const READ_KEY = "eoffice_notif_admin_read";
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function timeAgo(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1) return "Baru saja";
+      if (m < 60) return m + " menit lalu";
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + " jam lalu";
+      return Math.floor(h / 24) + " hari lalu";
+    }
+
+    function buildItems() {
+      const items = [
+        {
+          id: "sys-backup",
+          kategori: "Sistem",
+          icon: "database",
+          judul: "Backup otomatis berhasil",
+          teks: "Snapshot basis data harian tersimpan di penyimpanan sekunder.",
+          waktu: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
+        },
+        {
+          id: "sys-surat",
+          kategori: "Surat",
+          icon: "mail",
+          judul: "Surat masuk baru terdaftar",
+          teks: "S.501/SKSDA-JT/2026 dari Dinas Kehutanan Jateng menunggu distribusi.",
+          waktu: new Date(Date.now() - 5 * 3600 * 1000).toISOString()
+        },
+        {
+          id: "sys-quota",
+          kategori: "Sistem",
+          icon: "alert",
+          judul: "Kuota penyimpanan arsip 78%",
+          teks: "Pertimbangkan export dan pembersihan arsip lama.",
+          waktu: new Date(Date.now() - 26 * 3600 * 1000).toISOString()
+        },
+        {
+          id: "sys-pengumuman",
+          kategori: "Sistem",
+          icon: "megaphone",
+          judul: "Pengumuman terjadwal terkirim",
+          teks: "Pengumuman rapat koordinasi berhasil dikirim ke 148 pengguna.",
+          waktu: new Date(Date.now() - 30 * 3600 * 1000).toISOString()
+        }
+      ];
+
+      /* Registrasi live dari halaman pendaftaran */
+      try {
+        const regs = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
+        regs.slice().reverse().forEach((r, i) => {
+          const status = r.status === "aktif" ? "terverifikasi" : r.status === "ditolak" ? "ditolak" : "menunggu verifikasi";
+          items.push({
+            id: "reg-" + i + "-" + (r.daftarPada || ""),
+            kategori: "Registrasi",
+            icon: "userPlus",
+            judul: "Pendaftar baru: " + r.nama + " (" + status + ")",
+            teks: (r.role === "kepala-seksi" ? "Kepala Seksi" : "Staff") + " • " + r.idAtauEmail + " — kelola di menu Data Pengguna.",
+            waktu: r.daftarPada || new Date().toISOString(),
+            link: "data-pengguna.html"
+          });
+        });
+      } catch (e) { /* abaikan */ }
+
+      return items.sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
+    }
+
+    const ICONS = {
+      database: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+      mail: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+      alert: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      megaphone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+      userPlus: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>'
+    };
+
+    let filter = "all";
+    let search = "";
+    let readIds = [];
+    try { readIds = JSON.parse(localStorage.getItem(READ_KEY) || "[]"); } catch (e) {}
+
+    function updateStats(items) {
+      document.getElementById("nt-total").textContent = items.length;
+      document.getElementById("nt-unread").textContent = items.filter((i) => !readIds.includes(i.id)).length;
+      document.getElementById("nt-regcount").textContent = items.filter((i) => i.kategori === "Registrasi").length;
+    }
+
+    function render() {
+      const list = document.getElementById("nt-list");
+      const semua = buildItems();
+      updateStats(semua);
+      const items = semua.filter((it) => {
+        if (filter === "unread" && readIds.includes(it.id)) return false;
+        if (filter !== "all" && filter !== "unread" && it.kategori !== filter) return false;
+        if (search && !(it.judul + " " + it.teks).toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+      });
+
+      if (!items.length) {
+        list.innerHTML = '<div class="nt-empty" style="text-align:center;padding:40px 16px;color:#6B7280;font-size:14px">Tidak ada notifikasi.</div>';
+        return;
+      }
+
+      list.innerHTML = items.map((it) => {
+        const dibaca = readIds.includes(it.id);
+        const link = it.link ? '<a href="' + it.link + '" class="nt-item-link">Kelola &rarr;</a>' : "";
+        return (
+          '<article class="nt-item' + (dibaca ? "" : " is-unread") + '" data-id="' + esc(it.id) + '">' +
+            '<span class="nt-item-icon">' + (ICONS[it.icon] || ICONS.alert) + "</span>" +
+            '<div class="nt-item-body">' +
+              '<p class="nt-item-title">' + esc(it.judul) + ' <span class="nt-item-cat">' + esc(it.kategori) + "</span></p>" +
+              '<p class="nt-item-text">' + esc(it.teks) + "</p>" +
+              '<p class="nt-item-time">' + timeAgo(it.waktu) + "</p>" +
+            "</div>" +
+            link +
+          "</article>"
+        );
+      }).join("");
+
+      list.querySelectorAll(".nt-item").forEach((el) => {
+        el.addEventListener("click", function() {
+          const id = this.dataset.id;
+          if (!readIds.includes(id)) {
+            readIds.push(id);
+            localStorage.setItem(READ_KEY, JSON.stringify(readIds));
+            this.classList.remove("is-unread");
+          }
+        });
+      });
+    }
+
+    document.getElementById("nt-tabs").addEventListener("click", function(e) {
+      const btn = e.target.closest(".nt-tab");
+      if (!btn) return;
+      this.querySelectorAll(".nt-tab").forEach((t) => t.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      filter = btn.dataset.filter;
+      render();
+    });
+
+    document.getElementById("nt-search").addEventListener("input", function() {
+      search = this.value;
+      render();
+    });
+
+    document.getElementById("btn-read-all").addEventListener("click", function() {
+      readIds = buildItems().map((it) => it.id);
+      localStorage.setItem(READ_KEY, JSON.stringify(readIds));
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

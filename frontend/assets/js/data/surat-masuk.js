@@ -7,7 +7,7 @@
 export const SURAT_MASUK = [
   {
     id: 1,
-    nomor: "S.452/BKSDA-JT/2023",
+    nomor: "S.452/SKSDA-JT/2023",
     tanggal: "24 Okt 2023",
     pengirim: "Kementerian LHK",
     pengirimSub: "Pusat",
@@ -46,7 +46,7 @@ export const SURAT_MASUK = [
   },
   {
     id: 4,
-    nomor: "S.410/BKSDA-JT/2023",
+    nomor: "S.410/SKSDA-JT/2023",
     tanggal: "15 Okt 2023",
     pengirim: "Dirjen KSDAE",
     pengirimSub: "Kementerian LHK",

@@ -27,14 +27,14 @@ function renderAdminNavbar() {
 
     <div class="navbar-right">
 
-      <!-- Notifikasi -->
-      <button type="button" class="navbar-bell" aria-label="Notifikasi">
+      <!-- Notifikasi (klik → halaman notifikasi) -->
+      <a href="notifikasi.html" class="navbar-bell" aria-label="Notifikasi" title="Notifikasi">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <span class="bell-dot" aria-hidden="true"></span>
-      </button>
+      </a>
 
-      <!-- User chip -->
-      <div class="navbar-user" role="button" tabindex="0" aria-label="Profil pengguna">
+      <!-- User chip (klik → profil admin) -->
+      <a href="profil-admin.html" class="navbar-user" aria-label="Profil pengguna" title="Profil Admin">
         <span class="user-avatar" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </span>
@@ -43,10 +43,20 @@ function renderAdminNavbar() {
           <span class="user-role">Admin Sistem Jawa Tengah</span>
         </span>
         <span class="user-badge">ADMIN</span>
-      </div>
+      </a>
 
     </div>
   `;
 }
 
 renderAdminNavbar();
+
+/* Pencarian global: Enter → halaman hasil pencarian */
+const adminSearch = document.querySelector("#admin-navbar input[type='search']");
+if (adminSearch) {
+  adminSearch.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && adminSearch.value.trim()) {
+      location.href = "../../pencarian.html?q=" + encodeURIComponent(adminSearch.value.trim());
+    }
+  });
+}

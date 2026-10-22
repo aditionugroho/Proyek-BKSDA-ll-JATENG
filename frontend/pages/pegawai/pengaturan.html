@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pengaturan - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/pegawai/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/ks-pengaturan.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="pg-sidebar"></aside>
+  <header id="pg-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. BREADCRUMB + HEADER ===== -->
+    <nav class="st-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="st-breadcrumb-current">Pengaturan</span>
+    </nav>
+
+    <section class="st-head">
+      <div>
+        <h1 class="st-title">Pengaturan</h1>
+        <p class="st-desc">Kelola profil, keamanan akun, dan notifikasi untuk aktivitas kerja Anda.</p>
+      </div>
+    </section>
+
+    <!-- ===== 2. TABS ===== -->
+    <nav class="st-tabs" role="tablist" aria-label="Bagian pengaturan">
+      <button type="button" class="st-tab active" id="tab-profil" role="tab" aria-selected="true">Profil akun</button>
+      <button type="button" class="st-tab" id="tab-keamanan" role="tab" aria-selected="false">Keamanan akun</button>
+    </nav>
+
+    <!-- ===== 3. PANEL: PROFIL AKUN ===== -->
+    <section class="st-panel active" id="panel-profil" role="tabpanel">
+      <div class="st-card">
+        <div class="st-card-head">
+          <h2 class="st-card-title">Profil akun</h2>
+          <p class="st-card-sub">Informasi pribadi dan identitas pengguna aplikasi.</p>
+        </div>
+
+        <div class="st-photo-row">
+          <span class="st-avatar" id="st-avatar">BS</span>
+          <div>
+            <p class="st-photo-label">Ubah foto</p>
+            <p class="st-photo-hint">JPG atau PNG. Maksimal 2 MB.</p>
+            <label class="st-photo-btn" for="st-photo-input">Pilih Foto</label>
+            <input type="file" id="st-photo-input" accept="image/jpeg,image/png" hidden />
+          </div>
+        </div>
+
+        <div class="st-form-grid">
+          <div class="st-field">
+            <label class="st-label" for="st-nama">Nama lengkap</label>
+            <input type="text" id="st-nama" value="Budi Santoso, S.Hut" autocomplete="name" />
+          </div>
+          <div class="st-field">
+            <label class="st-label" for="st-username">Nama pengguna</label>
+            <input type="text" id="st-username" value="budi.santoso" autocomplete="username" />
+          </div>
+          <div class="st-field">
+            <label class="st-label" for="st-email">Email</label>
+            <input type="email" id="st-email" value="budi.santoso@sksda.go.id" autocomplete="email" />
+          </div>
+          <div class="st-field">
+            <label class="st-label" for="st-telepon">Nomor telepon</label>
+            <input type="tel" id="st-telepon" value="Belum ditambahkan" autocomplete="tel" />
+          </div>
+          <div class="st-field">
+            <label class="st-label" for="st-peran">Peran</label>
+            <input type="text" id="st-peran" value="Staff / Pegawai" disabled />
+          </div>
+          <div class="st-field">
+            <label class="st-label" for="st-unit">Unit kerja</label>
+            <input type="text" id="st-unit" value="Seksi Konservasi Wilayah II Pemalang" disabled />
+          </div>
+        </div>
+
+        <p class="st-note">
+          <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Perubahan peran dan unit kerja dikelola oleh administrator.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 4. PANEL: KEAMANAN AKUN ===== -->
+    <section class="st-panel" id="panel-keamanan" role="tabpanel" hidden>
+      <div class="st-card">
+        <div class="st-card-head">
+          <h2 class="st-card-title">Keamanan akun</h2>
+          <p class="st-card-sub">Perbarui kata sandi untuk melindungi akun Anda.</p>
+        </div>
+
+        <div class="st-field">
+          <label class="st-label" for="st-pw-lama">Kata sandi saat ini</label>
+          <input type="password" id="st-pw-lama" placeholder="Masukkan kata sandi saat ini" autocomplete="current-password" />
+        </div>
+        <div class="st-field">
+          <label class="st-label" for="st-pw-baru">Kata sandi baru</label>
+          <input type="password" id="st-pw-baru" placeholder="Masukkan kata sandi baru" autocomplete="new-password" />
+        </div>
+        <div class="st-field">
+          <label class="st-label" for="st-pw-konfirmasi">Konfirmasi kata sandi baru</label>
+          <input type="password" id="st-pw-konfirmasi" placeholder="Ulangi kata sandi baru" autocomplete="new-password" />
+          <p class="st-hint">Gunakan minimal 8 karakter dengan kombinasi huruf besar, huruf kecil, dan angka.</p>
+          <p class="st-error" id="st-pw-error" hidden></p>
+        </div>
+
+        <button type="button" class="st-btn st-btn--primary st-btn--block" id="st-btn-pw">
+          <svg width="15" height="15" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Ubah kata sandi
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== 5. PREFERENSI NOTIFIKASI ===== -->
+    <section class="st-card st-notif">
+      <div class="st-card-head">
+        <h2 class="st-card-title">Preferensi notifikasi</h2>
+        <p class="st-card-sub">Pilih pemberitahuan yang ingin Anda terima melalui aplikasi dan email.</p>
+      </div>
+
+      <div class="st-table-scroll">
+        <table class="st-notif-table">
+          <thead>
+            <tr>
+              <th>Jenis Pemberitahuan</th>
+              <th class="st-col-toggle">Aplikasi</th>
+              <th class="st-col-toggle">Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p class="st-notif-name">Surat dan disposisi</p>
+                <p class="st-notif-desc">Surat masuk baru serta disposisi yang ditujukan kepada Anda.</p>
+              </td>
+              <td class="st-col-toggle"><label class="st-switch"><input type="checkbox" data-pref="surat-aplikasi" checked /><span class="st-slider"></span></label></td>
+              <td class="st-col-toggle"><label class="st-switch"><input type="checkbox" data-pref="surat-email" checked /><span class="st-slider"></span></label></td>
+            </tr>
+            <tr>
+              <td>
+                <p class="st-notif-name">Tugas dan tenggat waktu</p>
+                <p class="st-notif-desc">Penugasan baru, pembaruan progres, dan pengingat batas waktu tugas.</p>
+              </td>
+              <td class="st-col-toggle"><label class="st-switch"><input type="checkbox" data-pref="tugas-aplikasi" checked /><span class="st-slider"></span></label></td>
+              <td class="st-col-toggle"><label class="st-switch"><input type="checkbox" data-pref="tugas-email" /><span class="st-slider"></span></label></td>
+            </tr>
+            <tr>
+              <td>
+                <p class="st-notif-name">Jadwal kegiatan</p>
+                <p class="st-notif-desc">Undangan, perubahan jadwal, dan pengingat kegiatan.</p>
+              </td>
+              <td class="st-col-toggle"><label class="st-switch"><input type="checkbox" data-pref="jadwal-aplikasi" checked /><span class="st-slider"></span></label></td>
+              <td class="st-col-toggle"><label class="st-switch"><input type="checkbox" data-pref="jadwal-email" checked /><span class="st-slider"></span></label></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="st-notif-foot">
+        <p class="st-note">
+          <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Perubahan berlaku untuk akun Anda saja.
+        </p>
+        <div class="st-notif-actions">
+          <button type="button" class="st-btn st-btn--outline" id="st-btn-batal">Batal</button>
+          <button type="button" class="st-btn st-btn--primary" id="st-btn-simpan">Simpan perubahan</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pg-footer">
+    &copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Toast ===== -->
+  <div class="st-toast" id="st-toast">
+    <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="st-toast-text">Perubahan disimpan.</span>
+  </div>
+
+  <!-- ===== Skrip ===== -->
+  <script>window.PG_SKIP_AUTH = true;</script>
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
+  <script type="module" src="../../assets/js/pages/pg-pengaturan.js"></script>
+</body>
+</html>

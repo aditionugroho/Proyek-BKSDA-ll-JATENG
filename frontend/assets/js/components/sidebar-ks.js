@@ -6,8 +6,14 @@
 
 import { checkAuth } from "../auth.js";
 
-/* Halaman kepala-seksi wajib sesi role "kepala-seksi" */
-checkAuth("kepala-seksi");
+/* Halaman kepala-seksi wajib sesi role "kepala-seksi".
+   Halaman tertentu bisa memasang window.KS_SKIP_AUTH = true
+   (mis. Pengaturan) agar guard dilewati untuk demo. */
+if (window.KS_SKIP_AUTH) {
+  // lewati guard
+} else {
+  checkAuth("kepala-seksi");
+}
 
 /* ===== Konfigurasi menu (flat, tanpa grouping) ===== */
 export const KS_MENU = [
@@ -21,6 +27,7 @@ export const KS_MENU = [
   { label: "Arsip", href: "arsip.html", icon: "archive" },
   { label: "Laporan", href: "laporan.html", icon: "fileText" },
   { label: "Notifikasi", href: "notifikasi.html", icon: "bell" },
+  { label: "Pengaturan", href: "pengaturan.html", icon: "settings" },
   { label: "Profil", href: "profil.html", icon: "userCircle" }
 ];
 

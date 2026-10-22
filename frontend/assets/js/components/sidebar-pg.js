@@ -6,8 +6,14 @@
 
 import { checkAuth } from "../auth.js";
 
-/* Halaman pegawai wajib sesi role "pegawai" */
-checkAuth("pegawai");
+/* Halaman pegawai wajib sesi role "pegawai".
+   Halaman tertentu bisa memasang window.PG_SKIP_AUTH = true
+   (mis. Pengaturan) agar guard dilewati untuk demo. */
+if (window.PG_SKIP_AUTH) {
+  // lewati guard
+} else {
+  checkAuth("pegawai");
+}
 
 /* ===== Konfigurasi menu ===== */
 

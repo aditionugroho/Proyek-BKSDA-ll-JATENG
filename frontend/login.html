@@ -10,115 +10,147 @@
 </head>
 <body>
 
-  <header class="nav">
-    <div class="nav-inner">
-      <a href="index.html" class="nav-brand">
-        <img src="assets/js/images/logokehutanan.jpeg" alt="Logo SKSDA" class="nav-logo" />
-        <span>
-          <span class="nav-brand-name">SKSDA WILAYAH II PEMALANG</span>
-          <span class="nav-brand-sub" data-i18n="nav.subtitle">Seksi Konservasi Sumber Daya Alam</span>
+  <main class="login-page">
+
+    <!-- ===== PANEL KIRI : BRANDING ===== -->
+    <section class="panel-left">
+      <a href="index.html" class="brand">
+        <img src="assets/js/images/logokehutanan.jpeg" alt="Logo SKSDA" class="brand-logo" />
+        <span class="brand-text">
+          <span class="brand-name">SKSDA WILAYAH II PEMALANG</span>
+          <span class="brand-sub">Seksi Konservasi Sumber Daya Alam</span>
         </span>
       </a>
-      <nav class="nav-menu">
-        <a href="index.html" class="nav-link active" data-i18n="nav.beranda">BERANDA</a>
-        <a href="index.html#tentang" class="nav-link" data-i18n="nav.visi">VISI &amp; MISI</a>
-        <a href="index.html#tentang" class="nav-link" data-i18n="nav.profil">PROFIL</a>
-        <a href="index.html#kontak" class="nav-link" data-i18n="nav.kontak">CONTACT</a>
-      </nav>
-      <span class="lang-pill">English (US)</span>
-    </div>
-  </header>
 
-  <main class="login-main">
-    <div class="login-card">
-      <h1 class="login-title" data-i18n="login.title">Selamat Datang Kembali</h1>
-      <p class="login-subtitle" data-i18n="login.subtitle">Akses aman ke ruang kerja resmi Anda</p>
+      <div class="hero">
+        <h2 class="hero-title">Portal Resmi<br />E-Office SKSDA</h2>
+        <p class="hero-desc">Satu pintu layanan digital untuk pengelolaan surat, disposisi, tugas, dan arsip sekretariat.</p>
 
-      <form class="login-form" id="login-form" novalidate>
+        <ul class="hero-list">
+          <li>
+            <span class="hero-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Manajemen surat masuk &amp; keluar</span>
+          </li>
+          <li>
+            <span class="hero-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Disposisi &amp; penugasan staf</span>
+          </li>
+          <li>
+            <span class="hero-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Arsip dokumen terpusat &amp; aman</span>
+          </li>
+        </ul>
+      </div>
 
-        <div class="form-field">
-          <div class="label-row">
+      <p class="panel-left-copy">&copy; 2026 SKSDA Wilayah II Pemalang. Seluruh hak cipta dilindungi undang-undang.</p>
+    </section>
+
+    <!-- ===== PANEL KANAN : KARTU LOGIN ===== -->
+    <section class="panel-right">
+      <div class="login-card">
+        <img src="assets/js/images/logokehutanan.jpeg" alt="Logo SKSDA" class="card-logo" />
+        <div class="session-banner" id="session-banner" hidden>
+          <span><span data-i18n="login.already">Anda sudah masuk sebagai</span> <strong data-banner-role></strong>.</span>
+          <a href="#" data-banner-link><span data-i18n="login.continue">Lanjut ke Dashboard</span> &rarr;</a>
+        </div>
+        <h1 class="login-title" data-i18n="login.title">Selamat Datang Kembali</h1>
+        <p class="login-subtitle" data-i18n="login.subtitle">Akses aman ke ruang kerja resmi Anda</p>
+
+        <form class="login-form" id="login-form" novalidate>
+
+          <div class="form-field">
             <label class="form-label" for="user-id" data-i18n="login.userId">ID Pengguna <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <input type="text" id="user-id" name="user-id" placeholder="Masukkan ID resmi Anda" data-i18n-placeholder="login.userId.ph" autocomplete="username" />
+            </div>
+            <p class="form-error" id="user-id-error" data-i18n="login.error">Wajib diisi</p>
           </div>
-          <div class="input-wrap">
-            <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-            <input type="text" id="user-id" name="user-id" placeholder="Masukkan ID resmi Anda" data-i18n-placeholder="login.userId.ph" autocomplete="username" />
-          </div>
-          <p class="form-error" id="user-id-error" data-i18n="login.error">Wajib diisi</p>
-        </div>
 
-        <div class="form-field">
-          <div class="label-row">
+          <div class="form-field">
             <label class="form-label" for="password" data-i18n="login.password">Kata Sandi <span class="req">*</span></label>
-            <a href="#" class="forgot-link" data-i18n="login.forgot">Lupa kata sandi?</a>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" id="password" name="password" placeholder="Masukkan kata sandi Anda" data-i18n-placeholder="login.password.ph" autocomplete="current-password" />
+              <button type="button" class="pw-toggle" id="toggle-password" aria-label="Tampilkan kata sandi">
+                <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+            <p class="form-error" id="password-error" data-i18n="login.error">Wajib diisi</p>
           </div>
-          <div class="input-wrap">
-            <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <input type="password" id="password" name="password" placeholder="Masukkan kata sandi Anda" data-i18n-placeholder="login.password.ph" autocomplete="current-password" />
-            <button type="button" class="toggle-pw" id="toggle-password" aria-label="Tampilkan kata sandi">
-              <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-            </button>
+
+          <div class="form-field">
+            <label class="form-label" for="role" data-i18n="login.role">Role</label>
+            <select id="role" name="role">
+              <option value="admin" selected>Admin</option>
+              <option value="kepala-seksi">Kepala Seksi</option>
+              <option value="pegawai">Staff</option>
+            </select>
           </div>
-          <p class="form-error" id="password-error" data-i18n="login.error">Wajib diisi</p>
-        </div>
 
-        <div class="form-field select-wrap">
-          <label class="form-label" for="role" data-i18n="login.role">Role</label>
-          <select id="role" name="role">
-            <option value="admin" selected>Admin</option>
-            <option value="kepala-seksi">Kepala Seksi</option>
-            <option value="pegawai">Staff</option>
-          </select>
-        </div>
+          <button type="submit" class="submit-btn" id="login-btn">
+            <span id="login-btn-text" data-i18n="login.submit">Masuk ke Portal</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
 
-        <label class="check-label">
-          <input type="checkbox" id="remember" name="remember" />
-          <span data-i18n="login.remember">Tetap masuk di perangkat ini</span>
-        </label>
+          <p class="form-alert" id="login-alert" hidden><svg width="15" height="15" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span data-i18n="login.pending">Akun Anda sedang menunggu verifikasi Admin.</span></p>
 
-        <button type="submit" class="submit-btn" id="login-btn">
-          <span id="login-btn-text" data-i18n="login.submit">Masuk ke Portal</span>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
+        </form>
 
-      </form>
-    </div>
+        <p class="help-text" style="margin-top:12px"><a href="lupa-password.html" class="help-link" data-i18n="login.forgot">Lupa kata sandi?</a></p>
+        <p class="help-text" style="margin-top:14px">Belum punya akun? <a href="halaman_registrasi_sksda.html" class="help-link">Daftar akun baru</a></p>
+        <p class="help-text" style="margin-top:10px"><span data-i18n="login.help">Butuh bantuan teknis?</span> <a href="#" class="help-link" data-i18n="login.helpLink">Hubungi Dukungan IT</a></p>
+      </div>
 
-    <div class="badges">
-      <span class="badge-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11.5 11 13.5 15 9.5"/></svg><span data-i18n="badge.ssl">Koneksi SSL Aman</span></span>
-      <span class="badge-sep">&bull;</span>
-      <span class="badge-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-i18n="badge.personel">Hanya untuk Personel Resmi</span></span>
-    </div>
-
-    <p class="help-text"><span data-i18n="login.help">Butuh bantuan teknis?</span> <a href="#" class="help-link" data-i18n="login.helpLink">Hubungi Dukungan IT</a></p>
+      <p class="panel-right-note">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span data-i18n="badge.personel">Hanya untuk Personel Resmi</span>
+      </p>
+    </section>
 
   </main>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <nav class="footer-links">
-        <a href="#" class="footer-link" data-i18n="footer.ketentuan">KETENTUAN LAYANAN</a>
-        <a href="#" class="footer-link" data-i18n="footer.privasi">KEBIJAKAN PRIVASI</a>
-        <a href="#" class="footer-link" data-i18n="footer.aksesibilitas">AKSESIBILITAS</a>
-      </nav>
-      <p class="footer-copy" data-i18n="footer.copy">© 2024 Lembaga Pemerintah Digital. Seluruh hak cipta dilindungi undang-undang.</p>
-    </div>
-  </footer>
-
   <script>
+    const ROLE_LABEL = { admin: "Admin", "kepala-seksi": "Kepala Seksi", pegawai: "Staff/Pegawai" };
+    const ROLE_DEST = { admin: "pages/admin/dashboard.html", "kepala-seksi": "pages/kepala-seksi/dashboard.html", pegawai: "pages/pegawai/dashboard.html" };
+
+    function t(key, fallback) {
+      try {
+        const d = I18N[getLang()];
+        return d && d[key] !== undefined ? d[key] : fallback;
+      } catch (e) { return fallback; }
+    }
+
+    // Banner bila sudah ada sesi login
+    (function() {
+      let s = null;
+      try { s = JSON.parse(sessionStorage.getItem("eoffice_session") || localStorage.getItem("eoffice_session") || "null"); } catch (e) {}
+      if (s && s.role) {
+        const b = document.getElementById("session-banner");
+        b.hidden = false;
+        b.querySelector("[data-banner-role]").textContent = ROLE_LABEL[s.role] || s.role;
+        b.querySelector("[data-banner-link]").href = ROLE_DEST[s.role] || ROLE_DEST.admin;
+      }
+    })();
+
     // Role from URL
     const rp = new URLSearchParams(location.search).get("role");
     if (rp) document.getElementById("role").value = rp;
 
-    // Toggle password
-    document.getElementById("toggle-password").addEventListener("click", function() {
-      const pw = document.getElementById("password");
-      const isHidden = pw.type === "password";
-      pw.type = isHidden ? "text" : "password";
-      document.getElementById("icon-eye").style.display = isHidden ? "none" : "block";
-      document.getElementById("icon-eye-off").style.display = isHidden ? "block" : "none";
-    });
+    // Alert helper
+    const alertBox = document.getElementById("login-alert");
+    function showAlert(type, key, fallback) {
+      const span = alertBox.querySelector("span");
+      span.setAttribute("data-i18n", key);
+      span.textContent = t(key, fallback);
+      alertBox.classList.toggle("danger", type === "danger");
+      alertBox.hidden = false;
+    }
+    function hideAlert() {
+      alertBox.hidden = true;
+      alertBox.classList.remove("show", "danger");
+    }
 
     // Validation + submit
     document.getElementById("login-form").addEventListener("submit", function(e) {
@@ -135,26 +167,87 @@
 
       if (!ok) return;
 
+      const resetBtn = function() {
+        document.getElementById("login-btn").disabled = false;
+        document.getElementById("login-btn-text").textContent = "Masuk ke Portal";
+      };
+
+      // Cari data registrasi yang cocok dengan ID/nama yang dimasukkan
+      const idInput = uid.value.trim().toLowerCase();
+      let match = null;
+      try {
+        const regs = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
+        match = regs.find(function(r) {
+          return String(r.idAtauEmail).toLowerCase() === idInput || String(r.nama).toLowerCase() === idInput;
+        }) || null;
+      } catch (e) { match = null; }
+
+      // 1) Ditolak admin → tidak boleh masuk
+      if (match && match.status === "ditolak") {
+        showAlert("danger", "login.rejected", "Pendaftaran akun Anda ditolak Admin.");
+        alertBox.classList.add("show");
+        resetBtn();
+        return;
+      }
+
+      // 2) Akun baru (registrasi mandiri / buatan admin) menunggu acc admin → belum boleh masuk.
+      //    Setelah di-acc (status aktif), selamanya langsung masuk tanpa acc lagi.
+      if (match && match.status === "menunggu-verifikasi") {
+        showAlert("warn", "login.pending", "Akun Anda sedang menunggu verifikasi Admin.");
+        alertBox.classList.add("show");
+        resetBtn();
+        return;
+      }
+
+      // 3) Akun sudah aktif: kata sandi wajib cocok
+      if (match && match.status === "aktif" && match.kataSandi && pw.value !== match.kataSandi) {
+        showAlert("danger", "login.wrongPw", "ID pengguna atau kata sandi salah.");
+        alertBox.classList.add("show");
+        pw.classList.add("input-error");
+        resetBtn();
+        return;
+      }
+      hideAlert();
+
       const btn = document.getElementById("login-btn");
       btn.disabled = true;
       document.getElementById("login-btn-text").textContent = "Memproses...";
 
       const role = document.getElementById("role").value;
-      const remember = document.getElementById("remember").checked;
       const session = { userId: uid.value.trim(), role, loginAt: new Date().toISOString() };
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem("eoffice_session", JSON.stringify(session));
+      localStorage.setItem("eoffice_session", JSON.stringify(session));
 
-      const dest = { admin: "pages/admin/dashboard.html", "kepala-seksi": "pages/kepala-seksi/dashboard.html", pegawai: "pages/pegawai/dashboard.html" };
-      location.href = dest[role] || dest.admin;
+      location.href = ROLE_DEST[role] || ROLE_DEST.admin;
     });
 
-    // Clear error on typing
+    // Toggle lihat sandi
+    document.getElementById("toggle-password").addEventListener("click", function() {
+      const pw = document.getElementById("password");
+      const isHidden = pw.type === "password";
+      pw.type = isHidden ? "text" : "password";
+      document.getElementById("icon-eye").style.display = isHidden ? "none" : "block";
+      document.getElementById("icon-eye-off").style.display = isHidden ? "block" : "none";
+    });
+
+    // Clear error on typing + saran role otomatis (bisa ditimpa manual)
     ["user-id", "password"].forEach(function(id) {
       document.getElementById(id).addEventListener("input", function() {
         this.classList.remove("input-error");
         document.getElementById(id + "-error").classList.remove("show");
+        hideAlert();
       });
+    });
+    document.getElementById("user-id").addEventListener("change", function() {
+      const v = this.value.trim().toLowerCase();
+      if (!v) return;
+      try {
+        const regs = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
+        const m = regs.find(function(r) {
+          return r.status === "aktif" &&
+            (String(r.idAtauEmail).toLowerCase() === v || String(r.nama).toLowerCase() === v);
+        });
+        if (m && m.role) document.getElementById("role").value = m.role;
+      } catch (e) {}
     });
   </script>
   <script src="assets/js/components/i18n.js"></script>

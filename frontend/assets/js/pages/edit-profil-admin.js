@@ -224,7 +224,7 @@ form.addEventListener("submit", (event) => {
     spinner.remove();
     saveBtn.disabled = false;
     saveBtnText.textContent = "Simpan Perubahan";
-    showToast("Perubahan Sukses - Profil Administrator berhasil diperbarui ke server BKSDA.");
+    showToast("Perubahan Sukses - Profil Administrator berhasil diperbarui ke server SKSDA.");
   }, 1500);
 });
 
@@ -287,7 +287,7 @@ function renderMetrik() {
     { label: "ID Akun Kepegawaian", value: ADMIN_PROFILE.idAkun, mono: true },
     { label: "Tanggal Terdaftar", value: ADMIN_PROFILE.tanggalTerdaftar },
     { label: "Terakhir Diperbarui", value: ADMIN_PROFILE.terakhirDiperbaruiDetail },
-    { label: "Basis Otoritas", value: "Super Administrator BKSDA", bold: true }
+    { label: "Basis Otoritas", value: "Super Administrator SKSDA", bold: true }
   ];
 
   document.getElementById("metrik-list").innerHTML = rows

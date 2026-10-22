@@ -79,14 +79,14 @@ const AUDIT_TRAIL = [
   {
     icon: "inbox",
     tone: "green",
-    text: "Surat masuk teregistrasi: S.892/BKSDA-JT/K.21/2023",
+    text: "Surat masuk teregistrasi: S.892/SKSDA-JT/K.21/2023",
     detail: "Pengirim: Ditjen KSDAE Kementerian LHK",
     time: "25 Menit yang lalu"
   },
   {
     icon: "send",
     tone: "blue",
-    text: "Surat keluar diinput: ND.104/BKSDA-JT/Kasi-II/2023",
+    text: "Surat keluar diinput: ND.104/SKSDA-JT/Kasi-II/2023",
     detail: "Nota Dinas Seksi Konservasi Wilayah II",
     time: "1 Jam yang lalu"
   },
@@ -132,7 +132,7 @@ const HEALTH = [
   {
     label: "Server Uptime",
     badge: { text: "99.98%", tone: "green" },
-    title: "BKSDA DC Semarang",
+    title: "SKSDA DC Semarang",
     desc: "Beban CPU 18% \u2022 RAM 38%",
     bottom: { type: "check", text: "Daring sejak 48 hari lalu" }
   }
