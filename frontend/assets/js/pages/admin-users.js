@@ -52,7 +52,7 @@ const USERS = [
     avatar: "AR",
     avatarTone: "blue",
     username: "alex.rivera",
-    email: "alex.rivera@bksda.go.id",
+    email: "alex.rivera@SKSDA.go.id",
     roleLabel: "KEPALA SEKSI",
     roleType: "blue",
     roleGroup: "Kepala Seksi",
@@ -70,7 +70,7 @@ const USERS = [
     avatar: "BS",
     avatarTone: "green",
     username: "budi.santoso",
-    email: "budi.santoso@bksda.go.id",
+    email: "budi.santoso@SKSDA.go.id",
     roleLabel: "STAF (POLHUT)",
     roleType: "outline",
     roleGroup: "Staf",
@@ -88,7 +88,7 @@ const USERS = [
     avatar: "SA",
     avatarTone: "blue",
     username: "siti.aminah",
-    email: "siti.aminah@bksda.go.id",
+    email: "siti.aminah@SKSDA.go.id",
     roleLabel: "STAF (PEH)",
     roleType: "outline",
     roleGroup: "Staf",
@@ -106,7 +106,7 @@ const USERS = [
     avatar: "RP",
     avatarTone: "gray",
     username: "rian.prasetyo",
-    email: "rian.prasetyo@bksda.go.id",
+    email: "rian.prasetyo@SKSDA.go.id",
     roleLabel: "ADMIN SISTEM",
     roleType: "solid",
     roleGroup: "Admin Sistem",
@@ -125,7 +125,7 @@ const USERS = [
     avatar: "BW",
     avatarTone: "gray",
     username: "bambang.w",
-    email: "bambang.w@bksda.go.id",
+    email: "bambang.w@SKSDA.go.id",
     roleLabel: "STAF",
     roleType: "outline",
     roleGroup: "Staf",
@@ -162,7 +162,7 @@ for (let i = USERS.length; i < 148; i++) {
     avatar: nama.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
     avatarTone: i % 3 === 0 ? "green" : "blue",
     username: `pegawai.${String(i).padStart(3, "0")}`,
-    email: `pegawai.${String(i).padStart(3, "0")}@bksda.go.id`,
+    email: `pegawai.${String(i).padStart(3, "0")}@SKSDA.go.id`,
     roleLabel: "STAF",
     roleType: "outline",
     roleGroup: "Staf",
@@ -538,3 +538,88 @@ document.getElementById("pagination").addEventListener("click", (event) => {
 renderStats();
 renderPanels();
 refresh();
+
+/* ============================================
+   ANTREAN VERIFIKASI PENDAFTAR
+   Membaca eoffice_registrations (dari halaman
+   registrasi) — admin memverifikasi / menolak.
+   Setelah "aktif", akun bisa dipakai login.
+   ============================================ */
+
+const REG_KEY = "eoffice_registrations";
+
+function getRegs() {
+  try { return JSON.parse(localStorage.getItem(REG_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function saveRegs(regs) {
+  localStorage.setItem(REG_KEY, JSON.stringify(regs));
+}
+
+function escHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function setRegStatus(id, status) {
+  const regs = getRegs();
+  const target = regs.find((r) => String(r.daftarPada) === id);
+  if (target) {
+    target.status = status;
+    target.diverifikasiPada = new Date().toISOString();
+    saveRegs(regs);
+  }
+  renderVerif();
+}
+
+function renderVerif() {
+  const section = document.getElementById("verif-section");
+  const list = document.getElementById("verif-list");
+  const count = document.getElementById("verif-count");
+  if (!section || !list) return;
+
+  const regs = getRegs();
+  if (!regs.length) { section.hidden = true; return; }
+  section.hidden = false;
+
+  const pending = regs.filter((r) => r.status === "menunggu-verifikasi");
+  if (count) count.textContent = pending.length;
+
+  list.innerHTML = "";
+  regs.slice().reverse().forEach((r) => {
+    const chip =
+      r.status === "menunggu-verifikasi" ? '<span class="verif-chip pending">MENUNGGU</span>' :
+      r.status === "ditolak" ? '<span class="verif-chip rejected">DITOLAK</span>' :
+      '<span class="verif-chip approved">AKTIF</span>';
+
+    const roleLabel = r.role === "kepala-seksi" ? "KEPALA SEKSI" : "STAFF";
+
+    const actions = r.status === "menunggu-verifikasi"
+      ? `<button type="button" class="verif-btn approve" data-id="${escHtml(r.daftarPada)}">Verifikasi</button>
+         <button type="button" class="verif-btn reject" data-id="${escHtml(r.daftarPada)}">Tolak</button>`
+      : "";
+
+    const li = document.createElement("li");
+    li.className = "verif-item" + (r.status === "menunggu-verifikasi" ? " is-pending" : "");
+    li.innerHTML = `
+      <div class="verif-info">
+        <p class="verif-nama">${escHtml(r.nama)}</p>
+        <p class="verif-meta">${escHtml(r.idAtauEmail)} &bull; ${new Date(r.daftarPada).toLocaleString("id-ID")}</p>
+      </div>
+      <span class="verif-chip role">${roleLabel}</span>
+      ${chip}
+      <div class="verif-actions">${actions}</div>`;
+    list.appendChild(li);
+  });
+
+  list.querySelectorAll(".verif-btn.approve").forEach((btn) => {
+    btn.addEventListener("click", () => setRegStatus(btn.dataset.id, "aktif"));
+  });
+  list.querySelectorAll(".verif-btn.reject").forEach((btn) => {
+    btn.addEventListener("click", () => setRegStatus(btn.dataset.id, "ditolak"));
+  });
+}
+
+renderVerif();

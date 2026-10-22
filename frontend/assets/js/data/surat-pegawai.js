@@ -25,7 +25,7 @@ export const suratPgData = [
   {
     id: 2,
     jenis: "masuk",
-    nomor: "B.456/BKSDA-JT/TU/10/2023",
+    nomor: "B.456/SKSDA-JT/TU/10/2023",
     pengirim: "Balai TN Karimunjawa",
     perihal: "Laporan Bulanan Patroli Kawasan",
     perihalDetail: "Terlampir laporan kegiatan patroli kawasan periode September...",
@@ -55,8 +55,8 @@ export const suratPgData = [
   {
     id: 4,
     jenis: "keluar",
-    nomor: "B.890/BKSDA-JT/TU/10/2023",
-    pengirim: "Balai BKSDA Jateng",
+    nomor: "B.890/SKSDA-JT/TU/10/2023",
+    pengirim: "SKSDA Jateng",
     perihal: "Penyampaian Laporan Triwulan III",
     perihalDetail: "Penyampaian laporan kegiatan konservasi triwulan III 2023.",
     tanggal: "06 Okt 2023",

@@ -6,7 +6,7 @@
    ============================================ */
 
 export const RUNNING_TEXT_DEFAULT = {
-  text: "Selamat datang di e-Office BKSDA SKW II Pemalang. Segera selesaikan tugas dengan deadline hari ini. Rapat koordinasi seksi pukul 13:00 di Ruang Rapat Lt. 2.",
+  text: "Selamat datang di e-Office SKSDA SKW II Pemalang. Segera selesaikan tugas dengan deadline hari ini. Rapat koordinasi seksi pukul 13:00 di Ruang Rapat Lt. 2.",
   speed: 30,
   enabled: true,
   audience: ["pegawai"],

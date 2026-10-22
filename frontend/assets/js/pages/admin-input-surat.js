@@ -8,7 +8,7 @@
 export const SURAT_TERAKHIR = [
   {
     id: 1,
-    nomor: "S.123/BKSDA-JT/TU/09/2026",
+    nomor: "S.123/SKSDA-JT/TU/09/2026",
     jenis: "MASUK",
     pihak: "Kementerian Lingkungan Hidup",
     perihal: "Undangan Rapat Koordinasi",
@@ -17,7 +17,7 @@ export const SURAT_TERAKHIR = [
   },
   {
     id: 2,
-    nomor: "B.045/BKSDA-JT/09/2026",
+    nomor: "B.045/SKSDA-JT/09/2026",
     jenis: "KELUAR",
     pihak: "Dinas Lingkungan Hidup Jawa Tengah",
     perihal: "Permohonan Koordinasi",
@@ -26,7 +26,7 @@ export const SURAT_TERAKHIR = [
   },
   {
     id: 3,
-    nomor: "S.098/BKSDA-JT/TU/09/2026",
+    nomor: "S.098/SKSDA-JT/TU/09/2026",
     jenis: "MASUK",
     pihak: "Balai Taman Nasional",
     perihal: "Laporan Kegiatan",

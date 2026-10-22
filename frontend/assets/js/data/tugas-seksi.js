@@ -106,7 +106,7 @@ export const TUGAS_DETAIL = {
   status: "Menunggu Review",
 
   deskripsi: [
-    "Berdasarkan surat tugas ST.123/BKSDA-JT/2023, agar segera disusun laporan hasil patroli rutin di kawasan Cagar Alam Nusakambangan Timur bulan November 2023. Laporan harus mencakup data temuan flora/fauna, kondisi tutupan lahan, dan potensi ancaman gangguan kawasan.",
+    "Berdasarkan surat tugas ST.123/SKSDA-JT/2023, agar segera disusun laporan hasil patroli rutin di kawasan Cagar Alam Nusakambangan Timur bulan November 2023. Laporan harus mencakup data temuan flora/fauna, kondisi tutupan lahan, dan potensi ancaman gangguan kawasan.",
     "Pastikan data spasial (track log GPS) dilampirkan.",
     "Dokumentasi foto minimal 10 lembar dengan geotagging.",
     "Format laporan sesuai standar SOP Pelaporan Bidang Konservasi."

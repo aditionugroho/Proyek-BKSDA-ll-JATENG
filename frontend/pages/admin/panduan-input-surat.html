@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panduan Input Surat - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-panduan.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== BREADCRUMB + HEADER ===== -->
+    <nav class="pd-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="pd-breadcrumb-current">Panduan Input Surat</span>
+    </nav>
+
+    <section class="pd-head">
+      <div>
+        <div class="pd-title-row">
+          <h1 class="pd-title">Panduan Input Surat</h1>
+          <span class="pd-badge">SOP &bull; RIWAYAT AKTIVITAS</span>
+        </div>
+        <p class="pd-desc">Prosedur baku pendaftaran naskah dinas pada sistem e-Office SKSDA Wilayah II Pemalang, beserta riwayat aktivitas input surat oleh petugas.</p>
+      </div>
+      <div class="pd-head-actions">
+        <a href="form-surat-masuk.html" class="pd-btn pd-btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Input Surat Masuk
+        </a>
+        <a href="form-surat-keluar.html" class="pd-btn pd-btn--outline">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Input Surat Keluar
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 1. ALUR UMUM ===== -->
+    <section class="pd-card">
+      <header class="pd-card-head">
+        <h2 class="pd-card-title">Alur Umum Pendaftaran Naskah Dinas</h2>
+        <p class="pd-card-sub">Berlaku untuk seluruh surat masuk dan keluar sebelum didistribusikan</p>
+      </header>
+      <ol class="pd-flow">
+        <li class="pd-flow-item">
+          <span class="pd-flow-num">1</span>
+          <div>
+            <p class="pd-flow-title">Pemeriksaan Berkas Fisik</p>
+            <p class="pd-flow-text">Pastikan naskah lengkap: kop, nomor, tanggal, isi, dan tanda tangan pengirim terbaca jelas.</p>
+          </div>
+        </li>
+        <li class="pd-flow-item">
+          <span class="pd-flow-num">2</span>
+          <div>
+            <p class="pd-flow-title">Pemindaian (Scan)</p>
+            <p class="pd-flow-text">Scan berwarna format PDF, ukuran maksimal 5 MB, satu file per naskah.</p>
+          </div>
+        </li>
+        <li class="pd-flow-item">
+          <span class="pd-flow-num">3</span>
+          <div>
+            <p class="pd-flow-title">Registrasi di Sistem</p>
+            <p class="pd-flow-text">Isi formulir melalui menu Input Surat &mdash; nomor agenda dan tanggal tercatat otomatis oleh sistem.</p>
+          </div>
+        </li>
+        <li class="pd-flow-item">
+          <span class="pd-flow-num">4</span>
+          <div>
+            <p class="pd-flow-title">Unggah &amp; Verifikasi</p>
+            <p class="pd-flow-text">Lampirkan hasil scan, periksa ulang isian, lalu simpan. Data masuk ke daftar distribusi Kepala Seksi.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== 2. PANDUAN KHUSUS ===== -->
+    <div class="pd-two-col">
+
+      <section class="pd-card">
+        <header class="pd-card-head">
+          <span class="pd-icon-badge in">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          </span>
+          <div>
+            <h2 class="pd-card-title">Surat Masuk</h2>
+            <p class="pd-card-sub">Naskah dari instansi eksternal / internal lain</p>
+          </div>
+        </header>
+        <ul class="pd-check-list">
+          <li>Pilih <strong>menu Input Surat &rarr; Registrasi Surat Masuk</strong>.</li>
+          <li>Isi <strong>tanggal penerimaan</strong> sesuai stempel tanda terima (bukan tanggal surat dibuat).</li>
+          <li>Cantumkan <strong>nomor surat pengirim</strong> apa adanya, termasuk kode instansi.</li>
+          <li>Isi <strong>pengirim, perihal, dan sifat</strong> (Biasa / Penting / Segera / Rahasia).</li>
+          <li>Nomor agenda sekensi tahun berjalan <strong>ter-generate otomatis</strong> &mdash; jangan menginput manual.</li>
+          <li>Setelah tersimpan, naskah otomatis masuk <strong>daftar disposisi Kepala Seksi</strong>.</li>
+        </ul>
+      </section>
+
+      <section class="pd-card">
+        <header class="pd-card-head">
+          <span class="pd-icon-badge out">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </span>
+          <div>
+            <h2 class="pd-card-title">Surat Keluar</h2>
+            <p class="pd-card-sub">Naskah resmi yang diterbitkan sekretariat</p>
+          </div>
+        </header>
+        <ul class="pd-check-list">
+          <li>Pilih <strong>menu Input Surat &rarr; Registrasi Surat Keluar</strong>.</li>
+          <li>Pastikan naskah sudah <strong>diperiksa dan diparaf Kepala Seksi</strong> sebelum didaftarkan.</li>
+          <li>Isi <strong>tujuan surat</strong> (instansi/alamat) secara lengkap untuk kebutuhan ekspedisi.</li>
+          <li>Nomor surat berformat <strong>KODE/BLN/TAHUN</strong> diberikan sistem &mdash; cek jangan sampai ganda.</li>
+          <li>Lampirkan draf final (PDF), bukan berkas kerja (DOCX).</li>
+          <li>Setelah dikirim, catat <strong>nomor ekspedisi</strong> pada kolom keterangan bila menggunakan jasa pos.</li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- ===== 3. BOLEH / JANGAN ===== -->
+    <div class="pd-two-col">
+      <section class="pd-card pd-do">
+        <header class="pd-card-head">
+          <h2 class="pd-card-title"><span class="pd-dot ok"></span> Yang Wajib Dilakukan</h2>
+        </header>
+        <ul class="pd-check-list">
+          <li>Input surat <strong>paling lambat 1&times;24 jam</strong> sejak diterima/diterbitkan.</li>
+          <li>Gunakan <strong>nama file yang bermakna</strong>: <code>NomorAgenda_Tanggal_Perinjal.pdf</code>.</li>
+          <li>Cek <strong>klasifikasi kerahasiaan</strong> sebelum menyimpan &mdash; salah klasifikasi berdampak pada hak akses pembaca.</li>
+          <li>Segera laporkan ke admin bila menemukan <strong>input ganda</strong>.</li>
+        </ul>
+      </section>
+
+      <section class="pd-card pd-dont">
+        <header class="pd-card-head">
+          <h2 class="pd-card-title"><span class="pd-dot no"></span> Yang Tidak Boleh</h2>
+        </header>
+        <ul class="pd-check-list">
+          <li><strong>Jangan menunda scan</strong> &mdash; berkas fisik mudah tercecer di meja agenda.</li>
+          <li><strong>Jangan mengubah nomor agenda/naskah</strong> yang sudah tersimpan; minta admin koreksi.</li>
+          <li><strong>Jangan unggah foto kamera</strong> miring/kurang terang sebagai pengganti scan.</li>
+          <li><strong>Jangan membagikan akun</strong> untuk input bersama &mdash; riwayat akan tercampur antar petugas.</li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- ===== 4. RIWAYAT INPUT SURAT ===== -->
+    <section class="pd-card">
+      <header class="pd-card-head pd-card-head--row">
+        <div>
+          <h2 class="pd-card-title">Riwayat Input Surat</h2>
+          <p class="pd-card-sub">Aktivitas pendaftaran naskah oleh petugas sekretariat (90 hari terakhir)</p>
+        </div>
+        <div class="pd-filter">
+          <button type="button" class="pd-tab is-active" data-filter="all">Semua</button>
+          <button type="button" class="pd-tab" data-filter="Masuk">Surat Masuk</button>
+          <button type="button" class="pd-tab" data-filter="Keluar">Surat Keluar</button>
+        </div>
+      </header>
+
+      <div class="pd-table-scroll">
+        <table class="pd-table">
+          <thead>
+            <tr>
+              <th>Waktu Input</th>
+              <th>Petugas</th>
+              <th>Jenis</th>
+              <th>Nomor Surat</th>
+              <th>Pengirim / Tujuan</th>
+              <th>Perihal</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="pd-riwayat"></tbody>
+        </table>
+      </div>
+      <p class="pd-foot-note" id="pd-count"></p>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2026 Seksi Konservasi Sumber Daya Alam Jawa Tengah (SKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script>
+    /* ===== Data riwayat input surat (mock) ===== */
+    const RIWAYAT = [
+      { waktu: "22 Okt 2026 13:42", petugas: "Rian Prasetyo, S.Kom", jenis: "Masuk", nomor: "SM-098/Agd/2026", pihak: "Dinas Kehutanan Jateng", perihal: "Undangan Rapat Koordinasi", status: "Terdistribusi" },
+      { waktu: "22 Okt 2026 10:15", petugas: "Rian Prasetyo, S.Kom", jenis: "Keluar", nomor: "S.502/SKSDA-JT/2026", pihak: "BKSDA Jawa Tengah", perihal: "Laporan Patroli Oktober", status: "Terkirim" },
+      { waktu: "21 Okt 2026 16:03", petugas: "Dewi Lestari (TU)", jenis: "Masuk", nomor: "SM-097/Agd/2026", pihak: "Polsek Taman, Pemalang", perihal: "Permintaan Data TSL", status: "Didisposisi" },
+      { waktu: "21 Okt 2026 09:30", petugas: "Rian Prasetyo, S.Kom", jenis: "Keluar", nomor: "S.501/SKSDA-JT/2026", pihak: "DLH Kab. Pemalang", perihal: "Balasan Permohonan Kerja Sama", status: "Terkirim" },
+      { waktu: "20 Okt 2026 14:22", petugas: "Dewi Lestari (TU)", jenis: "Masuk", nomor: "SM-096/Agd/2026", pihak: "Kantor Bupati Pemalang", perihal: "Edaran Protokoler", status: "Diarsipkan" },
+      { waktu: "20 Okt 2026 11:05", petugas: "Rian Prasetyo, S.Kom", jenis: "Masuk", nomor: "SM-095/Agd/2026", pihak: "Resort Konservasi Tegal", perihal: "Laporan Kegiatan Monitoring", status: "Didisposisi" },
+      { waktu: "18 Okt 2026 15:48", petugas: "Rian Prasetyo, S.Kom", jenis: "Keluar", nomor: "S.500/SKSDA-JT/2026", pihak: "Gakkum KLHK", perihal: "Permohonan Penyidikan", status: "Terkirim" },
+      { waktu: "17 Okt 2026 08:55", petugas: "Dewi Lestari (TU)", jenis: "Masuk", nomor: "SM-094/Agd/2026", pihak: "SMK N 1 Pemalang", perihal: "Permohonan Kunjungan Edukasi", status: "Diarsipkan" }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
+    const statusTone = {
+      "Terdistribusi": "blue",
+      "Didisposisi": "amber",
+      "Terkirim": "green",
+      "Diarsipkan": "gray"
+    };
+
+    let filter = "all";
+
+    function render() {
+      const rows = RIWAYAT.filter((r) => filter === "all" || r.jenis === filter);
+      document.getElementById("pd-riwayat").innerHTML = rows.map((r) =>
+        "<tr>" +
+        "<td>" + esc(r.waktu) + "</td>" +
+        "<td>" + esc(r.petugas) + "</td>" +
+        '<td><span class="pd-jenis ' + (r.jenis === "Masuk" ? "in" : "out") + '">' + (r.jenis === "Masuk" ? "MASUK" : "KELUAR") + "</span></td>" +
+        "<td><code>" + esc(r.nomor) + "</code></td>" +
+        "<td>" + esc(r.pihak) + "</td>" +
+        "<td>" + esc(r.perihal) + "</td>" +
+        '<td><span class="pd-status ' + (statusTone[r.status] || "gray") + '">' + esc(r.status) + "</span></td>" +
+        "</tr>"
+      ).join("");
+      document.getElementById("pd-count").textContent = "Menampilkan " + rows.length + " dari " + RIWAYAT.length + " aktivitas input.";
+    }
+
+    document.querySelectorAll(".pd-tab").forEach((tab) => {
+      tab.addEventListener("click", function() {
+        document.querySelectorAll(".pd-tab").forEach((t) => t.classList.remove("is-active"));
+        this.classList.add("is-active");
+        filter = this.dataset.filter;
+        render();
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -6,8 +6,8 @@
 
 /* ===== Data pejabat penandatangan ===== */
 const SIGNERS = {
-  darmanto: { label: "Ir. Darmanto, M.Si. - Kepala Balai", jabatan: "Kepala Balai Konservasi Sumber Daya Alam Jawa Tengah" },
-  sari: { label: "Dra. Sari Wulandari - Sekretaris Balai", jabatan: "Sekretaris Balai Konservasi Sumber Daya Alam Jawa Tengah" }
+  darmanto: { label: "Ir. Darmanto, M.Si. - Kepala Balai", jabatan: "Kepala Seksi Konservasi Sumber Daya Alam Jawa Tengah" },
+  sari: { label: "Dra. Sari Wulandari - Sekretaris Balai", jabatan: "Sekretaris Seksi Konservasi Sumber Daya Alam Jawa Tengah" }
 };
 
 /* Jabatan mengikuti pejabat yang dipilih */

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tambah Pengguna Baru - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/admin-tambah-pengguna.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="admin-sidebar"></aside>
+  <header id="admin-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== BREADCRUMB ===== -->
+    <nav class="tp-breadcrumb" aria-label="Breadcrumb">
+      <a href="dashboard.html">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <a href="data-pengguna.html">Data Pengguna</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="tp-breadcrumb-current">Tambah Pengguna Baru</span>
+    </nav>
+
+    <!-- ===== HEADER ===== -->
+    <section class="tp-head">
+      <div>
+        <div class="tp-title-row">
+          <h1 class="tp-title">Tambah Pengguna Baru</h1>
+          <span class="tp-badge">KONTROL RBAC &bull; FORMULIR PEGAWAI BARU</span>
+        </div>
+        <p class="tp-desc">Daftarkan akun pegawai baru ke sistem e-Office SKSDA Wilayah II Pemalang, tetapkan hak akses peran, unit kerja resort, serta kredensial awal.</p>
+      </div>
+      <div class="tp-head-actions">
+        <a href="data-pengguna.html" class="tp-btn tp-btn--outline">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Kembali ke Data Pengguna
+        </a>
+        <button type="button" class="tp-btn tp-btn--primary" id="btn-create-top">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Simpan &amp; Buat Akun
+        </button>
+      </div>
+    </section>
+
+    <div class="tp-layout">
+
+      <!-- ===== KOLOM FORM ===== -->
+      <div class="tp-form-col">
+
+        <!-- ===== 1. IDENTITAS ===== -->
+        <section class="tp-card">
+          <header class="tp-card-head">
+            <span class="tp-step-num">1</span>
+            <div>
+              <h2 class="tp-card-title">Identitas &amp; Informasi Kepegawaian</h2>
+              <p class="tp-card-sub">Data legalitas aparatur sipil SKSDA Jateng sesuai SK Penempatan</p>
+            </div>
+            <span class="tp-req-pill">Wajib Dilengkapi</span>
+          </header>
+
+          <div class="tp-photo-row">
+            <span class="tp-avatar" id="tp-avatar">AF</span>
+            <div>
+              <p class="tp-photo-label">Foto Tanda Pengenal Dinas</p>
+              <p class="tp-photo-hint">Format pasfoto dinas seragam PDH, latar polos (JPG/PNG, rasio 1:1, maks 2MB).</p>
+              <div class="tp-photo-actions">
+                <label class="tp-photo-btn" for="tp-photo-input">Unggah Berkas Baru</label>
+                <button type="button" class="tp-link-btn" id="tp-photo-reset">Hapus / Gunakan Inisial</button>
+              </div>
+              <input type="file" id="tp-photo-input" accept="image/jpeg,image/png" hidden />
+            </div>
+          </div>
+
+          <div class="tp-grid-2">
+            <div class="tp-field">
+              <label class="tp-label" for="tp-nama">Nama Lengkap beserta Gelar <span class="tp-req">*</span></label>
+              <input type="text" id="tp-nama" placeholder="Contoh: Ahmad Fauzi, S.Hut., M.Si." />
+              <p class="tp-hint">Cantumkan gelar akademis lengkap untuk validitas nota dinas &amp; paraf naskah.</p>
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="tp-nip">Nomor Induk Pegawai (NIP 18 Digit) <span class="tp-req">*</span></label>
+              <input type="text" id="tp-nip" placeholder="198709142011021 004" maxlength="21" inputmode="numeric" />
+              <p class="tp-hint">Format standar NIP BKN: [8 digit tgl lahir] [6 digit pengangkatan] [1 jenis kelamin] [3 no urut].</p>
+              <p class="tp-valid" id="tp-nip-status" hidden>&#10003; Tervalidasi BKN</p>
+              <p class="tp-error" id="tp-nip-error" hidden>NIP harus 18 digit angka.</p>
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="tp-jabatan">Jabatan Struktural / Fungsional <span class="tp-req">*</span></label>
+              <input type="text" id="tp-jabatan" placeholder="Contoh: Pengendali Ekosistem Hutan (PEH) Ahli Muda" />
+              <p class="tp-hint">Dasar penugasan: SK Kepala Balai (contoh: No. SK.42/2024).</p>
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="tp-pangkat">Pangkat &amp; Golongan Ruang</label>
+              <input type="text" id="tp-pangkat" placeholder="Contoh: Penata • Gol. III/c" />
+            </div>
+          </div>
+
+          <aside class="tp-sop">
+            <p class="tp-sop-title">SOP Penambahan Personil</p>
+            <p class="tp-sop-text">Personil resort baru wajib didaftarkan maksimal 2&times;24 jam sejak SPMT diterbitkan untuk menghindari hambatan disposisi penanganan satwa konflik &amp; kebakaran hutan.</p>
+          </aside>
+        </section>
+
+        <!-- ===== 2. PENEMPATAN ===== -->
+        <section class="tp-card">
+          <header class="tp-card-head">
+            <span class="tp-step-num">2</span>
+            <div>
+              <h2 class="tp-card-title">Penempatan Wilayah &amp; Satuan Kerja</h2>
+              <p class="tp-card-sub">Penetapan lokus kerja administratif dan resort patroli konservasi</p>
+            </div>
+          </header>
+
+          <div class="tp-grid-2">
+            <div class="tp-field">
+              <label class="tp-label" for="tp-unit">Unit Kerja Induk (Seksi Wilayah) <span class="tp-req">*</span></label>
+              <select id="tp-unit">
+                <option value="Seksi Konservasi Wilayah II" selected>Seksi Konservasi Wilayah II — Pemalang</option>
+              </select>
+              <p class="tp-hint">Terkunci otomatis sesuai lingkup kewenangan administratif admin login.</p>
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="tp-resort-input">Resort Konservasi / Subbag Operasional <span class="tp-req">*</span></label>
+              <input type="text" id="tp-resort-input" list="tp-resort-list" placeholder="Ketik manual nama resort / subbag..." autocomplete="off" />
+              <datalist id="tp-resort-list"></datalist>
+              <p class="tp-hint">Isi manual bebas — entri yang pernah diketip muncul sebagai saran dan dikelola di bawah (bisa dihapus).</p>
+              <div class="tp-resort-saved" id="tp-resort-saved" hidden>
+                <p class="tp-resort-saved-label">Entri tersimpan (klik &#10005; untuk hapus):</p>
+                <div class="tp-resort-chips" id="tp-resort-chips"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tp-field">
+            <label class="tp-label">Fokus Kawasan Konservasi &amp; Register Wilayah</label>
+            <div class="tp-chips" id="tp-kawasan">
+              <button type="button" class="tp-chip">Cagar Alam Guci (Tegal)</button>
+              <button type="button" class="tp-chip">Hutan Lindung Gunung Slamet</button>
+              <button type="button" class="tp-chip">Kawasan Konservasi Baturraden</button>
+              <button type="button" class="tp-chip">Suaka Margasatwa Muara Angka</button>
+            </div>
+            <p class="tp-hint">Menentukan tujuan alur disposisi berjenjang dari Kepala Seksi &amp; buku alamat naskah.</p>
+          </div>
+        </section>
+
+        <!-- ===== 3. AKUN SISTEM & RBAC ===== -->
+        <section class="tp-card">
+          <header class="tp-card-head">
+            <span class="tp-step-num">3</span>
+            <div>
+              <h2 class="tp-card-title">Akun Sistem &amp; Hak Akses (RBAC Matrix)</h2>
+              <p class="tp-card-sub">Konfigurasi peran dan wewenang tindakan naskah dinas elektronik</p>
+            </div>
+            <span class="tp-req-pill tp-req-pill--blue">ROLE-BASED ACCESS</span>
+          </header>
+
+          <div class="tp-grid-3">
+            <div class="tp-field">
+              <label class="tp-label" for="tp-username">Username e-Office <span class="tp-req">*</span></label>
+              <input type="text" id="tp-username" placeholder="ahmad.fauzi" />
+              <p class="tp-hint">Otomatis dari format nama depan.nama belakang.</p>
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="tp-email">Email Kedinasan <span class="tp-req">*</span></label>
+              <input type="email" id="tp-email" placeholder="ahmad.fauzi@sksda.go.id" />
+              <p class="tp-hint">Domain resmi @sksda.go.id</p>
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="tp-telepon">No. Telepon / WhatsApp Dinas</label>
+              <input type="tel" id="tp-telepon" placeholder="+62 813 9022 8841" />
+              <p class="tp-hint">Untuk gateway SMS/WA notifikasi disposisi mendesak.</p>
+            </div>
+          </div>
+
+          <p class="tp-label tp-label--block">Pilih Peran Sistem Utama <span class="tp-req">*</span></p>
+          <div class="tp-roles" id="tp-roles">
+            <label class="tp-role">
+              <input type="radio" name="tp-role" value="kepala-seksi" />
+              <span class="tp-role-head">
+                <span class="tp-role-name">KEPALA SEKSI</span>
+                <span class="tp-role-tag">Eselon</span>
+              </span>
+              <span class="tp-role-desc">Otoritas disposisi surat masuk berjenjang, persetujuan nota dinas keluar, dan penandatanganan elektronik naskah dinas.</span>
+            </label>
+            <label class="tp-role">
+              <input type="radio" name="tp-role" value="pegawai" data-subrole="PEH" checked />
+              <span class="tp-role-head">
+                <span class="tp-role-name">STAF (PEH)</span>
+                <span class="tp-role-tag">Fungsional</span>
+              </span>
+              <span class="tp-role-desc">Pengelolaan telaahan teknis ekosistem, inventarisasi data keanekaragaman hayati, dan pengusulan naskah dinas konservasi.</span>
+            </label>
+            <label class="tp-role">
+              <input type="radio" name="tp-role" value="pegawai" data-subrole="POLHUT" />
+              <span class="tp-role-head">
+                <span class="tp-role-name">STAF (POLHUT)</span>
+                <span class="tp-role-tag">Lapangan</span>
+              </span>
+              <span class="tp-role-desc">Penerimaan surat perintah tugas patroli resort, pelaporan cepat tindak pengamanan hutan dan penertiban TSL.</span>
+            </label>
+            <label class="tp-role">
+              <input type="radio" name="tp-role" value="pegawai" data-subrole="UMUM" />
+              <span class="tp-role-head">
+                <span class="tp-role-name">STAF UMUM / TATA USAHA</span>
+                <span class="tp-role-tag">Kesekretariatan</span>
+              </span>
+              <span class="tp-role-desc">Pemberian nomor agenda, penerimaan surat masuk eksternal, ekspedisi arsip surat keluar dan retensi berkas.</span>
+            </label>
+          </div>
+
+          <p class="tp-label tp-label--block">Kewenangan Spesifik Tambahan</p>
+          <div class="tp-perms">
+            <label class="tp-check"><input type="checkbox" id="perm-1" /><span>Dapat membuat dan mengajukan draf surat keluar</span></label>
+            <label class="tp-check"><input type="checkbox" id="perm-2" /><span>Berhak menerima lembar disposisi berjenjang seksi</span></label>
+            <label class="tp-check"><input type="checkbox" id="perm-3" /><span>Akses riwayat log dan arsip dokumen berklasifikasi rahasia</span></label>
+            <label class="tp-check"><input type="checkbox" id="perm-4" /><span>Akses ekspor rekapitulasi data &amp; laporan statistik</span></label>
+          </div>
+        </section>
+
+        <!-- ===== 4. KEAMANAN ===== -->
+        <section class="tp-card">
+          <header class="tp-card-head">
+            <span class="tp-step-num">4</span>
+            <div>
+              <h2 class="tp-card-title">Keamanan Akun &amp; Kredensial Awal</h2>
+              <p class="tp-card-sub">Metode pembuatan kata sandi sementara dan kebijakan otorisasi aktivasi</p>
+            </div>
+            <span class="tp-req-pill tp-req-pill--green">Enkripsi SHA-256</span>
+          </header>
+
+          <div class="tp-pw-mode">
+            <label class="tp-radio-card">
+              <input type="radio" name="tp-pw-mode" value="auto" checked />
+              <span class="tp-radio-card-title">Generate Otomatis Kata Sandi Acak</span>
+              <span class="tp-radio-card-desc">Standar keamanan: 12 karakter kombinasi angka &amp; simbol</span>
+            </label>
+            <label class="tp-radio-card">
+              <input type="radio" name="tp-pw-mode" value="manual" />
+              <span class="tp-radio-card-title">Tentukan Sandi Manual</span>
+              <span class="tp-radio-card-desc">Admin memasukkan password sementara khusus</span>
+            </label>
+          </div>
+
+          <div class="tp-field" id="tp-pw-auto-box">
+            <label class="tp-label">Kata Sandi Sementara Tergenerate</label>
+            <div class="tp-pw-display">
+              <code id="tp-pw-value">Skada#Pmlg2026!</code>
+              <button type="button" class="tp-copy-btn" id="tp-pw-copy">Salin</button>
+              <button type="button" class="tp-copy-btn" id="tp-pw-regen" title="Generate ulang">&#8635;</button>
+            </div>
+            <p class="tp-hint">Kekuatan: <strong style="color:var(--color-success)">Sangat Kuat</strong></p>
+          </div>
+
+          <div class="tp-field" id="tp-pw-manual-box" hidden>
+            <label class="tp-label" for="tp-pw-manual">Kata Sandi Manual <span class="tp-req">*</span></label>
+            <input type="text" id="tp-pw-manual" placeholder="Minimal 8 karakter" />
+            <p class="tp-error" id="tp-pw-manual-error" hidden>Minimal 8 karakter.</p>
+          </div>
+
+          <div class="tp-perms">
+            <label class="tp-check"><input type="checkbox" id="opt-1" checked /><span><strong>Wajib Ganti Sandi Pada Login Pertama</strong> — pegawai tidak dapat mengakses arsip surat sebelum memperbarui kata sandi pribadinya.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-2" checked /><span><strong>Aktifkan Status Akun Segera</strong> — akun langsung siap menerima tembusan disposisi dan penugasan per hari ini.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-3" checked /><span><strong>Kirim Salinan Kredensial Otomatis</strong> — mengirimkan informasi login, panduan e-Office, dan password ke email dinas terdaftar.</span></label>
+          </div>
+        </section>
+
+        <!-- ===== AKSI BAWAH ===== -->
+        <div class="tp-actions">
+          <a href="data-pengguna.html" class="tp-btn tp-btn--outline">Batal</a>
+          <button type="button" class="tp-btn tp-btn--outline" id="btn-draft">Simpan Draf</button>
+          <button type="button" class="tp-btn tp-btn--primary" id="btn-create">
+            Simpan &amp; Buat Akun Pegawai
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ===== SIDEBAR INFO ===== -->
+      <aside class="tp-side">
+
+        <div class="tp-side-card">
+          <p class="tp-side-title">Alokasi Lisensi Pegawai</p>
+          <div class="tp-meter">
+            <div class="tp-meter-bar" style="width: 92.5%"></div>
+          </div>
+          <p class="tp-side-big">148 <span>/ 160</span></p>
+          <p class="tp-side-tag ok">92.5% Terisi</p>
+          <p class="tp-side-note">Tersisa <strong>12 slot akun aktif</strong> untuk jajaran Wilayah II Pemalang.</p>
+        </div>
+
+        <div class="tp-side-card">
+          <p class="tp-side-title">Integrasi Database NIP</p>
+          <p class="tp-side-big sm">SIASN &bull; BKN</p>
+          <p class="tp-side-tag ok">Aktif</p>
+          <p class="tp-side-note">Sistem otomatis memvalidasi 18 digit NIP pegawai dengan register kepegawaian Balai Pusat Semarang.</p>
+        </div>
+
+        <div class="tp-side-card">
+          <p class="tp-side-title">Kebijakan Kredensial</p>
+          <p class="tp-side-tag blue">Autentikasi Aman</p>
+          <p class="tp-side-tag green">MFA On</p>
+          <p class="tp-side-note">Kredensial sementara di-generate acak. Pegawai wajib mereset kata sandi pada login perdana via portal SSO.</p>
+        </div>
+
+        <div class="tp-side-card tp-preview">
+          <p class="tp-side-title">Preview Rekaman Tabel Pegawai <span class="tp-live">Live</span></p>
+          <div class="tp-preview-row">
+            <span class="tp-preview-avatar" id="pv-avatar">AF</span>
+            <div>
+              <p class="tp-preview-name" id="pv-nama">—</p>
+              <p class="tp-preview-meta" id="pv-meta">NIP. —</p>
+            </div>
+            <span class="tp-preview-status" id="pv-status">BARU</span>
+          </div>
+          <p class="tp-side-note" style="margin-top:12px">Tampilan baris tabel Data Pengguna.</p>
+        </div>
+
+      </aside>
+    </div>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="admin-footer">
+    &copy; 2026 Seksi Konservasi Sumber Daya Alam Jawa Tengah (SKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik
+  </footer>
+
+  <!-- ===== Toast ===== -->
+  <div class="tp-toast" id="tp-toast">
+    <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="tp-toast-text">Akun berhasil dibuat.</span>
+  </div>
+
+  <!-- ===== Skrip ===== -->
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
+  <script>
+    function $(id) { return document.getElementById(id); }
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+    function showToast(msg) {
+      $("tp-toast-text").textContent = msg;
+      $("tp-toast").classList.add("show");
+      setTimeout(() => $("tp-toast").classList.remove("show"), 2600);
+    }
+
+    /* ===== Resort: input manual + riwayat bisa dihapus ===== */
+    const RESORT_KEY = "eoffice_resort_list";
+
+    function getResortList() {
+      try { return JSON.parse(localStorage.getItem(RESORT_KEY) || "[]"); } catch (e) { return []; }
+    }
+
+    function renderResortList() {
+      const list = getResortList();
+      $("tp-resort-list").innerHTML = list.map((r) => '<option value="' + esc(r) + '"></option>').join("");
+      const box = $("tp-resort-saved");
+      const chips = $("tp-resort-chips");
+      if (!list.length) { box.hidden = true; chips.innerHTML = ""; return; }
+      box.hidden = false;
+      chips.innerHTML = "";
+      list.forEach((r) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "tp-chip active";
+        chip.innerHTML = esc(r) + ' <span class="tp-chip-x" title="Hapus">&times;</span>';
+        chip.addEventListener("click", function(e) {
+          if (e.target.classList.contains("tp-chip-x")) {
+            const baru = getResortList().filter((x) => x !== r);
+            localStorage.setItem(RESORT_KEY, JSON.stringify(baru));
+            renderResortList();
+            showToast("Entri \"" + r + "\" dihapus.");
+          } else {
+            $("tp-resort-input").value = r;
+          }
+        });
+        chips.appendChild(chip);
+      });
+    }
+    renderResortList();
+
+    $("tp-resort-input").addEventListener("change", function() {
+      const v = this.value.trim();
+      if (!v) return;
+      const list = getResortList();
+      if (!list.includes(v)) {
+        list.push(v);
+        localStorage.setItem(RESORT_KEY, JSON.stringify(list));
+        renderResortList();
+      }
+    });
+
+    function resortAktif() {
+      return $("tp-resort-input").value.trim();
+    }
+
+    /* ===== Foto ===== */
+    $("tp-photo-input").addEventListener("change", function() {
+      const file = this.files && this.files[0];
+      if (!file) return;
+      const err = () => showToast("File harus JPG/PNG maksimal 2 MB.");
+      if (!/image\/(jpeg|png)/.test(file.type)) return err();
+      if (file.size > 2 * 1024 * 1024) return err();
+      const reader = new FileReader();
+      reader.onload = (e) => { $("tp-avatar").innerHTML = '<img src="' + e.target.result + '" alt="Foto">'; };
+      reader.readAsDataURL(file);
+    });
+    $("tp-photo-reset").addEventListener("click", function() {
+      $("tp-avatar").textContent = inisialDariNama($("tp-nama").value);
+      $("tp-photo-input").value = "";
+    });
+
+    /* ===== NIP: hanya angka & spasi + validasi 18 digit ===== */
+    $("tp-nip").addEventListener("input", function() {
+      this.value = this.value.replace(/[^\d ]/g, "");
+      const digits = this.value.replace(/\s/g, "");
+      const st = $("tp-nip-status"), er = $("tp-nip-error");
+      if (digits.length === 18) { st.hidden = false; er.hidden = true; }
+      else { st.hidden = true; er.hidden = true; }
+      updatePreview();
+    });
+
+    /* ===== Username otomatis dari nama ===== */
+    function inisialDariNama(nama) {
+      const p = String(nama || "").trim().split(/\s+/).filter(Boolean);
+      if (!p.length) return "--";
+      return ((p[0][0] || "") + (p.length > 1 ? p[p.length - 1][0] : "")).toUpperCase();
+    }
+    $("tp-nama").addEventListener("input", function() {
+      const bersih = this.value.split(",")[0].trim().toLowerCase()
+        .replace(/[^a-z\s]/g, "").split(/\s+/).filter(Boolean);
+      if (bersih.length) {
+        $("tp-username").value = bersih[0] + "." + (bersih.length > 1 ? bersih[bersih.length - 1] : bersih[0]);
+      }
+      if (!$("tp-photo-input").value) $("tp-avatar").textContent = inisialDariNama(this.value);
+      updatePreview();
+    });
+
+    /* ===== Preview panel ===== */
+    function updatePreview() {
+      $("pv-nama").textContent = $("tp-nama").value.trim() || "—";
+      $("pv-meta").textContent = "NIP. " + ($("tp-nip").value.replace(/\s/g, "") || "—");
+      $("pv-avatar").textContent = inisialDariNama($("tp-nama").value);
+    }
+
+    /* ===== Chips kawasan ===== */
+    document.querySelectorAll("#tp-kawasan .tp-chip").forEach((chip) => {
+      chip.addEventListener("click", () => chip.classList.toggle("active"));
+    });
+
+    /* ===== Kartu role ===== */
+    document.querySelectorAll("#tp-roles .tp-role input").forEach((radio) => {
+      radio.addEventListener("change", () => renderRoleSelected());
+    });
+    function renderRoleSelected() {
+      document.querySelectorAll("#tp-roles .tp-role").forEach((card) => {
+        card.classList.toggle("selected", card.querySelector("input").checked);
+      });
+    }
+    renderRoleSelected();
+
+    /* ===== Mode kata sandi ===== */
+    document.querySelectorAll('input[name="tp-pw-mode"]').forEach((r) => {
+      r.addEventListener("change", () => {
+        const manual = document.querySelector('input[name="tp-pw-mode"]:checked').value === "manual";
+        $("tp-pw-auto-box").hidden = manual;
+        $("tp-pw-manual-box").hidden = !manual;
+      });
+    });
+
+    function generatePw() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+      let out = "";
+      for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+    $("tp-pw-regen").addEventListener("click", () => { $("tp-pw-value").textContent = generatePw(); });
+    $("tp-pw-copy").addEventListener("click", function() {
+      const v = $("tp-pw-value").textContent;
+      if (navigator.clipboard) navigator.clipboard.writeText(v).then(() => showToast("Kata sandi disalin."));
+      else showToast("Kata sandi: " + v);
+    });
+
+    /* ===== Ambil sandi aktif ===== */
+    function sandiAktif() {
+      const manual = document.querySelector('input[name="tp-pw-mode"]:checked').value === "manual";
+      return manual ? $("tp-pw-manual").value : $("tp-pw-value").textContent;
+    }
+
+    /* ===== Kumpulkan data ===== */
+    function kumpulkan() {
+      const roleRadio = document.querySelector("#tp-roles input:checked");
+      return {
+        nama: $("tp-nama").value.trim(),
+        nip: $("tp-nip").value.replace(/\s/g, ""),
+        jabatan: $("tp-jabatan").value.trim(),
+        pangkat: $("tp-pangkat").value.trim(),
+        unit: $("tp-unit").value,
+        resort: resortAktif(),
+        kawasan: Array.from(document.querySelectorAll("#tp-kawasan .tp-chip.active")).map((c) => c.textContent.trim()),
+        username: $("tp-username").value.trim(),
+        email: $("tp-email").value.trim(),
+        telepon: $("tp-telepon").value.trim(),
+        role: roleRadio ? roleRadio.value : null,
+        subRole: roleRadio && roleRadio.dataset.subrole ? roleRadio.dataset.subrole : null,
+        perms: ["perm-1", "perm-2", "perm-3", "perm-4"].filter((id) => $(id).checked).map((id) => $(id).parentElement.textContent.trim()),
+        kataSandi: sandiAktif()
+      };
+    }
+
+    function validasi(d, untukAkun) {
+      let ok = true;
+      const tampil = (id, show) => { const el = $(id); if (el) el.hidden = !show; };
+
+      if (!d.nama) { $("tp-nama").classList.add("tp-input-error"); ok = false; } else $("tp-nama").classList.remove("tp-input-error");
+      if (!/^\d{18}$/.test(d.nip)) { tampil("tp-nip-error", true); ok = false; }
+      if (!d.jabatan) { $("tp-jabatan").classList.add("tp-input-error"); ok = false; } else $("tp-jabatan").classList.remove("tp-input-error");
+      if (!d.resort) { $("tp-resort-input").classList.add("tp-input-error"); ok = false; }
+      else $("tp-resort-input").classList.remove("tp-input-error");
+      if (!d.username || !d.email) { ok = false; showToast("Username dan email kedinasan wajib diisi."); }
+      if (!d.role) { ok = false; showToast("Pilih salah satu peran sistem."); }
+      if (untukAkun) {
+        const manual = document.querySelector('input[name="tp-pw-mode"]:checked').value === "manual";
+        if (manual && d.kataSandi.length < 8) { tampil("tp-pw-manual-error", true); ok = false; }
+      }
+      return ok;
+    }
+
+    function simpan(d, status) {
+      const daftar = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
+      daftar.push({
+        nama: d.nama,
+        idAtauEmail: d.email,
+        nip: d.nip,
+        jabatan: d.jabatan,
+        unit: d.unit,
+        resort: d.resort,
+        username: d.username,
+        role: d.role,
+        subRole: d.subRole,
+        perms: d.perms,
+        kataSandi: d.kataSandi,
+        sumber: "admin-tambah",
+        status: status === "aktif" ? "aktif" : "menunggu-verifikasi",
+        daftarPada: new Date().toISOString()
+      });
+      localStorage.setItem("eoffice_registrations", JSON.stringify(daftar));
+    }
+
+    /* ===== Simpan Draf ===== */
+    $("btn-draft").addEventListener("click", () => {
+      const d = kumpulkan();
+      if (!d.nama) return showToast("Minimal nama lengkap wajib diisi untuk draf.");
+      simpan(d, "draf");
+      showToast("Draf disimpan. Lengkapi nanti di Data Pengguna.");
+    });
+
+    /* ===== Simpan & Buat Akun ===== */
+    function buatAkun() {
+      const d = kumpulkan();
+      if (!validasi(d, true)) { showToast("Periksa kembali field yang bertanda *"); return; }
+
+      const langsungAktif = $("opt-2").checked;
+      simpan(d, langsungAktif ? "aktif" : "menunggu-verifikasi");
+
+      $("tp-toast-text").textContent = langsungAktif
+        ? "Akun " + d.username + " dibuat & aktif. Sandi: " + d.kataSandi
+        : "Akun " + d.username + " tersimpan (menunggu aktivasi).";
+      $("tp-toast").classList.add("show");
+
+      setTimeout(() => { location.href = "data-pengguna.html"; }, 2400);
+    }
+    $("btn-create").addEventListener("click", buatAkun);
+    $("btn-create-top").addEventListener("click", buatAkun);
+  </script>
+</body>
+</html>

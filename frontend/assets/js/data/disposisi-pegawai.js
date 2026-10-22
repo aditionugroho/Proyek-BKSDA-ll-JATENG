@@ -20,7 +20,7 @@ export const disposisiPgData = [
     instruksiFull:
       "Segera koordinasikan dengan tim lapangan terkait temuan aktivitas ilegal di sektor utara. Siapkan laporan detail kronologi dan rekomendasi tindakan penertiban paling lambat besok siang sebelum rapat pleno.",
     surat: {
-      nomor: "S.842/BKSDA-JT/K.1/2023",
+      nomor: "S.842/SKSDA-JT/K.1/2023",
       tanggal: "12 Oktober 2023",
       pengirim: "Kepala Resort Konservasi Wilayah Cilacap",
       perihal: "Laporan Hasil Patroli Rutin Bulan Oktober dan Temuan Indikasi Perambahan Hutan"
@@ -33,7 +33,7 @@ export const disposisiPgData = [
   {
     id: 2,
     nomor: "DISP/2023/10/042",
-    suratNomor: "S-98/BKSDA-JT/Tu/2023",
+    suratNomor: "S-98/SKSDA-JT/Tu/2023",
     suratPerihal: "Laporan Patroli Pengamanan Hutan E",
     instruksi: "Pelajari laporan dan buat resume untuk dibah...",
     prioritas: { text: "Penting", tone: "amber" },
@@ -45,9 +45,9 @@ export const disposisiPgData = [
     instruksiFull:
       "Pelajari laporan patroli pengamanan hutan lindung sektor timur dan buat resume ringkas untuk dibahas dalam rapat evaluasi mingguan seksi.",
     surat: {
-      nomor: "S-98/BKSDA-JT/Tu/2023",
+      nomor: "S-98/SKSDA-JT/Tu/2023",
       tanggal: "10 Oktober 2023",
-      pengirim: "Polisi Kehutanan BKSDA Jateng",
+      pengirim: "Polisi Kehutanan SKSDA Jateng",
       perihal: "Laporan Patroli Pengamanan Hutan Lindung Sektor Timur"
     },
     files: [{ name: "Patroli_Sektor_Timur.pdf", size: "1.8 MB", type: "pdf" }]
@@ -86,7 +86,7 @@ export const DISPOSISI_DETAIL_PG = {
   instruksi:
     "Segera koordinasikan dengan tim lapangan terkait temuan aktivitas ilegal di sektor utara. Siapkan laporan detail kronologi dan rekomendasi tindakan penertiban paling lambat besok siang sebelum rapat pleno.",
   surat: {
-    nomor: "S.842/BKSDA-JT/K.1/2023",
+    nomor: "S.842/SKSDA-JT/K.1/2023",
     tanggal: "12 Oktober 2023",
     pengirim: "Kepala Resort Konservasi Wilayah Cilacap",
     perihal: "Laporan Hasil Patroli Rutin Bulan Oktober dan Temuan Indikasi Perambahan Hutan"

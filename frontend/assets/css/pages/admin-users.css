@@ -1,8 +1,72 @@
 /* ============================================
    DATA PENGGUNA (ADMIN) — E-Office SKSDA
    Stat card, header, filter, tabel, pagination,
-   panel bawah, modal konfirmasi
+   panel bawah, modal konfirmasi, antrean verifikasi
    ============================================ */
+
+/* ===== 0. ANTREAN VERIFIKASI PENDAFTAR ===== */
+.verif-card {
+  margin-top: 16px;
+  background: var(--color-surface);
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.verif-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-bottom: 12px; border-bottom: 1px dashed var(--color-border);
+}
+.verif-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 800; color: #92400E; margin: 0;
+}
+.verif-title svg { color: #D97706; flex-shrink: 0; }
+.verif-count {
+  min-width: 26px; height: 26px; padding: 0 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #fff;
+  background: #D97706; border-radius: 999px;
+}
+.verif-list { list-style: none; margin: 0; padding: 0; }
+.verif-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0;
+}
+.verif-item + .verif-item { border-top: 1px solid var(--color-border); }
+.verif-item.is-pending .verif-nama { color: #111827; }
+.verif-info { flex: 1; min-width: 0; }
+.verif-nama { margin: 0; font-size: 13px; font-weight: 700; color: #374151; }
+.verif-meta {
+  margin: 2px 0 0; font-size: 12px; color: var(--color-text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.verif-chip {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+  border-radius: 999px;
+}
+.verif-chip.pending { color: #92400E; background: #FEF3C7; }
+.verif-chip.rejected { color: #991B1B; background: #FEE2E2; }
+.verif-chip.approved { color: #166534; background: #DCFCE7; }
+.verif-chip.role { color: #1E3A8A; background: #DBEAFE; }
+.verif-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.verif-btn {
+  padding: 8px 14px; font-size: 12px; font-weight: 700;
+  border-radius: 8px; border: none; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.verif-btn.approve { color: #fff; background: #16A34A; }
+.verif-btn.approve:hover { background: #15803D; }
+.verif-btn.reject {
+  color: #DC2626; background: #fff; border: 1px solid #FECACA;
+}
+.verif-btn.reject:hover { background: #FEF2F2; }
+
+@media (max-width: 640px) {
+  .verif-item { flex-wrap: wrap; }
+  .verif-info { flex-basis: 100%; }
+}
 
 /* ===== 1. STAT CARD (teks kiri, icon kanan) ===== */
 .users-stats {

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n-title="title.reg">Buat Akun — E-Office SKSDA Wilayah II Pemalang</title>
+  <meta name="description" content="Daftarkan akun untuk akses portal resmi E-Office SKSDA Wilayah II Pemalang." />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/pages/registrasi.css" />
+</head>
+<body>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/js/images/logokehutanan.jpeg" alt="Logo SKSDA" class="nav-logo" />
+        <span>
+          <span class="nav-brand-name">SKSDA WILAYAH II PEMALANG</span>
+          <span class="nav-brand-sub" data-i18n="nav.subtitle">Seksi Konservasi Sumber Daya Alam</span>
+        </span>
+      </a>
+      <nav class="nav-menu">
+        <a href="index.html" class="nav-link" data-i18n="nav.beranda">BERANDA</a>
+        <a href="index.html#visi-misi" class="nav-link" data-i18n="nav.visi">VISI &amp; MISI</a>
+        <a href="index.html#tentang" class="nav-link" data-i18n="nav.profil">PROFIL</a>
+      </nav>
+      <div class="nav-actions">
+        <div style="position:relative" id="lang-wrapper">
+          <button type="button" id="lang-toggle" class="lang-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span data-lang-label>Bahasa Indonesia</span>
+          </button>
+          <div class="lang-dd" id="lang-dropdown">
+            <button type="button" data-setlang="id"><span>Bahasa Indonesia</span><svg class="check" data-lang-check xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></button>
+            <button type="button" data-setlang="en"><span>English (US)</span><svg class="check" data-lang-check xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="reg-main">
+    <div class="reg-card">
+
+      <div class="reg-head" id="reg-head">
+        <h1 class="reg-title" data-i18n="reg.title">Buat Akun Baru</h1>
+        <p class="reg-subtitle" data-i18n="reg.subtitle">Daftarkan akun untuk akses portal resmi Anda</p>
+      </div>
+
+      <ol class="steps" id="steps">
+        <li class="step active" data-step="1">
+          <span class="step-num">1</span>
+          <span class="step-label" data-i18n="reg.step1">Data Diri</span>
+        </li>
+        <li class="step" data-step="2">
+          <span class="step-num">2</span>
+          <span class="step-label" data-i18n="reg.step2">Keamanan</span>
+        </li>
+        <li class="step" data-step="3">
+          <span class="step-num">3</span>
+          <span class="step-label" data-i18n="reg.step3">Konfirmasi</span>
+        </li>
+      </ol>
+
+      <form class="reg-form" id="reg-form" novalidate>
+
+        <!-- ===== LANGKAH 1 : DATA DIRI ===== -->
+        <section class="reg-panel active" id="panel-1">
+          <div class="form-field">
+            <label class="form-label" for="nama"><span data-i18n="reg.nama">Nama Lengkap</span> <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap Anda" data-i18n-placeholder="reg.nama.ph" autocomplete="name" />
+            </div>
+            <p class="form-error" id="nama-error">Wajib diisi</p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="idemail"><span data-i18n="reg.idemail">ID Resmi / Email</span> <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              <input type="text" id="idemail" name="idemail" placeholder="Masukkan ID resmi atau email" data-i18n-placeholder="reg.idemail.ph" autocomplete="username" />
+            </div>
+            <p class="form-error" id="idemail-error">Wajib diisi</p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="role"><span data-i18n="reg.role">Role</span> <span class="req">*</span></label>
+            <select id="role" name="role">
+              <option value="pegawai" selected data-i18n="role.opt.pegawai">Staff</option>
+              <option value="kepala-seksi" data-i18n="role.opt.kepala-seksi">Kepala Seksi</option>
+            </select>
+          </div>
+
+          <button type="button" class="submit-btn" id="next-1">
+            <span data-i18n="reg.next">Lanjut</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </section>
+
+        <!-- ===== LANGKAH 2 : KEAMANAN ===== -->
+        <section class="reg-panel" id="panel-2">
+          <div class="form-field">
+            <label class="form-label" for="password"><span data-i18n="reg.password">Kata Sandi</span> <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" id="password" name="password" placeholder="Buat kata sandi" data-i18n-placeholder="reg.password.ph" autocomplete="new-password" />
+              <button type="button" class="pw-toggle" data-target="password" aria-label="Tampilkan kata sandi">
+                <svg class="eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+            <div class="strength" id="strength">
+              <div class="strength-bars"><span></span><span></span><span></span><span></span></div>
+              <p class="strength-text" id="strength-text">Kekuatan sandi</p>
+            </div>
+            <p class="form-error" id="password-error">Minimal 6 karakter</p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="konfirmasi"><span data-i18n="reg.konfirmasi">Konfirmasi Kata Sandi</span> <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" id="konfirmasi" name="konfirmasi" placeholder="Ulangi kata sandi" data-i18n-placeholder="reg.konfirmasi.ph" autocomplete="new-password" />
+              <span class="match-ind" id="match-ind"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            </div>
+            <p class="form-error" id="konfirmasi-error">Kata sandi tidak sama</p>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="back-btn" id="back-2">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span data-i18n="reg.back">Kembali</span>
+            </button>
+            <button type="button" class="submit-btn" id="next-2">
+              <span data-i18n="reg.next">Lanjut</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- ===== LANGKAH 3 : KONFIRMASI ===== -->
+        <section class="reg-panel" id="panel-3">
+          <ul class="summary">
+            <li>
+              <span class="summary-label" data-i18n="reg.sum.nama">Nama Lengkap</span>
+              <span class="summary-value" id="sum-nama">—</span>
+            </li>
+            <li>
+              <span class="summary-label" data-i18n="reg.sum.id">ID Resmi / Email</span>
+              <span class="summary-value" id="sum-idemail">—</span>
+            </li>
+            <li>
+              <span class="summary-label" data-i18n="reg.sum.role">Role</span>
+              <span class="summary-value" id="sum-role">—</span>
+            </li>
+            <li>
+              <span class="summary-label" data-i18n="reg.sum.pass">Kata Sandi</span>
+              <span class="summary-value">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span>
+            </li>
+          </ul>
+
+          <label class="check-label">
+            <input type="checkbox" id="setuju" name="setuju" />
+            <span>
+              <span data-i18n="reg.terms.pre">Saya menyetujui</span>
+              <a href="#" class="inline-link" data-i18n="reg.terms.link">syarat dan ketentuan</a>
+              <span data-i18n="reg.terms.post">dan memastikan data di atas benar</span>
+            </span>
+          </label>
+          <p class="form-error" id="setuju-error">Centang persetujuan untuk melanjutkan</p>
+
+          <div class="btn-row">
+            <button type="button" class="back-btn" id="back-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span data-i18n="reg.back">Kembali</span>
+            </button>
+            <button type="submit" class="submit-btn" id="reg-btn">
+              <span id="reg-btn-text" data-i18n="reg.submit">Buat Akun</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            </button>
+          </div>
+        </section>
+
+      </form>
+
+      <!-- ===== LAYAR SUKSES ===== -->
+      <div class="reg-success" id="reg-success">
+        <span class="success-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <h2 class="success-title" data-i18n="reg.success.title">Akun Berhasil Didaftarkan!</h2>
+        <p class="success-desc" data-i18n="reg.success.desc">Registrasi Anda akan diverifikasi oleh Admin terlebih dahulu. Setelah disetujui, Anda bisa langsung masuk kapan saja tanpa verifikasi ulang.</p>
+        <p class="success-count"><span data-i18n="reg.success.count.pre">Mengalihkan ke halaman masuk dalam</span> <strong id="count-num">3</strong> <span data-i18n="reg.success.count.post">detik…</span></p>
+        <a href="login.html" class="success-link" data-i18n="reg.success.link">Masuk sekarang</a>
+      </div>
+
+    </div>
+
+    <div class="badges">
+      <span class="badge-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11.5 11 13.5 15 9.5"/></svg><span data-i18n="badge.ssl">Koneksi SSL Aman</span></span>
+      <span class="badge-sep">&bull;</span>
+      <span class="badge-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span data-i18n="reg.badge.data">Data Dilindungi</span></span>
+    </div>
+
+    <p class="help-text-sub"><span data-i18n="reg.has.account">Sudah punya akun?</span> <a href="login.html" class="help-link" data-i18n="reg.login">Masuk</a> &nbsp;&bull;&nbsp; <span data-i18n="login.help">Butuh bantuan teknis?</span> <a href="#" class="help-link" data-i18n="login.helpLink">Hubungi Dukungan IT</a></p>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p class="footer-copy" data-i18n="reg.footer.copy">&copy; 2026 SKSDA Wilayah II Pemalang. Semua hak cipta dilindungi.</p>
+      <p class="footer-sub" data-i18n="reg.footer.sub">Seksi Konservasi Sumber Daya Alam | SKSDA Wilayah II Pemalang</p>
+    </div>
+  </footer>
+
+  <script>
+    let currentStep = 1;
+
+    function t(key) {
+      try {
+        const d = I18N[getLang()];
+        return d && d[key] !== undefined ? d[key] : key;
+      } catch (e) { return key; }
+    }
+
+    const steps = document.querySelectorAll(".step");
+    const panels = document.querySelectorAll(".reg-panel");
+
+    function setError(id, show, msgKey) {
+      const input = document.getElementById(id);
+      const err = document.getElementById(id + "-error");
+      if (msgKey && err) err.textContent = t(msgKey);
+      if (!input || !err) return;
+      input.classList.toggle("input-error", show);
+      err.classList.toggle("show", show);
+    }
+
+    function goStep(n) {
+      currentStep = n;
+      panels.forEach(function(p) { p.classList.toggle("active", p.id === "panel-" + n); });
+      steps.forEach(function(s) {
+        const sn = Number(s.dataset.step);
+        s.classList.toggle("active", sn === n);
+        s.classList.toggle("done", sn < n);
+      });
+      if (n === 3) {
+        document.getElementById("sum-nama").textContent = document.getElementById("nama").value.trim();
+        document.getElementById("sum-idemail").textContent = document.getElementById("idemail").value.trim();
+        const roleVal = document.getElementById("role").value;
+        const roleSel = document.querySelector('#role option[value="' + roleVal + '"]');
+        document.getElementById("sum-role").textContent = roleSel ? roleSel.textContent : roleVal;
+      }
+    }
+
+    function validateStep1() {
+      let ok = true;
+      if (!document.getElementById("nama").value.trim()) { setError("nama", true, "reg.err.required"); ok = false; }
+      if (!document.getElementById("idemail").value.trim()) { setError("idemail", true, "reg.err.required"); ok = false; }
+      return ok;
+    }
+
+    function validateStep2() {
+      let ok = true;
+      const pw = document.getElementById("password").value;
+      const kf = document.getElementById("konfirmasi").value;
+      if (pw.length < 6) { setError("password", true, "reg.err.min6"); ok = false; }
+      if (!kf || kf !== pw) { setError("konfirmasi", true, "reg.err.match"); ok = false; }
+      return ok;
+    }
+
+    document.getElementById("next-1").addEventListener("click", function() { if (validateStep1()) goStep(2); });
+    document.getElementById("next-2").addEventListener("click", function() { if (validateStep2()) goStep(3); });
+    document.getElementById("back-2").addEventListener("click", function() { goStep(1); });
+    document.getElementById("back-3").addEventListener("click", function() { goStep(2); });
+
+    ["nama", "idemail", "password", "konfirmasi"].forEach(function(id) {
+      document.getElementById(id).addEventListener("input", function() { setError(id, false); });
+    });
+
+    document.getElementById("reg-form").addEventListener("submit", function(e) { e.preventDefault(); });
+
+    // ===== TOGGLE LIHAT SANDI =====
+    document.querySelectorAll(".pw-toggle").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        const input = document.getElementById(btn.dataset.target);
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        btn.querySelector(".eye").style.display = show ? "none" : "block";
+        btn.querySelector(".eye-off").style.display = show ? "block" : "none";
+      });
+    });
+
+    // ===== METER KEKUATAN SANDI =====
+    const strengthBars = document.querySelectorAll(".strength-bars span");
+    const strengthText = document.getElementById("strength-text");
+    const strengthColors = ["#DC2626", "#EA580C", "#F59E0B", "#16A34A"];
+
+    function updateStrength() {
+      const v = document.getElementById("password").value;
+      let score = -1;
+      if (v.length > 0) {
+        score = 0;
+        if (v.length >= 6) score++;
+        if (v.length >= 10) score++;
+        if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+        if (/\d/.test(v) && /[^A-Za-z0-9]/.test(v)) score++;
+      }
+      strengthBars.forEach(function(b, i) {
+        b.style.background = (score > i) ? strengthColors[Math.max(0, score - 1)] : "#E5E7EB";
+      });
+      if (score < 0) {
+        strengthText.textContent = t("reg.strength");
+        strengthText.style.color = "#9CA3AF";
+      } else {
+        const lvl = Math.max(0, score - 1);
+        strengthText.textContent = t("reg.strength") + ": " + t("reg.strength." + lvl);
+        strengthText.style.color = strengthColors[lvl];
+      }
+    }
+
+    document.getElementById("password").addEventListener("input", function() {
+      updateStrength();
+      checkMatch();
+    });
+
+    // ===== INDIKATOR SANDI COCOK =====
+    const matchInd = document.getElementById("match-ind");
+    function checkMatch() {
+      const pw = document.getElementById("password").value;
+      const kf = document.getElementById("konfirmasi").value;
+      matchInd.classList.toggle("show", kf.length > 0);
+      matchInd.classList.toggle("ok", kf.length > 0 && kf === pw);
+    }
+    document.getElementById("konfirmasi").addEventListener("input", checkMatch);
+
+    // ===== SUBMIT FINAL =====
+    document.getElementById("reg-btn").addEventListener("click", function() {
+      if (!validateStep2()) { goStep(2); return; }
+
+      const setuju = document.getElementById("setuju");
+      const setujuErr = document.getElementById("setuju-error");
+      setujuErr.textContent = t("reg.err.terms");
+      if (!setuju.checked) { setujuErr.classList.add("show"); return; }
+      setujuErr.classList.remove("show");
+
+      const btn = document.getElementById("reg-btn");
+      btn.disabled = true;
+      document.getElementById("reg-btn-text").textContent = t("reg.processing");
+
+      const daftar = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
+      daftar.push({
+        nama: document.getElementById("nama").value.trim(),
+        idAtauEmail: document.getElementById("idemail").value.trim(),
+        kataSandi: document.getElementById("password").value,
+        role: document.getElementById("role").value,
+        sumber: "registrasi-mandiri",
+        status: "menunggu-verifikasi",
+        daftarPada: new Date().toISOString()
+      });
+      localStorage.setItem("eoffice_registrations", JSON.stringify(daftar));
+
+      document.getElementById("reg-head").style.display = "none";
+      document.getElementById("steps").style.display = "none";
+      document.getElementById("reg-form").style.display = "none";
+      document.getElementById("reg-success").classList.add("show");
+
+      let sisa = 3;
+      const num = document.getElementById("count-num");
+      const timer = setInterval(function() {
+        sisa--;
+        if (sisa <= 0) { clearInterval(timer); location.href = "login.html"; }
+        else num.textContent = sisa;
+      }, 1000);
+    });
+
+    document.getElementById("setuju").addEventListener("change", function() {
+      document.getElementById("setuju-error").classList.remove("show");
+    });
+
+    // ===== DROPDOWN BAHASA =====
+    document.getElementById("lang-toggle").addEventListener("click", function(e) {
+      e.stopPropagation();
+      document.getElementById("lang-dropdown").classList.toggle("open");
+    });
+    document.addEventListener("click", function(e) {
+      if (!e.target.closest("#lang-wrapper")) document.getElementById("lang-dropdown").classList.remove("open");
+    });
+    // Setelah ganti bahasa, perbarui teks dinamis (meter kekuatan dsb.)
+    document.querySelectorAll("[data-setlang]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        setTimeout(updateStrength, 50);
+      });
+    });
+  </script>
+  <script src="assets/js/components/i18n.js"></script>
+</body>
+</html>

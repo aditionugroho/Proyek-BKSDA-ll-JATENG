@@ -9,7 +9,7 @@ import { openModal } from "../components/modal.js";
 
 /* ===== DATA DEFAULT (mock sesuai spesifikasi) ===== */
 const DEFAULT_SURAT = {
-  nomor: "S.123/BKSDA-JT/2023",
+  nomor: "S.123/SKSDA-JT/2023",
   tanggalTtd: "Semarang, 24 Oktober 2023",
   sifat: "Biasa",
   lampiran: "1 (satu) berkas",
@@ -24,7 +24,7 @@ const DEFAULT_SURAT = {
   rencana: [
     { label: "Hari/Tanggal", nilai: "Kamis, 2 November 2023" },
     { label: "Waktu", nilai: "09.00 WIB s.d. selesai" },
-    { label: "Tempat", nilai: "Ruang Rapat Utama BKSDA Jawa Tengah" },
+    { label: "Tempat", nilai: "Ruang Rapat Utama SKSDA Jawa Tengah" },
     { label: "Acara", nilai: "Pembahasan Rencana Kerja Tahunan Pengelolaan Kawasan Konservasi" }
   ],
   penutup:
@@ -82,11 +82,11 @@ function renderSurat(data) {
     <header class="pgv-kop">
       <p class="pgv-kop-1">Kementerian Lingkungan Hidup dan Kehutanan</p>
       <p class="pgv-kop-2">Direktorat Jenderal Konservasi Sumber Daya Alam dan Ekosistem</p>
-      <p class="pgv-kop-3">Balai Konservasi Sumber Daya Alam Jawa Tengah</p>
+      <p class="pgv-kop-3">Seksi Konservasi Sumber Daya Alam Jawa Tengah</p>
       <p class="pgv-kop-addr">
         Gedung Manggala Wanabakti Blok I Lt. 3, Jl. Gatot Subroto, Senayan, Jakarta 10270<br />
         Telepon: (021) 5731326, Faksimile: (021) 5731326<br />
-        Website: ksdae.menlhk.go.id, Email: bksdajateng@menlhk.go.id
+        Website: ksdae.menlhk.go.id, Email: SKSDAjateng@menlhk.go.id
       </p>
       <hr class="pgv-kop-line" />
     </header>
