@@ -84,23 +84,28 @@ class DisposisiController extends BaseController
     */
 
     private function logActivity(
-        string $aktivitas,
-        ?int $referensiId = null,
-        ?string $deskripsi = null
-    ): void {
-        $user = $this->getCurrentUser();
+    string $aktivitas,
+    ?int $referensiId = null,
+    ?string $deskripsi = null
+): void {
+    $user = $this->getCurrentUser();
 
-        $this->activityLogModel->insert([
-            'user_id' => $user['id'] ?? null,
-            'aktivitas' => $aktivitas,
-            'modul' => 'disposisi',
-            'referensi_id' => $referensiId,
-            'deskripsi' => $deskripsi,
-            'ip_address' => $this->request->getIPAddress(),
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
+    $result = $this->activityLogModel->insert([
+        'user_id' => $user['id'] ?? null,
+        'aktivitas' => $aktivitas,
+        'modul' => 'disposisi',
+        'referensi_id' => $referensiId,
+        'deskripsi' => $deskripsi,
+        'ip_address' => $this->request->getIPAddress(),
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+
+    if ($result === false) {
+        throw new \RuntimeException(
+            'Gagal menyimpan activity log.'
+        );
     }
-
+}
     /*
     |--------------------------------------------------------------------------
     | CREATE NOTIFICATION
@@ -108,18 +113,24 @@ class DisposisiController extends BaseController
     */
 
     private function createNotification(
-        int $userId,
-        string $pesan,
-        string $tipe
-    ): void {
-        $this->notifikasiModel->insert([
-            'user_id' => $userId,
-            'pesan' => $pesan,
-            'tipe' => $tipe,
-            'is_read' => 0,
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
+    int $userId,
+    string $pesan,
+    string $tipe
+): void {
+    $result = $this->notifikasiModel->insert([
+        'user_id' => $userId,
+        'pesan' => $pesan,
+        'tipe' => $tipe,
+        'is_read' => 0,
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+
+    if ($result === false) {
+        throw new \RuntimeException(
+            'Gagal menyimpan notifikasi.'
+        );
     }
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -396,215 +407,219 @@ class DisposisiController extends BaseController
     */
 
     public function create()
-    {
-        $user = $this->getCurrentUser();
+{
+    $user = $this->getCurrentUser();
 
-        if (!$user) {
-            return $this->respond([
-                'status' => false,
-                'message' => 'User tidak terautentikasi.',
-            ], 401);
-        }
+    if (!$user) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'User tidak terautentikasi.',
+        ], 401);
+    }
 
-        if ($user['role'] !== 'kepala_seksi') {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Hanya Kepala Seksi yang dapat membuat disposisi.',
-            ], 403);
-        }
+    if ($user['role'] !== 'kepala_seksi') {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Hanya Kepala Seksi yang dapat membuat disposisi.',
+        ], 403);
+    }
 
-        $data = $this->request
-            ->getJSON(true);
+    $data = $this->request->getJSON(true);
 
-        if (!$data) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Request harus menggunakan format JSON.',
-            ], 400);
-        }
+    if (!is_array($data) || $data === []) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Request harus menggunakan format JSON.',
+        ], 400);
+    }
 
-        $suratMasukId =
-            (int) ($data['surat_masuk_id'] ?? 0);
+    $suratMasukId = filter_var(
+        $data['surat_masuk_id'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
 
-        $keUserId =
-            (int) ($data['ke_user_id'] ?? 0);
+    $keUserId = filter_var(
+        $data['ke_user_id'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
 
-        $catatan = trim(
-            $data['catatan'] ?? ''
+    $catatan = $data['catatan'] ?? '';
+    $deadline = $data['deadline'] ?? '';
+
+    if (!is_string($catatan) || !is_string($deadline)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Catatan dan deadline harus berupa teks.',
+        ], 422);
+    }
+
+    $catatan = trim($catatan);
+    $deadline = trim($deadline);
+
+    if (
+        $suratMasukId === false ||
+        $keUserId === false ||
+        $catatan === ''
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Surat masuk, staf tujuan, dan catatan wajib diisi.',
+        ], 422);
+    }
+
+    // CEK SURAT MASUK
+    $surat = $this->suratModel->find($suratMasukId);
+
+    if (!$surat) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Surat masuk tidak ditemukan.',
+        ], 404);
+    }
+
+    // CEK STAF TUJUAN
+    $staf = $this->userModel
+        ->where('id', $keUserId)
+        ->where('role', 'staf')
+        ->where('status', 1)
+        ->first();
+
+    if (!$staf) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Staf tujuan tidak ditemukan atau tidak aktif.',
+        ], 422);
+    }
+
+    // VALIDASI DEADLINE
+    if ($deadline !== '') {
+        $date = \DateTimeImmutable::createFromFormat(
+            '!Y-m-d',
+            $deadline
         );
 
-        $deadline = trim(
-            $data['deadline'] ?? ''
-        );
-
-        if (
-            $suratMasukId <= 0 ||
-            $keUserId <= 0 ||
-            $catatan === ''
-        ) {
+        if (!$date || $date->format('Y-m-d') !== $deadline) {
             return $this->respond([
                 'status' => false,
-                'message' =>
-                    'Surat masuk, staf tujuan, dan catatan wajib diisi.',
+                'message' => 'Format deadline harus YYYY-MM-DD.',
             ], 422);
         }
+    }
 
-        /*
-        |--------------------------------------------------------------------------
-        | CEK SURAT
-        |--------------------------------------------------------------------------
-        */
+    // MULAI DATABASE TRANSACTION
+    $db = \Config\Database::connect();
 
-        $surat = $this->suratModel
-            ->find($suratMasukId);
+    if (!$db->transBegin()) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal memulai transaksi database.',
+        ], 500);
+    }
 
-        if (!$surat) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Surat masuk tidak ditemukan.',
-            ], 404);
-        }
+    try {
+        // KUNCI SURAT MASUK SELAMA TRANSAKSI
+$suratTerkunci = $db->query(
+    'SELECT id, status FROM surat_masuk WHERE id = ? FOR UPDATE',
+    [$suratMasukId]
+)->getRowArray();
 
-        /*
-        |--------------------------------------------------------------------------
-        | CEK STAF TUJUAN
-        |--------------------------------------------------------------------------
-        */
+if (!$suratTerkunci) {
+    throw new \RuntimeException(
+        'Surat masuk tidak ditemukan saat transaksi.'
+    );
+}
 
-        $staf = $this->userModel
-            ->where('id', $keUserId)
-            ->where('role', 'staf')
-            ->where('status', 1)
-            ->first();
+// CEGAH DISPOSISI BARU UNTUK SURAT SELESAI
+if ($suratTerkunci['status'] === 'selesai') {
+    $db->transRollback();
 
-        if (!$staf) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Staf tujuan tidak ditemukan atau tidak aktif.',
-            ], 422);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI DEADLINE
-        |--------------------------------------------------------------------------
-        */
-
-        if ($deadline !== '') {
-            $date = \DateTime::createFromFormat(
-                'Y-m-d',
-                $deadline
-            );
-
-            if (
-                !$date ||
-                $date->format('Y-m-d') !==
-                    $deadline
-            ) {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        'Format deadline harus YYYY-MM-DD.',
-                ], 422);
-            }
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | INSERT DISPOSISI
-        |--------------------------------------------------------------------------
-        */
-
-        $id = $this->disposisiModel
-            ->insert([
-                'surat_masuk_id' =>
-                    $suratMasukId,
-
-                'dari_user_id' =>
-                    $user['id'],
-
-                'ke_user_id' =>
-                    $keUserId,
-
-                'catatan' =>
-                    $catatan,
-
-                'hasil_tindak_lanjut' =>
-                    null,
-
-                'catatan_revisi' =>
-                    null,
-
-                'status' =>
-                    'menunggu',
-
-                'deadline' =>
-                    $deadline !== ''
-                        ? $deadline
-                        : null,
-            ], true);
+    return $this->respond([
+        'status' => false,
+        'message' =>
+            'Surat masuk sudah selesai dan tidak dapat didisposisikan kembali.',
+    ], 409);
+}
+        // INSERT DISPOSISI
+        $id = $this->disposisiModel->insert([
+            'surat_masuk_id' => $suratMasukId,
+            'dari_user_id' => $user['id'],
+            'ke_user_id' => $keUserId,
+            'catatan' => $catatan,
+            'hasil_tindak_lanjut' => null,
+            'catatan_revisi' => null,
+            'status' => 'menunggu',
+            'deadline' => $deadline !== '' ? $deadline : null,
+        ], true);
 
         if (!$id) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Gagal membuat disposisi.',
-            ], 500);
+            throw new \RuntimeException(
+                'Gagal membuat disposisi.'
+            );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE STATUS SURAT
-        |--------------------------------------------------------------------------
-        */
-
-        $this->suratModel->update(
+        // UPDATE STATUS SURAT MASUK
+        $suratUpdated = $this->suratModel->update(
             $suratMasukId,
-            [
-                'status' => 'didisposisikan',
-            ]
+            ['status' => 'didisposisikan']
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVITY LOG
-        |--------------------------------------------------------------------------
-        */
+        if (!$suratUpdated) {
+            throw new \RuntimeException(
+                'Gagal memperbarui status surat masuk.'
+            );
+        }
 
+        // ACTIVITY LOG
         $this->logActivity(
             'create',
             (int) $id,
-            'Membuat disposisi surat kepada ' .
-            $staf['name']
+            'Membuat disposisi surat kepada ' . $staf['name']
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | NOTIFIKASI STAF
-        |--------------------------------------------------------------------------
-        */
-
+        // NOTIFIKASI STAF
         $this->createNotification(
             (int) $staf['id'],
             'Anda menerima disposisi baru untuk surat "' .
-            $surat['perihal'] . '".',
+            ($surat['perihal'] ?? 'Surat Masuk') . '".',
             'disposisi_baru'
         );
 
-        return $this->respondCreated([
-            'status' => true,
-            'message' =>
-                'Disposisi berhasil dibuat.',
+        // CEK DAN COMMIT
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'Terjadi kegagalan transaksi database.'
+            );
+        }
 
-            'data' =>
-                $this->disposisiModel
-                    ->find($id),
-        ]);
+        if (!$db->transCommit()) {
+            throw new \RuntimeException(
+                'Gagal melakukan commit transaksi.'
+            );
+        }
+
+    } catch (\Throwable $e) {
+        $db->transRollback();
+
+        log_message(
+            'error',
+            'Gagal membuat disposisi: ' . $e->getMessage()
+        );
+
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Gagal membuat disposisi. Transaksi dibatalkan jika belum di-commit.',
+        ], 500);
     }
+
+    return $this->respondCreated([
+        'status' => true,
+        'message' => 'Disposisi berhasil dibuat.',
+        'data' => $this->disposisiModel->find($id),
+    ]);
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -613,121 +628,179 @@ class DisposisiController extends BaseController
     */
 
     public function tindakLanjut($id = null)
-    {
-        $user = $this->getCurrentUser();
+{
+    $user = $this->getCurrentUser();
 
-        if (
-            !$user ||
-            $user['role'] !== 'staf'
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Hanya Staf yang dapat mengisi tindak lanjut.',
-            ], 403);
+    // VALIDASI ROLE
+    if (!$user || $user['role'] !== 'staf') {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Hanya Staf yang dapat mengisi tindak lanjut.',
+        ], 403);
+    }
+
+    // VALIDASI ID
+    if (!$id || !ctype_digit((string) $id)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'ID disposisi tidak valid.',
+        ], 400);
+    }
+
+    // CEK DISPOSISI
+    $disposisi = $this->disposisiModel->find($id);
+
+    if (!$disposisi) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Disposisi tidak ditemukan.',
+        ], 404);
+    }
+
+    // VALIDASI KEPEMILIKAN
+    if (
+        (int) $disposisi['ke_user_id'] !==
+        (int) $user['id']
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Disposisi ini bukan ditujukan kepada Anda.',
+        ], 403);
+    }
+
+    // VALIDASI STATUS
+    if ($disposisi['status'] === 'selesai') {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Disposisi sudah selesai.',
+        ], 409);
+    }
+
+    // VALIDASI REQUEST JSON
+    $data = $this->request->getJSON(true);
+
+    if (!is_array($data)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Request harus menggunakan format JSON.',
+        ], 400);
+    }
+
+    $hasil = $data['hasil_tindak_lanjut'] ?? '';
+
+    if (!is_string($hasil) || trim($hasil) === '') {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Hasil tindak lanjut wajib diisi dengan teks.',
+        ], 422);
+    }
+
+    $hasil = trim($hasil);
+
+    // MULAI DATABASE TRANSACTION
+    $db = \Config\Database::connect();
+
+    if (!$db->transBegin()) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal memulai transaksi database.',
+        ], 500);
+    }
+
+    try {
+        /*
+         * UPDATE BERSYARAT
+         * Mencegah tindak lanjut pada disposisi
+         * yang sudah diselesaikan oleh request lain.
+         */
+        $updated = $db->table('disposisi')
+            ->where('id', (int) $id)
+            ->where('ke_user_id', (int) $user['id'])
+            ->whereIn('status', [
+                'menunggu',
+                'dalam_proses',
+                'dikembalikan',
+            ])
+            ->update([
+                'hasil_tindak_lanjut' => $hasil,
+                'status' => 'dalam_proses',
+                'catatan_revisi' => null,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        if (!$updated) {
+            throw new \RuntimeException(
+                'Gagal menyimpan tindak lanjut.'
+            );
         }
 
-        $disposisi = $this->disposisiModel
-            ->find($id);
+        // CEK BARIS YANG BERUBAH
+        if ($db->affectedRows() !== 1) {
+            $db->transRollback();
 
-        if (!$disposisi) {
             return $this->respond([
                 'status' => false,
                 'message' =>
-                    'Disposisi tidak ditemukan.',
-            ], 404);
-        }
-
-        if (
-            (int) $disposisi['ke_user_id'] !==
-            (int) $user['id']
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Disposisi ini bukan ditujukan kepada Anda.',
-            ], 403);
-        }
-
-        if (
-            $disposisi['status'] === 'selesai'
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Disposisi sudah selesai.',
+                    'Status disposisi telah berubah atau hasil tidak diperbarui.',
             ], 409);
         }
 
-        $data = $this->request
-            ->getJSON(true);
-
-        $hasil = trim(
-            $data['hasil_tindak_lanjut'] ?? ''
-        );
-
-        if ($hasil === '') {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Hasil tindak lanjut wajib diisi.',
-            ], 422);
-        }
-
-        $this->disposisiModel->update(
-            $id,
-            [
-                'hasil_tindak_lanjut' =>
-                    $hasil,
-
-                'status' =>
-                    'dalam_proses',
-
-                'catatan_revisi' =>
-                    null,
-            ]
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVITY LOG
-        |--------------------------------------------------------------------------
-        */
-
+        // ACTIVITY LOG
         $this->logActivity(
             'tindak_lanjut',
             (int) $id,
             'Mengisi hasil tindak lanjut disposisi.'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | NOTIFIKASI KEPALA SEKSI
-        |--------------------------------------------------------------------------
-        */
-
+        // AMBIL DATA SURAT
         $surat = $this->suratModel->find(
             $disposisi['surat_masuk_id']
         );
 
+        // NOTIFIKASI KEPALA SEKSI
         $this->createNotification(
             (int) $disposisi['dari_user_id'],
             'Staf telah mengisi tindak lanjut untuk disposisi surat "' .
-            ($surat['perihal'] ?? 'Surat Masuk') .
-            '".',
+            ($surat['perihal'] ?? 'Surat Masuk') . '".',
             'tindak_lanjut'
+        );
+        // CEK TRANSACTION
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'Terjadi kegagalan transaksi database.'
+            );
+        }
+
+        // COMMIT
+        if (!$db->transCommit()) {
+            throw new \RuntimeException(
+                'Gagal melakukan commit transaksi.'
+            );
+        }
+
+    } catch (\Throwable $e) {
+        $db->transRollback();
+
+        log_message(
+            'error',
+            'Gagal menindaklanjuti disposisi ID ' .
+            $id . ': ' . $e->getMessage()
         );
 
         return $this->respond([
-            'status' => true,
+            'status' => false,
             'message' =>
-                'Tindak lanjut berhasil disimpan.',
-
-            'data' =>
-                $this->disposisiModel
-                    ->find($id),
-        ]);
+                'Gagal menyimpan tindak lanjut. Transaksi dibatalkan jika belum di-commit.',
+        ], 500);
     }
+
+    return $this->respond([
+        'status' => true,
+        'message' => 'Tindak lanjut berhasil disimpan.',
+        'data' => $this->disposisiModel->find($id),
+    ]);
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -784,7 +857,8 @@ class DisposisiController extends BaseController
 
         $user = $this->getCurrentUser();
 
-        $this->activityLogModel->insert([
+        $archiveLogged = $this->activityLogModel->insert([
+
             'user_id' => $user['id'] ?? null,
             'aktivitas' => 'auto_archive',
             'modul' => 'arsip',
@@ -798,109 +872,142 @@ class DisposisiController extends BaseController
             'created_at' =>
                 date('Y-m-d H:i:s'),
         ]);
-
+        if ($archiveLogged === false) {
+    throw new \RuntimeException(
+        'Gagal mencatat aktivitas pengarsipan.'
+    );
+}
         return (int) $arsipId;
     }
-    public function selesai($id = null)
-    {
-        $user = $this->getCurrentUser();
 
-        if (!$user) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'User tidak terautentikasi.',
-            ], 401);
-        }
 
-        $disposisi = $this->disposisiModel
-            ->find($id);
+public function selesai($id = null)
+{
+    $user = $this->getCurrentUser();
 
-        if (!$disposisi) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Disposisi tidak ditemukan.',
-            ], 404);
-        }
+    if (!$user) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'User tidak terautentikasi.',
+        ], 401);
+    }
 
-        /*
-        |--------------------------------------------------------------------------
-        | STAF HANYA DISPOSISI MILIKNYA
-        |--------------------------------------------------------------------------
-        */
+    if (!$id || !ctype_digit((string) $id)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'ID disposisi tidak valid.',
+        ], 400);
+    }
 
-        if (
-            $user['role'] === 'staf' &&
-            (int) $disposisi['ke_user_id'] !==
-            (int) $user['id']
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Disposisi ini bukan ditujukan kepada Anda.',
-            ], 403);
-        }
+    $disposisi = $this->disposisiModel->find($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | KEPALA HANYA DISPOSISI YANG DIBUATNYA
-        |--------------------------------------------------------------------------
-        */
+    if (!$disposisi) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Disposisi tidak ditemukan.',
+        ], 404);
+    }
 
-        if (
-            $user['role'] === 'kepala_seksi' &&
-            (int) $disposisi['dari_user_id'] !==
-            (int) $user['id']
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Anda tidak memiliki akses ke disposisi ini.',
-            ], 403);
-        }
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDASI ROLE DAN HAK AKSES
+    |--------------------------------------------------------------------------
+    */
 
-        if (
-            !in_array(
-                $user['role'],
-                [
-                    'staf',
-                    'kepala_seksi',
-                ],
-                true
-            )
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Anda tidak dapat menyelesaikan disposisi.',
-            ], 403);
-        }
+    if (!in_array(
+        $user['role'],
+        ['staf', 'kepala_seksi'],
+        true
+    )) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Anda tidak dapat menyelesaikan disposisi.',
+        ], 403);
+    }
 
-        if (
-            empty(
-                $disposisi['hasil_tindak_lanjut']
-            )
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Tindak lanjut harus diisi sebelum disposisi diselesaikan.',
-            ], 422);
-        }
+    if (
+        $user['role'] === 'staf' &&
+        (int) $disposisi['ke_user_id'] !== (int) $user['id']
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Disposisi ini bukan ditujukan kepada Anda.',
+        ], 403);
+    }
+
+    if (
+        $user['role'] === 'kepala_seksi' &&
+        (int) $disposisi['dari_user_id'] !== (int) $user['id']
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Anda tidak memiliki akses ke disposisi ini.',
+        ], 403);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDASI STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($disposisi['status'] !== 'dalam_proses') {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Hanya disposisi dalam proses yang dapat diselesaikan.',
+        ], 409);
+    }
+
+    if (trim((string) $disposisi['hasil_tindak_lanjut']) === '') {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Tindak lanjut harus diisi sebelum disposisi diselesaikan.',
+        ], 422);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATABASE TRANSACTION
+    |--------------------------------------------------------------------------
+    */
+
+    $db = \Config\Database::connect();
+
+    $db->transBegin();
+
+    try {
 
         /*
         |--------------------------------------------------------------------------
         | UPDATE DISPOSISI
         |--------------------------------------------------------------------------
+        | Update bersyarat untuk mencegah penyelesaian berulang.
         */
 
-        $this->disposisiModel->update(
-            $id,
-            [
+        $updated = $db->table('disposisi')
+            ->where('id', (int) $id)
+            ->where('status', 'dalam_proses')
+            ->update([
                 'status' => 'selesai',
-            ]
-        );
+            ]);
+
+        if (!$updated) {
+            throw new \RuntimeException(
+                'Gagal memperbarui status disposisi.'
+            );
+        }
+
+        if ($db->affectedRows() !== 1) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Status disposisi telah berubah atau sudah selesai.',
+            ], 409);
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -908,21 +1015,34 @@ class DisposisiController extends BaseController
         |--------------------------------------------------------------------------
         */
 
-        $this->suratModel->update(
+        $suratUpdated = $this->suratModel->update(
             $disposisi['surat_masuk_id'],
             [
                 'status' => 'selesai',
             ]
         );
+
+        if (!$suratUpdated) {
+            throw new \RuntimeException(
+                'Gagal memperbarui status surat masuk.'
+            );
+        }
+
         /*
         |--------------------------------------------------------------------------
-        | AUTO ARCHIVE SURAT MASUK
+        | AUTO ARCHIVE
         |--------------------------------------------------------------------------
         */
 
-        $this->archiveSuratMasukIfNeeded(
+        $arsipId = $this->archiveSuratMasukIfNeeded(
             (int) $disposisi['surat_masuk_id']
         );
+
+        if ($arsipId === null) {
+            throw new \RuntimeException(
+                'Gagal membuat arsip surat masuk.'
+            );
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -946,10 +1066,7 @@ class DisposisiController extends BaseController
             $disposisi['surat_masuk_id']
         );
 
-        if (
-            $user['role'] ===
-            'kepala_seksi'
-        ) {
+        if ($user['role'] === 'kepala_seksi') {
             $notificationUserId =
                 (int) $disposisi['ke_user_id'];
         } else {
@@ -964,17 +1081,59 @@ class DisposisiController extends BaseController
             '" telah diselesaikan.',
             'disposisi_selesai'
         );
+        /*
+        |--------------------------------------------------------------------------
+        | CEK TRANSACTION
+        |--------------------------------------------------------------------------
+        */
+
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'Terjadi kegagalan transaksi database.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMMIT
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$db->transCommit()) {
+            throw new \RuntimeException(
+                'Gagal melakukan commit transaksi.'
+            );
+        }
+
+    } catch (\Throwable $e) {
+
+        $db->transRollback();
+
+        log_message(
+            'error',
+            'Gagal menyelesaikan disposisi ID ' .
+            $id . ': ' . $e->getMessage()
+        );
 
         return $this->respond([
-            'status' => true,
+            'status' => false,
             'message' =>
-                'Disposisi berhasil diselesaikan.',
-
-            'data' =>
-                $this->disposisiModel
-                    ->find($id),
-        ]);
+                'Gagal menyelesaikan disposisi. Perubahan database dibatalkan apabila transaksi belum berhasil di-commit.',
+        ], 500);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    return $this->respond([
+        'status' => true,
+        'message' => 'Disposisi berhasil diselesaikan.',
+        'data' => $this->disposisiModel->find($id),
+    ]);
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -982,97 +1141,135 @@ class DisposisiController extends BaseController
     |--------------------------------------------------------------------------
     */
 
-    public function kembalikan($id = null)
-    {
-        $user = $this->getCurrentUser();
 
-        if (
-            !$user ||
-            $user['role'] !== 'kepala_seksi'
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Hanya Kepala Seksi yang dapat mengembalikan disposisi.',
-            ], 403);
+public function kembalikan($id = null)
+{
+    $user = $this->getCurrentUser();
+
+    // VALIDASI ROLE KEPALA SEKSI
+    if (!$user || $user['role'] !== 'kepala_seksi') {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Hanya Kepala Seksi yang dapat mengembalikan disposisi.',
+        ], 403);
+    }
+
+    // VALIDASI ID
+    if (!$id || !ctype_digit((string) $id)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'ID disposisi tidak valid.',
+        ], 400);
+    }
+
+    // CEK DISPOSISI
+    $disposisi = $this->disposisiModel->find($id);
+
+    if (!$disposisi) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Disposisi tidak ditemukan.',
+        ], 404);
+    }
+
+    // VALIDASI KEPEMILIKAN
+    if (
+        (int) $disposisi['dari_user_id'] !==
+        (int) $user['id']
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Anda tidak memiliki akses ke disposisi ini.',
+        ], 403);
+    }
+
+    // VALIDASI STATUS
+    if ($disposisi['status'] !== 'dalam_proses') {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Hanya disposisi dalam proses yang dapat dikembalikan untuk revisi.',
+        ], 409);
+    }
+
+    // VALIDASI REQUEST JSON
+    $data = $this->request->getJSON(true);
+
+    if (!is_array($data)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Request harus menggunakan format JSON.',
+        ], 400);
+    }
+
+    $catatanRevisi = $data['catatan_revisi'] ?? '';
+
+    if (
+        !is_string($catatanRevisi) ||
+        trim($catatanRevisi) === ''
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' =>
+                'Catatan revisi wajib diisi dengan teks.',
+        ], 422);
+    }
+
+    $catatanRevisi = trim($catatanRevisi);
+
+    // MULAI DATABASE TRANSACTION
+    $db = \Config\Database::connect();
+
+    if (!$db->transBegin()) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal memulai transaksi database.',
+        ], 500);
+    }
+
+    try {
+        // UPDATE DISPOSISI BERSYARAT
+        $updated = $db->table('disposisi')
+            ->where('id', (int) $id)
+            ->where('dari_user_id', (int) $user['id'])
+            ->where('status', 'dalam_proses')
+            ->update([
+                'status' => 'dikembalikan',
+                'catatan_revisi' => $catatanRevisi,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        if (!$updated) {
+            throw new \RuntimeException(
+                'Gagal mengembalikan disposisi.'
+            );
         }
 
-        $disposisi = $this->disposisiModel
-            ->find($id);
+        // CEK BARIS YANG BERUBAH
+        if ($db->affectedRows() !== 1) {
+            $db->transRollback();
 
-        if (!$disposisi) {
             return $this->respond([
                 'status' => false,
-                'message' =>
-                    'Disposisi tidak ditemukan.',
-            ], 404);
+                'message' => 'Status disposisi telah berubah.',
+            ], 409);
         }
 
-        if (
-            (int) $disposisi['dari_user_id'] !==
-            (int) $user['id']
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Anda tidak memiliki akses ke disposisi ini.',
-            ], 403);
-        }
-
-        $data = $this->request
-            ->getJSON(true);
-
-        $catatanRevisi = trim(
-            $data['catatan_revisi'] ?? ''
-        );
-
-        if ($catatanRevisi === '') {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Catatan revisi wajib diisi.',
-            ], 422);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE DISPOSISI
-        |--------------------------------------------------------------------------
-        */
-
-        $this->disposisiModel->update(
-            $id,
-            [
-                'status' =>
-                    'dikembalikan',
-
-                'catatan_revisi' =>
-                    $catatanRevisi,
-            ]
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVITY LOG
-        |--------------------------------------------------------------------------
-        */
-
+        // ACTIVITY LOG
         $this->logActivity(
             'revisi',
             (int) $id,
             'Mengembalikan disposisi untuk revisi.'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | NOTIFIKASI STAF
-        |--------------------------------------------------------------------------
-        */
-
+        // AMBIL DATA SURAT
         $surat = $this->suratModel->find(
             $disposisi['surat_masuk_id']
         );
 
+        // NOTIFIKASI STAF
         $this->createNotification(
             (int) $disposisi['ke_user_id'],
             'Disposisi surat "' .
@@ -1081,15 +1278,42 @@ class DisposisiController extends BaseController
             $catatanRevisi,
             'revisi_disposisi'
         );
+        // CEK TRANSACTION
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'Terjadi kegagalan transaksi database.'
+            );
+        }
+
+        // COMMIT
+        if (!$db->transCommit()) {
+            throw new \RuntimeException(
+                'Gagal melakukan commit transaksi.'
+            );
+        }
+
+    } catch (\Throwable $e) {
+        $db->transRollback();
+
+        log_message(
+            'error',
+            'Gagal revisi disposisi ID ' .
+            $id . ': ' . $e->getMessage()
+        );
 
         return $this->respond([
-            'status' => true,
+            'status' => false,
             'message' =>
-                'Disposisi berhasil dikembalikan untuk revisi.',
-
-            'data' =>
-                $this->disposisiModel
-                    ->find($id),
-        ]);
+                'Gagal mengembalikan disposisi. Transaksi dibatalkan jika belum di-commit.',
+        ], 500);
     }
+
+    return $this->respond([
+        'status' => true,
+        'message' =>
+            'Disposisi berhasil dikembalikan untuk revisi.',
+        'data' => $this->disposisiModel->find($id),
+    ]);
+}
+
 }
