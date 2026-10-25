@@ -292,6 +292,10 @@ $routes->group(
         'filter' => 'role:admin,kepala_seksi,staf',
     ],
     static function ($routes) {
+        $routes->get(
+            '(:num)/timeline',
+            'Api\DisposisiController::timeline/$1'
+        );
 
         $routes->get(
             '',
