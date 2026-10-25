@@ -11,6 +11,7 @@ use App\Models\NotifikasiModel;
 use App\Models\SuratMasukModel;
 use App\Models\UserModel;
 use CodeIgniter\API\ResponseTrait;
+use App\Models\DisposisiRiwayatModel;
 
 class DisposisiController extends BaseController
 {
@@ -23,6 +24,7 @@ class DisposisiController extends BaseController
     protected ActivityLogModel $activityLogModel;
     protected NotifikasiModel $notifikasiModel;
     protected ArsipModel $arsipModel;
+    protected DisposisiRiwayatModel $riwayatModel;
 
     public function __construct()
     {
@@ -33,6 +35,7 @@ class DisposisiController extends BaseController
         $this->activityLogModel = new ActivityLogModel();
         $this->notifikasiModel = new NotifikasiModel();
         $this->arsipModel = new ArsipModel();
+        $this->riwayatModel = new DisposisiRiwayatModel();
     }
 
     /*
@@ -87,7 +90,7 @@ class DisposisiController extends BaseController
     string $aktivitas,
     ?int $referensiId = null,
     ?string $deskripsi = null
-): void {
+): int {
     $user = $this->getCurrentUser();
 
     $result = $this->activityLogModel->insert([
@@ -103,6 +106,42 @@ class DisposisiController extends BaseController
     if ($result === false) {
         throw new \RuntimeException(
             'Gagal menyimpan activity log.'
+        );
+    }
+    return (int) $result;
+}
+
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN RIWAYAT DISPOSISI
+    |--------------------------------------------------------------------------
+    */
+
+
+    private function simpanRiwayat(
+        int $disposisiId,
+        int $userId,
+        string $aktivitas,
+        ?string $statusSebelum,
+        string $statusSesudah,
+        ?string $catatan,
+        int $activityLogId
+    ): void {
+
+    $result = $this->riwayatModel->insert([
+        'disposisi_id' => $disposisiId,
+        'activity_log_id' => $activityLogId,
+        'user_id' => $userId,
+        'aktivitas' => $aktivitas,
+        'status_sebelum' => $statusSebelum,
+        'status_sesudah' => $statusSesudah,
+        'catatan' => $catatan,
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+
+    if ($result === false) {
+        throw new \RuntimeException(
+            'Gagal menyimpan riwayat disposisi.'
         );
     }
 }
@@ -400,6 +439,189 @@ class DisposisiController extends BaseController
         ]);
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | TIMELINE RIWAYAT DISPOSISI
+    |--------------------------------------------------------------------------
+    */
+
+    public function timeline($id = null)
+    {
+        if (!$id || !ctype_digit((string) $id) || (int) $id < 1) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'ID disposisi tidak valid.',
+            ], 400);
+        }
+
+        $user = $this->getCurrentUser();
+
+        if (!$user) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'User tidak terautentikasi.',
+            ], 401);
+        }
+
+        // Periksa akses menggunakan aturan yang sama dengan show().
+        $this->detailQuery();
+
+        $this->disposisiModel->where('disposisi.id', (int) $id);
+
+        if ($user['role'] === 'kepala_seksi') {
+            $this->disposisiModel->where(
+                'disposisi.dari_user_id',
+                $user['id']
+            );
+        } elseif ($user['role'] === 'staf') {
+            $this->disposisiModel->where(
+                'disposisi.ke_user_id',
+                $user['id']
+            );
+        } elseif ($user['role'] !== 'admin') {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akses tidak diizinkan.',
+            ], 403);
+        }
+
+        $disposisi = $this->disposisiModel->first();
+
+        if (!$disposisi) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak ditemukan atau tidak dapat diakses.',
+            ], 404);
+        }
+
+        // Ambil activity log, termasuk aktivitas historis.
+        $activityLogs = $this->activityLogModel
+            ->select(
+                'activity_logs.id,
+                 activity_logs.user_id,
+                 users.name AS user_name,
+                 activity_logs.aktivitas,
+                 activity_logs.deskripsi,
+                 activity_logs.created_at'
+            )
+            ->join(
+                'users',
+                'users.id = activity_logs.user_id',
+                'left'
+            )
+            ->where('activity_logs.modul', 'disposisi')
+            ->where('activity_logs.referensi_id', (int) $id)
+            ->orderBy('activity_logs.created_at', 'ASC')
+            ->orderBy('activity_logs.id', 'ASC')
+            ->findAll();
+
+        // Ambil semua snapshot riwayat.
+        $snapshots = $this->riwayatModel
+            ->select(
+                'disposisi_riwayat.id,
+                 disposisi_riwayat.activity_log_id,
+                 disposisi_riwayat.user_id,
+                 users.name AS user_name,
+                 disposisi_riwayat.aktivitas,
+                 disposisi_riwayat.status_sebelum,
+                 disposisi_riwayat.status_sesudah,
+                 disposisi_riwayat.catatan,
+                 disposisi_riwayat.created_at'
+            )
+            ->join(
+                'users',
+                'users.id = disposisi_riwayat.user_id',
+                'left'
+            )
+            ->where('disposisi_riwayat.disposisi_id', (int) $id)
+            ->orderBy('disposisi_riwayat.created_at', 'ASC')
+            ->orderBy('disposisi_riwayat.id', 'ASC')
+            ->findAll();
+
+        $snapshotsByLogId = [];
+        $snapshotsTanpaRelasi = [];
+
+        foreach ($snapshots as $snapshot) {
+            if ($snapshot['activity_log_id'] !== null) {
+                $snapshotsByLogId[(int) $snapshot['activity_log_id']] =
+                    $snapshot;
+            } else {
+                $snapshotsTanpaRelasi[] = $snapshot;
+            }
+        }
+
+        $logs = [];
+
+        // Untuk snapshot lama yang belum memiliki relasi eksplisit,
+        // pertahankan perilaku sebelumnya agar tidak menampilkan
+        // duplikasi yang belum bisa dicocokkan secara pasti.
+
+        if ($snapshotsTanpaRelasi !== []) {
+            log_message(
+                'error',
+                'Timeline disposisi ID ' . (int) $id .
+                ' memiliki snapshot tanpa activity_log_id.'
+            );
+
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Timeline belum dapat ditampilkan karena terdapat riwayat yang belum terhubung.',
+            ], 500);
+        }
+
+        foreach ($activityLogs as $log) {
+            $logId = (int) $log['id'];
+
+            if (isset($snapshotsByLogId[$logId])) {
+                $snapshot = $snapshotsByLogId[$logId];
+
+                $logs[] = [
+                    'id' => $snapshot['id'],
+                    'activity_log_id' => $logId,
+                    'user_id' => $snapshot['user_id'],
+                    'user_name' => $snapshot['user_name'],
+                    'aktivitas' => $snapshot['aktivitas'],
+                    'status_sebelum' => $snapshot['status_sebelum'],
+                    'status_sesudah' => $snapshot['status_sesudah'],
+                    'catatan' => $snapshot['catatan'],
+                    'deskripsi' => $log['deskripsi'],
+                    'created_at' => $snapshot['created_at'],
+                ];
+            } else {
+                $logs[] = [
+                    'id' => $log['id'],
+                    'activity_log_id' => $logId,
+                    'user_id' => $log['user_id'],
+                    'user_name' => $log['user_name'],
+                    'aktivitas' => $log['aktivitas'],
+                    'status_sebelum' => null,
+                    'status_sesudah' => null,
+                    'catatan' => null,
+                    'deskripsi' => $log['deskripsi'],
+                    'created_at' => $log['created_at'],
+                ];
+            }
+        }
+
+        $sumberRiwayat = $snapshotsByLogId !== []
+            ? 'campuran'
+            : 'activity_logs';
+
+            return $this->respond([
+            'status' => true,
+            'message' => 'Timeline disposisi berhasil diambil.',
+            'data' => [
+                'disposisi_id' => (int) $disposisi['id'],
+                'no_agenda' => $disposisi['no_agenda'],
+                'no_surat' => $disposisi['no_surat'],
+                'status_terkini' => $disposisi['status'],
+                'sumber_riwayat' => $sumberRiwayat,
+                'timeline' => $logs,
+            ],
+        ], 200);
+    }
     /*
     |--------------------------------------------------------------------------
     | CREATE DISPOSISI
@@ -572,12 +794,21 @@ if ($suratTerkunci['status'] === 'selesai') {
         }
 
         // ACTIVITY LOG
-        $this->logActivity(
+        $activityLogId = $this->logActivity(
             'create',
             (int) $id,
             'Membuat disposisi surat kepada ' . $staf['name']
         );
-
+        // RIWAYAT DISPOSISI
+        $this->simpanRiwayat(
+            (int) $id,
+            (int) $user['id'],
+            'create',
+            null,
+            'menunggu',
+            $catatan,
+            $activityLogId
+        );
         // NOTIFIKASI STAF
         $this->createNotification(
             (int) $staf['id'],
@@ -714,6 +945,48 @@ if ($suratTerkunci['status'] === 'selesai') {
          * Mencegah tindak lanjut pada disposisi
          * yang sudah diselesaikan oleh request lain.
          */
+
+        // KUNCI DISPOSISI DAN AMBIL STATUS SEBELUMNYA
+        $disposisiTerkunci = $db->query(
+            'SELECT id, ke_user_id, status
+             FROM disposisi
+             WHERE id = ?
+             FOR UPDATE',
+            [(int) $id]
+        )->getRowArray();
+
+        if (!$disposisiTerkunci) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak ditemukan.',
+            ], 404);
+        }
+
+        if (
+            (int) $disposisiTerkunci['ke_user_id'] !==
+            (int) $user['id']
+        ) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi ini bukan ditujukan kepada Anda.',
+            ], 403);
+        }
+
+        if ($disposisiTerkunci['status'] === 'selesai') {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi sudah selesai.',
+            ], 409);
+        }
+
+        $statusSebelum = $disposisiTerkunci['status'];
+
         $updated = $db->table('disposisi')
             ->where('id', (int) $id)
             ->where('ke_user_id', (int) $user['id'])
@@ -747,10 +1020,21 @@ if ($suratTerkunci['status'] === 'selesai') {
         }
 
         // ACTIVITY LOG
-        $this->logActivity(
+        $activityLogId = $this->logActivity(
             'tindak_lanjut',
             (int) $id,
             'Mengisi hasil tindak lanjut disposisi.'
+        );
+
+        // SNAPSHOT RIWAYAT TINDAK LANJUT
+        $this->simpanRiwayat(
+            (int) $id,
+            (int) $user['id'],
+            'tindak_lanjut',
+            $statusSebelum,
+            'dalam_proses',
+            $hasil,
+            $activityLogId
         );
 
         // AMBIL DATA SURAT
@@ -975,9 +1259,77 @@ public function selesai($id = null)
 
     $db = \Config\Database::connect();
 
-    $db->transBegin();
+if (!$db->transBegin()) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Gagal memulai transaksi database.',
+    ], 500);
+}
+try {
 
-    try {
+        /*
+        |--------------------------------------------------------------------------
+        | KUNCI DISPOSISI DAN VALIDASI STATUS TERBARU
+        |--------------------------------------------------------------------------
+        */
+
+        $disposisiTerkunci = $db->query(
+            'SELECT id, dari_user_id, ke_user_id,
+                    surat_masuk_id, status, hasil_tindak_lanjut
+             FROM disposisi
+             WHERE id = ?
+             FOR UPDATE',
+            [(int) $id]
+        )->getRowArray();
+
+        if (!$disposisiTerkunci) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak ditemukan.',
+            ], 404);
+        }
+
+        // Validasi ulang kepemilikan setelah baris dikunci
+        $berhak = (
+            $user['role'] === 'kepala_seksi' &&
+            (int) $disposisiTerkunci['dari_user_id'] === (int) $user['id']
+        ) || (
+            $user['role'] === 'staf' &&
+            (int) $disposisiTerkunci['ke_user_id'] === (int) $user['id']
+        );
+
+        if (!$berhak) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Anda tidak memiliki akses ke disposisi ini.',
+            ], 403);
+        }
+
+        if ($disposisiTerkunci['status'] !== 'dalam_proses') {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Hanya disposisi dalam proses yang dapat diselesaikan.',
+            ], 409);
+        }
+
+        if (trim((string) $disposisiTerkunci['hasil_tindak_lanjut']) === '') {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Tindak lanjut harus diisi sebelum disposisi diselesaikan.',
+            ], 422);
+        }
+
+        $statusSebelum = $disposisiTerkunci['status'];
 
         /*
         |--------------------------------------------------------------------------
@@ -1050,12 +1402,28 @@ public function selesai($id = null)
         |--------------------------------------------------------------------------
         */
 
-        $this->logActivity(
+        $activityLogId = $this->logActivity(
             'selesai',
             (int) $id,
             'Menyelesaikan disposisi.'
         );
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | SNAPSHOT RIWAYAT PENYELESAIAN
+        |--------------------------------------------------------------------------
+        */
+
+        $this->simpanRiwayat(
+            (int) $id,
+            (int) $user['id'],
+            'selesai',
+            $statusSebelum,
+            'selesai',
+            null,
+            $activityLogId
+        );
         /*
         |--------------------------------------------------------------------------
         | NOTIFIKASI
@@ -1230,6 +1598,49 @@ public function kembalikan($id = null)
     }
 
     try {
+
+
+        // KUNCI DISPOSISI DAN VALIDASI STATUS TERBARU
+        $disposisiTerkunci = $db->query(
+            'SELECT id, dari_user_id, status
+             FROM disposisi
+             WHERE id = ?
+             FOR UPDATE',
+            [(int) $id]
+        )->getRowArray();
+
+        if (!$disposisiTerkunci) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak ditemukan.',
+            ], 404);
+        }
+
+        if (
+            (int) $disposisiTerkunci['dari_user_id'] !==
+            (int) $user['id']
+        ) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Anda tidak memiliki akses ke disposisi ini.',
+            ], 403);
+        }
+
+        if ($disposisiTerkunci['status'] !== 'dalam_proses') {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Hanya disposisi dalam proses yang dapat dikembalikan untuk revisi.',
+            ], 409);
+        }
+
+        $statusSebelum = $disposisiTerkunci['status'];
         // UPDATE DISPOSISI BERSYARAT
         $updated = $db->table('disposisi')
             ->where('id', (int) $id)
@@ -1258,10 +1669,20 @@ public function kembalikan($id = null)
         }
 
         // ACTIVITY LOG
-        $this->logActivity(
+        $activityLogId = $this->logActivity(
             'revisi',
             (int) $id,
             'Mengembalikan disposisi untuk revisi.'
+        );
+        // SNAPSHOT RIWAYAT REVISI
+        $this->simpanRiwayat(
+            (int) $id,
+            (int) $user['id'],
+            'revisi',
+            $statusSebelum,
+            'dikembalikan',
+            $catatanRevisi,
+            $activityLogId
         );
 
         // AMBIL DATA SURAT
