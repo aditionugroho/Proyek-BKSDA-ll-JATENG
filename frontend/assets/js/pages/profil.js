@@ -7,8 +7,8 @@
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== DATA PROFIL (mock — bisa diganti sessionStorage/API) ===== */
-const PROFILE = {
+/* ===== DATA PROFIL: diisi loadProfil() — API saat LIVE, mock saat belum ===== */
+const PROFILE_MOCK = {
   nama: "Alex Rivera",
   jabatan: "Kepala Seksi Konservasi Wilayah",
   nip: "198505122010011001",
@@ -16,6 +16,15 @@ const PROFILE = {
   email: "alex.rivera@SKSDA-jateng.go.id",
   telepon: "0812-3456-7890"
 };
+
+let PROFILE = null;
+
+async function loadProfil() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getProfil();
+  }
+  return PROFILE_MOCK;
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -85,13 +94,27 @@ editBtn.addEventListener("click", () => {
 
   if (!valid) return;
 
-  PROFILE.nama = namaInput.value.trim();
-  PROFILE.email = emailInput.value.trim();
-  PROFILE.telepon = teleponInput.value.trim();
+  const simpanSukses = () => {
+    PROFILE.nama = namaInput.value.trim();
+    PROFILE.email = emailInput.value.trim();
+    PROFILE.telepon = teleponInput.value.trim();
+    setEditMode(false);
+    applyProfile();
+    showToast("Profil diperbarui");
+  };
 
-  setEditMode(false);
-  applyProfile();
-  showToast("Profil diperbarui");
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.updateProfil({
+      nama: namaInput.value.trim(),
+      email: emailInput.value.trim(),
+      telepon: teleponInput.value.trim()
+    })
+      .then(simpanSukses)
+      .catch(() => showToast("Gagal menyimpan profil. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
+  simpanSukses();
 });
 
 /* Batal: kembali read-only tanpa mengubah data */
@@ -154,7 +177,13 @@ document.getElementById("btn-password").addEventListener("click", () => {
         return false;
       }
 
-      showToast("Kata sandi berhasil diubah");
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        EOfficeAPI.gantiKataSandi(lama, baru)
+          .then(() => showToast("Kata sandi berhasil diubah"))
+          .catch(() => showToast("Gagal mengubah kata sandi. Periksa koneksi lalu coba lagi."));
+      } else {
+        showToast("Kata sandi berhasil diubah");
+      }
     }
   });
 });
@@ -168,12 +197,28 @@ document.getElementById("btn-logout").addEventListener("click", () => {
     cancelLabel: "Batal",
     danger: true,
     onConfirm: () => {
-      window.sessionStorage.clear();
-      window.localStorage.removeItem("eoffice_session"); // hapus juga sesi "tetap masuk"
-      window.location.href = "../../login.html";
+      if (window.EOfficeAPI) {
+        EOfficeAPI.logout().finally(() => {
+          window.location.href = "../../login.html";
+        });
+      } else {
+        window.sessionStorage.clear();
+        window.localStorage.removeItem("eoffice_session");
+        window.location.href = "../../login.html";
+      }
     }
   });
 });
 
-/* ===== Inisialisasi ===== */
-applyProfile();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  try {
+    PROFILE = await loadProfil();
+  } catch (e) {
+    PROFILE = PROFILE_MOCK;
+    showToast("Gagal memuat profil. Menampilkan data bawaan.");
+  }
+  applyProfile();
+}
+
+init();

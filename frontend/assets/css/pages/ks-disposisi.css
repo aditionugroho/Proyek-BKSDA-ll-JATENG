@@ -192,6 +192,15 @@
   gap: 12px;
 }
 
+/* Petunjuk format di bawah input */
+.kdp-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6B7280;
+}
+.kdp-hint strong { color: #374151; }
+
 /* Pesan error inline */
 .kdp-error {
   margin: 0;
@@ -199,7 +208,9 @@
   color: #DC2626;
 }
 
-.kdp-field.is-error select {
+.kdp-field.is-error select,
+.kdp-field.is-error input,
+.kdp-field.is-error textarea {
   border-color: #DC2626 !important;
 }
 

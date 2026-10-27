@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -49,40 +49,59 @@
   <footer class="admin-footer">&copy; 2026 Seksi Konservasi Sumber Daya Alam Jawa Tengah (SKSDA Jateng) - Sistem Informasi Tata Kelola Surat Elektronik</footer>
 
   <!-- ===== Skrip ===== -->
+  <script src="../../assets/js/api.js"></script>
   <script type="module" src="../../assets/js/auth.js"></script>
   <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
   <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
   <script type="module">
-    import { SURAT_TERAKHIR } from "../../assets/js/pages/admin-input-surat.js";
+    import { SURAT_TERAKHIR_MOCK } from "../../assets/js/pages/admin-input-surat.js";
 
-    const id = Number(new URLSearchParams(location.search).get("id"));
-    const d = SURAT_TERAKHIR.find((x) => x.id === id) || SURAT_TERAKHIR[0];
+    async function loadDetail(id) {
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        const list = await EOfficeAPI.getSuratTerbaru();
+        return list.find((x) => x.id === id) || list[0];
+      }
+      return SURAT_TERAKHIR_MOCK.find((x) => x.id === id) || SURAT_TERAKHIR_MOCK[0];
+    }
 
-    document.getElementById("dg-crumb").textContent = d.nomor;
-    document.getElementById("dg-title").textContent = d.perihal;
-    document.getElementById("dg-sub").textContent = `${d.pihak} \u2022 ${d.tanggal}`;
+    async function init() {
+      const id = Number(new URLSearchParams(location.search).get("id"));
+      let d;
+      try {
+        d = await loadDetail(id);
+      } catch (e) {
+        document.getElementById("dg-title").textContent = "Gagal memuat detail surat";
+        return;
+      }
 
-    const badge = document.getElementById("dg-badge");
-    badge.textContent = d.status;
-    badge.className = "dg-badge dg-badge--green";
+      document.getElementById("dg-crumb").textContent = d.nomor;
+      document.getElementById("dg-title").textContent = d.perihal;
+      document.getElementById("dg-sub").textContent = `${d.pihak} \u2022 ${d.tanggal}`;
 
-    const rows = [
-      ["Nomor Surat", d.nomor, true],
-      ["Jenis", d.jenis],
-      ["Pengirim / Penerima", d.pihak],
-      ["Tanggal", d.tanggal],
-      ["Status", d.status]
-    ];
+      const badge = document.getElementById("dg-badge");
+      badge.textContent = d.status;
+      badge.className = "dg-badge dg-badge--green";
 
-    document.getElementById("dg-info").innerHTML = rows
-      .map(([l, v, mono]) => `
-        <div class="dg-field">
-          <p class="dg-label">${l}</p>
-          <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-        </div>`)
-      .join("");
+      const rows = [
+        ["Nomor Surat", d.nomor, true],
+        ["Jenis", d.jenis],
+        ["Pengirim / Penerima", d.pihak],
+        ["Tanggal", d.tanggal],
+        ["Status", d.status]
+      ];
 
-    document.title = `${d.perihal} - E-Office SKSDA`;
+      document.getElementById("dg-info").innerHTML = rows
+        .map(([l, v, mono]) => `
+          <div class="dg-field">
+            <p class="dg-label">${l}</p>
+            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
+          </div>`)
+        .join("");
+
+      document.title = `${d.perihal} - E-Office SKSDA`;
+    }
+
+    init();
   </script>
 </body>
 </html>

@@ -4,9 +4,19 @@
    pilih baris, dropdown aksi, pagination
    ============================================ */
 
-import { arsipPgData, TOTAL_ARSIP_MOCK } from "../data/arsip-pegawai.js";
+import { arsipPgData as ARSIP_PG_MOCK } from "../data/arsip-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let arsipPgData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getArsipSaya();
+  }
+  return ARSIP_PG_MOCK;
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -87,7 +97,7 @@ function renderTable() {
 
   /* Footer */
   document.getElementById("pga-showing").textContent =
-    `Menampilkan 1-${rows.length} dari ${TOTAL_ARSIP_MOCK} data`;
+    `Menampilkan 1-${rows.length} dari ${arsipPgData.length} data`;
 }
 
 /* ===== EVENT: tab ===== */
@@ -203,5 +213,20 @@ document.querySelectorAll(".pga-page-num").forEach((btn) => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("pga-tbody");
+  tbody.innerHTML = `<tr class="pga-empty"><td colspan="10">Memuat data arsip...</td></tr>`;
+
+  try {
+    arsipPgData = await loadData();
+  } catch (e) {
+    arsipPgData = [];
+    tbody.innerHTML = `<tr class="pga-empty"><td colspan="10">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderTable();
+}
+
+init();

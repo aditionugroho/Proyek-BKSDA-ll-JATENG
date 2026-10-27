@@ -5,7 +5,10 @@
    ============================================ */
 
 /* ===== MOCK DATA ===== */
-const pgDashboardData = {
+/* ===== DATA: diisi loadDashboard() — API saat LIVE, mock saat belum ===== */
+let pgDashboardData = null;
+
+const PG_DASHBOARD_MOCK = {
   stats: [
     {
       label: "Tugas Aktif",
@@ -178,7 +181,24 @@ function renderDashboard() {
   renderDisposisi();
 }
 
-renderDashboard();
+async function loadDashboard() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getDashboardPegawai();
+  }
+  return PG_DASHBOARD_MOCK;
+}
+
+async function init() {
+  try {
+    pgDashboardData = await loadDashboard();
+  } catch (e) {
+    console.error("Gagal memuat dashboard:", e);
+    return;
+  }
+  renderDashboard();
+}
+
+init();
 
 /* ============================================
    RUNNING TEXT (PENGUMUMAN) — utilitas bersama

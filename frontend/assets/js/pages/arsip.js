@@ -4,17 +4,19 @@
    status), toggle tabel/grid, modal detail
    ============================================ */
 
-import { arsipData, TOTAL_ARsip_MOCK } from "../data/arsip.js";
+import { arsipData as ARSIP_MOCK } from "../data/arsip.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== STAT ===== */
-const STATS = [
-  { label: "Total Arsip", value: "1,248", sub: "berkas tersimpan aman", dot: "blue", icon: "folder", tone: "blue" },
-  { label: "Surat Masuk", value: "742", sub: "arsip terselesaikan", dot: "green", icon: "inbox", tone: "green" },
-  { label: "Surat Keluar", value: "386", sub: "teregistrasi & TTE sah", dot: "blue", icon: "send", tone: "blue" },
-  { label: "Arsip Bulan Ini", value: "120", sub: "penambahan berkas baru", dot: "orange", icon: "calendar", tone: "amber" }
-];
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let arsipData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getArsip();
+  }
+  return ARSIP_MOCK;
+}
 
 const ICONS = {
   folder: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
@@ -30,9 +32,23 @@ let jenisFilter = "all";
 let tahunFilter = "all";
 let statusFilter = "all";
 
-/* ===== RENDER STAT ===== */
+/* ===== RENDER STAT (dihitung dari data, bukan hard-coded) ===== */
 function renderStats() {
-  document.getElementById("ar-stats").innerHTML = STATS.map(
+  const fmt = (n) => n.toLocaleString("id-ID");
+  const namaBulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const now = new Date();
+  const bulanIni = arsipData.filter((d) =>
+    d.tanggal.includes(`${namaBulan[now.getMonth()]} ${now.getFullYear()}`)
+  ).length;
+
+  const stats = [
+    { label: "Total Arsip", value: fmt(arsipData.length), sub: "berkas tersimpan aman", dot: "blue", icon: "folder", tone: "blue" },
+    { label: "Surat Masuk", value: fmt(arsipData.filter((d) => d.jenis === "Surat Masuk").length), sub: "arsip surat masuk", dot: "green", icon: "inbox", tone: "green" },
+    { label: "Surat Keluar", value: fmt(arsipData.filter((d) => d.jenis === "Surat Keluar").length), sub: "arsip surat keluar", dot: "blue", icon: "send", tone: "blue" },
+    { label: "Arsip Bulan Ini", value: fmt(bulanIni), sub: "penambahan berkas baru", dot: "orange", icon: "calendar", tone: "amber" }
+  ];
+
+  document.getElementById("ar-stats").innerHTML = stats.map(
     (s) => `
       <article class="ar-stat">
         <div>
@@ -107,7 +123,7 @@ function renderGrid(rows) {
 function renderFooter(rows) {
   document.getElementById("ar-count-num").textContent = rows.length;
   document.getElementById("ar-showing").textContent =
-    `Menampilkan 1-${rows.length} dari ${TOTAL_ARsip_MOCK.toLocaleString("id-ID")} dokumen`;
+    `Menampilkan 1-${rows.length} dari ${arsipData.length.toLocaleString("id-ID")} dokumen`;
 }
 
 /* ===== REFRESH ===== */
@@ -188,6 +204,21 @@ document.getElementById("btn-cari-cepat").addEventListener("click", () => {
   input.focus();
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("ar-tbody");
+  tbody.innerHTML = `<tr class="ar-empty"><td colspan="8">Memuat data arsip...</td></tr>`;
+
+  try {
+    arsipData = await loadData();
+  } catch (e) {
+    arsipData = [];
+    tbody.innerHTML = `<tr class="ar-empty"><td colspan="8">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderStats();
+  refresh();
+}
+
+init();

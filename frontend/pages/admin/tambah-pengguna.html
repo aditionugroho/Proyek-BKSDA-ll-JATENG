@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -99,7 +99,7 @@
             </div>
             <div class="tp-field">
               <label class="tp-label" for="tp-pangkat">Pangkat &amp; Golongan Ruang</label>
-              <input type="text" id="tp-pangkat" placeholder="Contoh: Penata • Gol. III/c" />
+              <input type="text" id="tp-pangkat" placeholder="Contoh: Penata â€¢ Gol. III/c" />
             </div>
           </div>
 
@@ -123,7 +123,7 @@
             <div class="tp-field">
               <label class="tp-label" for="tp-unit">Unit Kerja Induk (Seksi Wilayah) <span class="tp-req">*</span></label>
               <select id="tp-unit">
-                <option value="Seksi Konservasi Wilayah II" selected>Seksi Konservasi Wilayah II — Pemalang</option>
+                <option value="Seksi Konservasi Wilayah II" selected>Seksi Konservasi Wilayah II â€” Pemalang</option>
               </select>
               <p class="tp-hint">Terkunci otomatis sesuai lingkup kewenangan administratif admin login.</p>
             </div>
@@ -131,7 +131,7 @@
               <label class="tp-label" for="tp-resort-input">Resort Konservasi / Subbag Operasional <span class="tp-req">*</span></label>
               <input type="text" id="tp-resort-input" list="tp-resort-list" placeholder="Ketik manual nama resort / subbag..." autocomplete="off" />
               <datalist id="tp-resort-list"></datalist>
-              <p class="tp-hint">Isi manual bebas — entri yang pernah diketip muncul sebagai saran dan dikelola di bawah (bisa dihapus).</p>
+              <p class="tp-hint">Isi manual bebas â€” entri yang pernah diketip muncul sebagai saran dan dikelola di bawah (bisa dihapus).</p>
               <div class="tp-resort-saved" id="tp-resort-saved" hidden>
                 <p class="tp-resort-saved-label">Entri tersimpan (klik &#10005; untuk hapus):</p>
                 <div class="tp-resort-chips" id="tp-resort-chips"></div>
@@ -266,9 +266,9 @@
           </div>
 
           <div class="tp-perms">
-            <label class="tp-check"><input type="checkbox" id="opt-1" checked /><span><strong>Wajib Ganti Sandi Pada Login Pertama</strong> — pegawai tidak dapat mengakses arsip surat sebelum memperbarui kata sandi pribadinya.</span></label>
-            <label class="tp-check"><input type="checkbox" id="opt-2" checked /><span><strong>Aktifkan Status Akun Segera</strong> — akun langsung siap menerima tembusan disposisi dan penugasan per hari ini.</span></label>
-            <label class="tp-check"><input type="checkbox" id="opt-3" checked /><span><strong>Kirim Salinan Kredensial Otomatis</strong> — mengirimkan informasi login, panduan e-Office, dan password ke email dinas terdaftar.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-1" checked /><span><strong>Wajib Ganti Sandi Pada Login Pertama</strong> â€” pegawai tidak dapat mengakses arsip surat sebelum memperbarui kata sandi pribadinya.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-2" checked /><span><strong>Aktifkan Status Akun Segera</strong> â€” akun langsung siap menerima tembusan disposisi dan penugasan per hari ini.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-3" checked /><span><strong>Kirim Salinan Kredensial Otomatis</strong> â€” mengirimkan informasi login, panduan e-Office, dan password ke email dinas terdaftar.</span></label>
           </div>
         </section>
 
@@ -316,8 +316,8 @@
           <div class="tp-preview-row">
             <span class="tp-preview-avatar" id="pv-avatar">AF</span>
             <div>
-              <p class="tp-preview-name" id="pv-nama">—</p>
-              <p class="tp-preview-meta" id="pv-meta">NIP. —</p>
+              <p class="tp-preview-name" id="pv-nama">â€”</p>
+              <p class="tp-preview-meta" id="pv-meta">NIP. â€”</p>
             </div>
             <span class="tp-preview-status" id="pv-status">BARU</span>
           </div>
@@ -341,6 +341,7 @@
   </div>
 
   <!-- ===== Skrip ===== -->
+  <script src="../../assets/js/api.js"></script>
   <script type="module" src="../../assets/js/auth.js"></script>
   <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
   <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
@@ -449,8 +450,8 @@
 
     /* ===== Preview panel ===== */
     function updatePreview() {
-      $("pv-nama").textContent = $("tp-nama").value.trim() || "—";
-      $("pv-meta").textContent = "NIP. " + ($("tp-nip").value.replace(/\s/g, "") || "—");
+      $("pv-nama").textContent = $("tp-nama").value.trim() || "â€”";
+      $("pv-meta").textContent = "NIP. " + ($("tp-nip").value.replace(/\s/g, "") || "â€”");
       $("pv-avatar").textContent = inisialDariNama($("tp-nama").value);
     }
 
@@ -537,7 +538,28 @@
       return ok;
     }
 
-    function simpan(d, status) {
+    function simpan(d, status, lalu) {
+      const sukses = () => { if (lalu) lalu(); };
+
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        // LIVE: akun dibuat langsung di server
+        EOfficeAPI.createUser({
+          nama: d.nama,
+          nip: d.nip,
+          username: d.username,
+          email: d.email,
+          role: d.role,
+          unit: d.resort,
+          jabatan: d.jabatan,
+          kata_sandi: d.kataSandi,
+          langsung_aktif: status === "aktif"
+        })
+          .then(sukses)
+          .catch(() => showToast("Gagal menyimpan. Periksa koneksi lalu coba lagi."));
+        return;
+      }
+
+      // MOCK: simpan ke localStorage (perilaku lama)
       const daftar = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
       daftar.push({
         nama: d.nama,
@@ -556,14 +578,14 @@
         daftarPada: new Date().toISOString()
       });
       localStorage.setItem("eoffice_registrations", JSON.stringify(daftar));
+      sukses();
     }
 
     /* ===== Simpan Draf ===== */
     $("btn-draft").addEventListener("click", () => {
       const d = kumpulkan();
       if (!d.nama) return showToast("Minimal nama lengkap wajib diisi untuk draf.");
-      simpan(d, "draf");
-      showToast("Draf disimpan. Lengkapi nanti di Data Pengguna.");
+      simpan(d, "draf", () => showToast("Draf disimpan. Lengkapi nanti di Data Pengguna."));
     });
 
     /* ===== Simpan & Buat Akun ===== */
@@ -572,14 +594,14 @@
       if (!validasi(d, true)) { showToast("Periksa kembali field yang bertanda *"); return; }
 
       const langsungAktif = $("opt-2").checked;
-      simpan(d, langsungAktif ? "aktif" : "menunggu-verifikasi");
+      simpan(d, langsungAktif ? "aktif" : "menunggu-verifikasi", () => {
+        $("tp-toast-text").textContent = langsungAktif
+          ? "Akun " + d.username + " dibuat & aktif. Sandi: " + d.kataSandi
+          : "Akun " + d.username + " tersimpan (menunggu aktivasi).";
+        $("tp-toast").classList.add("show");
 
-      $("tp-toast-text").textContent = langsungAktif
-        ? "Akun " + d.username + " dibuat & aktif. Sandi: " + d.kataSandi
-        : "Akun " + d.username + " tersimpan (menunggu aktivasi).";
-      $("tp-toast").classList.add("show");
-
-      setTimeout(() => { location.href = "data-pengguna.html"; }, 2400);
+        setTimeout(() => { location.href = "data-pengguna.html"; }, 2400);
+      });
     }
     $("btn-create").addEventListener("click", buatAkun);
     $("btn-create-top").addEventListener("click", buatAkun);

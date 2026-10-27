@@ -4,18 +4,20 @@
    pagination teks, select-all, modal info
    ============================================ */
 
-import { SURAT_MASUK as suratData } from "../data/surat-masuk.js";
+import { SURAT_MASUK as SURAT_MASUK_MOCK } from "../data/surat-masuk.js";
 import { saveListState, loadListState } from "../utils/state.js";
 
 const STATE_KEY = "surat-masuk-ks";
 
-/* Stat card */
-const stats = [
-  { label: "Total Surat Masuk", meta: "Bulan Ini", value: "1,248", icon: "inbox", tone: "blue" },
-  { label: "Belum Dibaca", meta: "\u2191 12%", metaTone: "red", value: "42", icon: "mail", tone: "red" },
-  { label: "Perlu Tindak Lanjut", meta: "Menunggu", value: "18", icon: "clock", tone: "amber" },
-  { label: "Selesai (Bulan Ini)", meta: "\u2191 8%", metaTone: "green", value: "1,188", icon: "checkCircle", tone: "green" }
-];
+/* ===== DATA: diisi loadData() — API saat LIVE, array mock saat belum ===== */
+let suratData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getSuratMasuk();
+  }
+  return SURAT_MASUK_MOCK;
+}
 
 /* ===== IKON SVG INLINE ===== */
 const ICONS = {
@@ -51,8 +53,15 @@ function restoreState() {
   );
 }
 
-/* ===== RENDER: stat card ===== */
+/* ===== RENDER: stat card (dihitung dari data, bukan hard-coded) ===== */
 function renderStats() {
+  const fmt = (n) => n.toLocaleString("id-ID");
+  const stats = [
+    { label: "Total Surat Masuk", meta: "Bulan Ini", value: fmt(suratData.length), icon: "inbox", tone: "blue" },
+    { label: "Belum Dibaca", meta: "Surat Baru", metaTone: "red", value: fmt(suratData.filter((s) => s.unread).length), icon: "mail", tone: "red" },
+    { label: "Perlu Tindak Lanjut", meta: "Menunggu", value: fmt(suratData.filter((s) => s.perluTindak).length), icon: "clock", tone: "amber" },
+    { label: "Selesai", meta: "Total", metaTone: "green", value: fmt(suratData.filter((s) => s.selesai).length), icon: "checkCircle", tone: "green" }
+  ];
   document.getElementById("kss-stats").innerHTML = stats.map((s) => {
     const metaTone = s.metaTone ? ` kss-stat-meta--${s.metaTone}` : "";
     return `
@@ -218,8 +227,23 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-renderTabBadges();
-restoreState();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("kss-tbody");
+  tbody.innerHTML = `<tr class="kss-empty"><td colspan="6">Memuat data surat...</td></tr>`;
+
+  try {
+    suratData = await loadData();
+  } catch (e) {
+    suratData = [];
+    tbody.innerHTML = `<tr class="kss-empty"><td colspan="6">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderStats();
+  renderTabBadges();
+  restoreState();
+  refresh();
+}
+
+init();

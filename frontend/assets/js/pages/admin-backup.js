@@ -1,5 +1,5 @@
-/* ============================================
-   BACKUP DATA (ADMIN) — E-Office SKSDA
+﻿/* ============================================
+   BACKUP DATA (ADMIN) â€” E-Office SKSDA
    Stat, modul, riwayat (tab state), backup
    manual simulasi, detail interaktif
    ============================================ */
@@ -7,7 +7,7 @@
 /* ===== MOCK DATA ===== */
 
 /* Stat card */
-const STATS = [
+const STATS_MOCK = [
   { label: "Backup Terakhir", value: "13 Sep 2026", badge: "Berhasil", sub: "03:00 WIB", icon: "calendar", tone: "blue" },
   { label: "Status Backup", value: "Normal", sub: "Sistem Backup Aktif", dot: true, icon: "checkCircle", tone: "green" },
   { label: "Ukuran Terakhir", value: "2.4 GB", sub: "Full Backup Harian", icon: "box", tone: "blue" },
@@ -16,7 +16,7 @@ const STATS = [
 ];
 
 /* Modul backup 2x2 */
-const MODULES = [
+const MODULES_MOCK = [
   { icon: "database", name: "Database", desc: "PostgreSQL 15 (Cluster Jateng)", time: "13 Sep 2026, 03:00 WIB" },
   { icon: "file", name: "Dokumen Surat", desc: "Arsip digital PDF & Lampiran (1.8 TB)", time: "13 Sep 2026, 03:00 WIB" },
   { icon: "users", name: "Data Pengguna", desc: "148 akun pengguna & hak akses", time: "13 Sep 2026, 03:00 WIB" },
@@ -24,7 +24,7 @@ const MODULES = [
 ];
 
 /* Riwayat backup */
-const HISTORY = [
+const HISTORY_MOCK = [
   {
     id: "BKP-2026-09-13-0300", tanggal: "13 Sep 2026", waktu: "03:00 WIB",
     jenis: "Scheduled", size: "2.4 GB", status: "Berhasil", oleh: "System (Cron)",
@@ -183,7 +183,7 @@ document.getElementById("tab-pills").addEventListener("click", (event) => {
   renderHistory(btn.dataset.mode);
 });
 
-/* ===== LIHAT DETAIL → isi panel kanan ===== */
+/* ===== LIHAT DETAIL â†’ isi panel kanan ===== */
 function fillDetail(row) {
   document.getElementById("d-id").textContent = row.id;
   document.getElementById("d-tipe").textContent = row.jenis;
@@ -216,6 +216,25 @@ const BACKUP_IDLE = `${ICONS.cloud} + Backup Sekarang`;
 backupBtn.addEventListener("click", () => {
   backupBtn.disabled = true;
   backupBtn.innerHTML = `<span class="spinner"></span> Memproses...`;
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    // LIVE: server menjalankan backup, riwayat diambil ulang
+    EOfficeAPI.runBackup()
+      .then(() => EOfficeAPI.getBackup())
+      .then((res) => {
+        HISTORY = res.history || HISTORY_MOCK;
+        renderHistory("normal");
+        backupBtn.disabled = false;
+        backupBtn.innerHTML = BACKUP_IDLE;
+        showToast("Backup manual selesai");
+      })
+      .catch(() => {
+        backupBtn.disabled = false;
+        backupBtn.innerHTML = BACKUP_IDLE;
+        showToast("Backup gagal. Periksa koneksi lalu coba lagi.");
+      });
+    return;
+  }
 
   setTimeout(() => {
     // Buat baris riwayat baru (Manual, Berhasil)
@@ -250,7 +269,36 @@ backupBtn.addEventListener("click", () => {
   }, 3000);
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-renderModules();
-renderHistory("normal");
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let STATS = STATS_MOCK;
+let MODULES = MODULES_MOCK;
+let HISTORY = HISTORY_MOCK;
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const res = await EOfficeAPI.getBackup();
+    return {
+      stats: res.stats || STATS_MOCK,
+      modules: res.modules || MODULES_MOCK,
+      history: res.history || HISTORY_MOCK
+    };
+  }
+  return { stats: STATS_MOCK, modules: MODULES_MOCK, history: HISTORY_MOCK };
+}
+
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  try {
+    const res = await loadData();
+    STATS = res.stats;
+    MODULES = res.modules;
+    HISTORY = res.history;
+  } catch (e) {
+    console.error("Gagal memuat data backup:", e);
+  }
+  renderStats();
+  renderModules();
+  renderHistory("normal");
+}
+
+init();

@@ -49,37 +49,55 @@
   <footer class="pg-footer">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
 
   <!-- ===== Skrip ===== -->
+  <script src="../../assets/js/api.js"></script>
   <script type="module" src="../../assets/js/auth.js"></script>
   <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
   <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
   <script type="module">
-    import { arsipPgData } from "../../assets/js/data/arsip-pegawai.js";
+    import { arsipPgData as MOCK } from "../../assets/js/data/arsip-pegawai.js";
 
-    const id = Number(new URLSearchParams(location.search).get("id"));
-    const d = arsipPgData.find((x) => x.id === id) || arsipPgData[0];
+    async function loadDetail(id) {
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        return EOfficeAPI.getArsipSayaDetail(id);
+      }
+      return MOCK.find((x) => x.id === id) || MOCK[0];
+    }
 
-    document.getElementById("dg-crumb").textContent = d.nomor;
-    document.getElementById("dg-title").textContent = d.nama;
-    document.getElementById("dg-sub").textContent = `${d.jenis} \u2022 ${d.tanggal} \u2022 ${d.sub || ""}`;
+    async function init() {
+      const id = Number(new URLSearchParams(location.search).get("id"));
+      let d;
+      try {
+        d = await loadDetail(id);
+      } catch (e) {
+        document.getElementById("dg-title").textContent = "Gagal memuat detail arsip";
+        return;
+      }
 
-    const rows = [
-      ["Nomor Dokumen", d.nomor, true],
-      ["Jenis Dokumen", d.jenis],
-      ["Tanggal Dokumen", `${d.tanggal} (${d.tahun})`],
-      ["Diarsipkan Oleh", d.oleh],
-      ["Tanggal Diarsipkan", d.diarsipkan],
-      ["Status", d.status]
-    ];
+      document.getElementById("dg-crumb").textContent = d.nomor;
+      document.getElementById("dg-title").textContent = d.nama;
+      document.getElementById("dg-sub").textContent = `${d.jenis} \u2022 ${d.tanggal} \u2022 ${d.sub || ""}`;
 
-    document.getElementById("dg-info").innerHTML = rows
-      .map(([l, v, mono]) => `
-        <div class="dg-field">
-          <p class="dg-label">${l}</p>
-          <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-        </div>`)
-      .join("");
+      const rows = [
+        ["Nomor Dokumen", d.nomor, true],
+        ["Jenis Dokumen", d.jenis],
+        ["Tanggal Dokumen", `${d.tanggal} (${d.tahun})`],
+        ["Diarsipkan Oleh", d.oleh],
+        ["Tanggal Diarsipkan", d.diarsipkan],
+        ["Status", d.status]
+      ];
 
-    document.title = `${d.nama} - E-Office SKSDA`;
+      document.getElementById("dg-info").innerHTML = rows
+        .map(([l, v, mono]) => `
+          <div class="dg-field">
+            <p class="dg-label">${l}</p>
+            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
+          </div>`)
+        .join("");
+
+      document.title = `${d.nama} - E-Office SKSDA`;
+    }
+
+    init();
   </script>
 </body>
 </html>

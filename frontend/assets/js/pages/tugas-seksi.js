@@ -4,19 +4,21 @@
    dropdown menu ⋮, progress bar warna
    ============================================ */
 
-import { TUGAS_SEKSI, TOTAL_TUGAS_MOCK } from "../data/tugas-seksi.js";
+import { TUGAS_SEKSI as TUGAS_MOCK } from "../data/tugas-seksi.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
 
 const STATE_KEY = "tugas-seksi-ks";
 
-/* ===== STAT CARD ===== */
-const STATS = [
-  { label: "Total Tugas Aktif", value: "24", note: "+3 dari minggu lalu", noteTone: "green", noteIcon: "trendUp", icon: "clipboard", tone: "blue" },
-  { label: "Menunggu Review", value: "5", note: "Perlu tindakan segera", icon: "clock", tone: "amber" },
-  { label: "Selesai (Bulan Ini)", value: "18", note: "Tingkat penyelesaian: 85%", icon: "check", tone: "green" },
-  { label: "Terlambat", value: "2", valueRed: true, note: "Perlu eskalasi", noteTone: "red", icon: "alert", tone: "red" }
-];
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let tugasData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getTugas();
+  }
+  return TUGAS_MOCK;
+}
 
 /* ===== IKON SVG INLINE ===== */
 const ICONS = {
@@ -48,9 +50,21 @@ function restoreState() {
   );
 }
 
-/* ===== RENDER: stat card ===== */
+/* ===== RENDER: stat card (dihitung dari data, bukan hard-coded) ===== */
 function renderStats() {
-  document.getElementById("ktg-stats").innerHTML = STATS.map((s) => {
+  const aktif = tugasData.filter((t) => t.status !== "Selesai").length;
+  const review = tugasData.filter((t) => t.status === "Menunggu Review").length;
+  const selesai = tugasData.filter((t) => t.status === "Selesai").length;
+  const terlambat = tugasData.filter((t) => t.status === "Terlambat").length;
+
+  const stats = [
+    { label: "Total Tugas Aktif", value: String(aktif), note: "belum selesai", noteTone: "green", noteIcon: "trendUp", icon: "clipboard", tone: "blue" },
+    { label: "Menunggu Review", value: String(review), note: "Perlu tindakan segera", icon: "clock", tone: "amber" },
+    { label: "Selesai", value: String(selesai), note: "total tuntas", icon: "check", tone: "green" },
+    { label: "Terlambat", value: String(terlambat), valueRed: true, note: "Perlu eskalasi", noteTone: "red", icon: "alert", tone: "red" }
+  ];
+
+  document.getElementById("ktg-stats").innerHTML = stats.map((s) => {
     const noteTone = s.noteTone ? ` ktg-stat-note--${s.noteTone}` : "";
     const noteIcon = s.noteIcon ? ICONS[s.noteIcon] : "";
     return `
@@ -86,7 +100,7 @@ const STATUS_TONE = {
 function renderTable() {
   const tbody = document.getElementById("ktg-tbody");
 
-  const rows = TUGAS_SEKSI.filter((t) => currentFilter === "all" || t.status === currentFilter);
+  const rows = tugasData.filter((t) => currentFilter === "all" || t.status === currentFilter);
 
   if (rows.length === 0) {
     tbody.innerHTML = `<tr class="ktg-empty"><td colspan="7">Tidak ada tugas dengan status ini.</td></tr>`;
@@ -133,7 +147,7 @@ function renderTable() {
 
   /* Footer tabel */
   document.getElementById("ktg-showing").textContent =
-    `Menampilkan 1 - ${rows.length} dari ${TOTAL_TUGAS_MOCK} tugas`;
+    `Menampilkan 1 - ${rows.length} dari ${tugasData.length} tugas`;
   document.getElementById("ktg-prev").disabled = true;
   document.getElementById("ktg-next").disabled = true;
   persistState();
@@ -180,7 +194,22 @@ document.getElementById("btn-filter").addEventListener("click", (event) => {
   event.currentTarget.classList.toggle("is-active");
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-restoreState();
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("ktg-tbody");
+  tbody.innerHTML = `<tr class="ktg-empty"><td colspan="7">Memuat data tugas...</td></tr>`;
+
+  try {
+    tugasData = await loadData();
+  } catch (e) {
+    tugasData = [];
+    tbody.innerHTML = `<tr class="ktg-empty"><td colspan="7">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderStats();
+  restoreState();
+  renderTable();
+}
+
+init();

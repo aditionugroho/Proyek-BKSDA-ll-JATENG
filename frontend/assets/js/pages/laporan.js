@@ -4,8 +4,18 @@
    periode, simulasi kosong, unduh & cetak
    ============================================ */
 
-import { laporanData } from "../data/laporan.js";
+import { laporanData as LAPORAN_MOCK } from "../data/laporan.js";
 import { showToast } from "../components/toast.js";
+
+/* ===== DATA: diisi loadLaporan() — API saat LIVE, mock saat belum ===== */
+let laporanData = null;
+
+async function loadLaporan(periode) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getLaporan(periode);
+  }
+  return LAPORAN_MOCK[periode] || null;
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -23,9 +33,9 @@ const ICONS = {
 let currentKey = "2026-09";
 let emptySim = false;
 
-/* ===== PERIODE AKTIF ===== */
+/* ===== PERIODE AKTIF (laporanData = objek periode yang sedang dimuat) ===== */
 function getPeriod() {
-  return laporanData[currentKey] || null;
+  return laporanData || null;
 }
 
 /* ===== RENDER: info filter ===== */
@@ -136,16 +146,24 @@ function renderLaporan() {
 }
 
 /* ===== EVENT: tombol Tampilkan ===== */
-document.getElementById("btn-tampilkan").addEventListener("click", () => {
+document.getElementById("btn-tampilkan").addEventListener("click", async () => {
   const tahun = document.getElementById("lp-tahun").value;
   const bulan = document.getElementById("lp-bulan").value;
   currentKey = `${tahun}-${bulan}`;
   emptySim = false;
   document.getElementById("btn-simulasi").classList.remove("is-active");
-  renderLaporan();
 
-  const period = getPeriod();
-  showToast(period ? `Menampilkan data ${period.label}` : "Tidak ada data untuk periode ini");
+  try {
+    laporanData = await loadLaporan(currentKey);
+  } catch (e) {
+    laporanData = null;
+    renderLaporan();
+    showToast("Gagal memuat laporan. Periksa koneksi lalu coba lagi.");
+    return;
+  }
+
+  renderLaporan();
+  showToast(laporanData ? `Menampilkan data ${laporanData.label}` : "Tidak ada data untuk periode ini");
 });
 
 /* ===== EVENT: Simulasi Kosong (toggle) ===== */
@@ -162,5 +180,14 @@ document.getElementById("btn-excel").addEventListener("click", () => showToast("
 document.getElementById("btn-print-link").addEventListener("click", () => window.print());
 document.getElementById("btn-cetak").addEventListener("click", () => window.print());
 
-/* ===== Inisialisasi ===== */
-renderLaporan();
+/* ===== Inisialisasi: muat periode awal dulu, baru render ===== */
+async function init() {
+  try {
+    laporanData = await loadLaporan(currentKey);
+  } catch (e) {
+    laporanData = null;
+  }
+  renderLaporan();
+}
+
+init();

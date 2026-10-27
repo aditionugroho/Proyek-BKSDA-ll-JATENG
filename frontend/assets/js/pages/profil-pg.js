@@ -7,25 +7,38 @@
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== DATA PROFIL (mock — bisa diganti sessionStorage/API) ===== */
-const PROFILE = {
+/* ===== DATA PROFIL: diisi loadProfil() — API saat LIVE, mock saat belum ===== */
+const PROFILE_MOCK = {
   nama: "Ahmad Susanto, S.Hut.",
   nip: "NIP. 19850412 201012 1 003",
   email: "ahmad.susanto@menlhk.go.id",
   telepon: "+62 812 3456 7890"
 };
 
-/* Nama dari sesi login (bila ada) */
-try {
-  const session = JSON.parse(window.sessionStorage.getItem("eoffice_session") || "null");
-  if (session?.userId) {
-    PROFILE.nama = session.userId
-      .split(/[._-]/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+let PROFILE = { ...PROFILE_MOCK };
+
+async function loadProfil() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    try {
+      return await EOfficeAPI.getProfil();
+    } catch (e) {
+      /* fallback ke mock bila server belum siap */
+    }
   }
-} catch {
-  /* abaikan */
+  /* Mock: nama dari sesi login (bila ada) */
+  const profil = { ...PROFILE_MOCK };
+  try {
+    const session = JSON.parse(window.sessionStorage.getItem("eoffice_session") || "null");
+    if (session?.userId) {
+      profil.nama = session.userId
+        .split(/[._-]/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    }
+  } catch {
+    /* abaikan */
+  }
+  return profil;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -84,10 +97,25 @@ editBtn.addEventListener("click", () => {
     return;
   }
 
-  PROFILE.email = emailInput.value.trim();
-  PROFILE.telepon = teleponInput.value.trim();
-  setEditMode(false);
-  showToast("Profil diperbarui");
+  const simpanSukses = () => {
+    PROFILE.email = emailInput.value.trim();
+    PROFILE.telepon = teleponInput.value.trim();
+    setEditMode(false);
+    showToast("Profil diperbarui");
+  };
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.updateProfil({
+      nama: PROFILE.nama,
+      email: emailInput.value.trim(),
+      telepon: teleponInput.value.trim()
+    })
+      .then(simpanSukses)
+      .catch(() => showToast("Gagal menyimpan profil. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
+  simpanSukses();
 });
 
 /* Tombol Batal (mode edit) */
@@ -144,7 +172,13 @@ document.getElementById("btn-password").addEventListener("click", () => {
         return false;
       }
 
-      showToast("Password berhasil diubah");
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        EOfficeAPI.gantiKataSandi(lama, baru)
+          .then(() => showToast("Password berhasil diubah"))
+          .catch(() => showToast("Gagal mengubah password. Periksa koneksi lalu coba lagi."));
+      } else {
+        showToast("Password berhasil diubah");
+      }
     }
   });
 });
@@ -158,12 +192,23 @@ document.getElementById("btn-logout").addEventListener("click", () => {
     cancelLabel: "Batal",
     danger: true,
     onConfirm: () => {
-      window.sessionStorage.clear();
-      window.localStorage.removeItem("eoffice_session"); // hapus juga sesi "tetap masuk"
-      window.location.href = "../../login.html";
+      if (window.EOfficeAPI) {
+        EOfficeAPI.logout().finally(() => {
+          window.location.href = "../../login.html";
+        });
+      } else {
+        window.sessionStorage.clear();
+        window.localStorage.removeItem("eoffice_session");
+        window.location.href = "../../login.html";
+      }
     }
   });
 });
 
-/* ===== Inisialisasi ===== */
-applyProfile();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  PROFILE = await loadProfil();
+  applyProfile();
+}
+
+init();

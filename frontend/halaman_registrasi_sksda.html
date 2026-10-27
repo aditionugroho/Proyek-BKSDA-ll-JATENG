@@ -214,6 +214,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/api.js"></script>
   <script>
     let currentStep = 1;
 
@@ -348,30 +349,41 @@
       btn.disabled = true;
       document.getElementById("reg-btn-text").textContent = t("reg.processing");
 
-      const daftar = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
-      daftar.push({
+      // Registrasi lewat lapisan API (mock selama backend belum siap)
+      EOfficeAPI.register({
         nama: document.getElementById("nama").value.trim(),
-        idAtauEmail: document.getElementById("idemail").value.trim(),
-        kataSandi: document.getElementById("password").value,
-        role: document.getElementById("role").value,
-        sumber: "registrasi-mandiri",
-        status: "menunggu-verifikasi",
-        daftarPada: new Date().toISOString()
-      });
-      localStorage.setItem("eoffice_registrations", JSON.stringify(daftar));
+        id_pengguna: document.getElementById("idemail").value.trim(),
+        kata_sandi: document.getElementById("password").value,
+        role: document.getElementById("role").value
+      })
+        .then(function (res) {
+          if (res.status === "duplicate") {
+            btn.disabled = false;
+            document.getElementById("reg-btn-text").textContent = t("reg.submit");
+            setujuErr.textContent = "ID/Email sudah terdaftar. Gunakan yang lain.";
+            setujuErr.classList.add("show");
+            return;
+          }
 
-      document.getElementById("reg-head").style.display = "none";
-      document.getElementById("steps").style.display = "none";
-      document.getElementById("reg-form").style.display = "none";
-      document.getElementById("reg-success").classList.add("show");
+          document.getElementById("reg-head").style.display = "none";
+          document.getElementById("steps").style.display = "none";
+          document.getElementById("reg-form").style.display = "none";
+          document.getElementById("reg-success").classList.add("show");
 
-      let sisa = 3;
-      const num = document.getElementById("count-num");
-      const timer = setInterval(function() {
-        sisa--;
-        if (sisa <= 0) { clearInterval(timer); location.href = "login.html"; }
-        else num.textContent = sisa;
-      }, 1000);
+          let sisa = 3;
+          const num = document.getElementById("count-num");
+          const timer = setInterval(function() {
+            sisa--;
+            if (sisa <= 0) { clearInterval(timer); location.href = "login.html"; }
+            else num.textContent = sisa;
+          }, 1000);
+        })
+        .catch(function () {
+          btn.disabled = false;
+          document.getElementById("reg-btn-text").textContent = t("reg.submit");
+          setujuErr.textContent = "Gagal mengirim pendaftaran. Periksa koneksi lalu coba lagi.";
+          setujuErr.classList.add("show");
+        });
     });
 
     document.getElementById("setuju").addEventListener("change", function() {

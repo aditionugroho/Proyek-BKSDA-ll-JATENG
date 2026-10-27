@@ -5,19 +5,21 @@
    Klik nomor → modal preview (detail belum ada).
    ============================================ */
 
-import { SURAT_KELUAR as suratKeluarData } from "../data/surat-keluar.js";
+import { SURAT_KELUAR as SURAT_KELUAR_MOCK } from "../data/surat-keluar.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
 
 const STATE_KEY = "surat-keluar-ks";
 
-/* Stat card surat keluar */
-const stats = [
-  { label: "Total Surat Keluar", meta: "Bulan Ini", value: "856", icon: "send", tone: "blue" },
-  { label: "Belum Dibaca", meta: "\u2191 12%", metaTone: "red", value: "42", icon: "mail", tone: "red" },
-  { label: "Perlu Tindak Lanjut", meta: "Menunggu", value: "18", icon: "clock", tone: "amber" },
-  { label: "Selesai (Bulan Ini)", meta: "\u2191 8%", metaTone: "green", value: "796", icon: "checkCircle", tone: "green" }
-];
+/* ===== DATA: diisi loadData() — API saat LIVE, array mock saat belum ===== */
+let suratKeluarData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getSuratKeluar();
+  }
+  return SURAT_KELUAR_MOCK;
+}
 
 /* ===== IKON SVG INLINE ===== */
 const ICONS = {
@@ -53,8 +55,15 @@ function restoreState() {
   );
 }
 
-/* ===== RENDER: stat card ===== */
+/* ===== RENDER: stat card (dihitung dari data, bukan hard-coded) ===== */
 function renderStats() {
+  const fmt = (n) => n.toLocaleString("id-ID");
+  const stats = [
+    { label: "Total Surat Keluar", meta: "Bulan Ini", value: fmt(suratKeluarData.length), icon: "send", tone: "blue" },
+    { label: "Belum Dibaca", meta: "Surat Baru", metaTone: "red", value: fmt(suratKeluarData.filter((s) => s.unread).length), icon: "mail", tone: "red" },
+    { label: "Perlu Tindak Lanjut", meta: "Menunggu", value: fmt(suratKeluarData.filter((s) => s.perluTindak).length), icon: "clock", tone: "amber" },
+    { label: "Selesai", meta: "Total", metaTone: "green", value: fmt(suratKeluarData.filter((s) => s.selesai).length), icon: "checkCircle", tone: "green" }
+  ];
   document.getElementById("kss-stats").innerHTML = stats.map((s) => {
     const metaTone = s.metaTone ? ` kss-stat-meta--${s.metaTone}` : "";
     return `
@@ -209,8 +218,23 @@ document.getElementById("kss-tbody").addEventListener("click", (event) => {
   window.location.href = `detail-surat-keluar.html?id=${btn.dataset.preview}`;
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-renderTabBadges();
-restoreState();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("kss-tbody");
+  tbody.innerHTML = `<tr class="kss-empty"><td colspan="6">Memuat data surat keluar...</td></tr>`;
+
+  try {
+    suratKeluarData = await loadData();
+  } catch (e) {
+    suratKeluarData = [];
+    tbody.innerHTML = `<tr class="kss-empty"><td colspan="6">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderStats();
+  renderTabBadges();
+  restoreState();
+  refresh();
+}
+
+init();

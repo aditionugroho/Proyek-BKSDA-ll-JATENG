@@ -3,17 +3,19 @@
    Stat, filter, tabel/grid, modal detail
    ============================================ */
 
-import { stafData, TOTAL_STAF_MOCK } from "../data/staf.js";
+import { stafData as STAF_MOCK } from "../data/staf.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== STAT ===== */
-const STATS = [
-  { label: "Total Staf", labelTone: "", value: "12", valueTone: "", suffix: "personel", sub: "Personel terdaftar pada seksi", icon: "users", tone: "blue" },
-  { label: "Staf Aktif", labelTone: "green", value: "10", valueTone: "green", suffix: "orang (83%)", sub: "Siap menerima disposisi harian", icon: "check", tone: "green" },
-  { label: "Sedang Bertugas", labelTone: "blue", value: "7", valueTone: "blue", suffix: "penugasan", sub: "Progres tugas dan survei berjalan", icon: "clipboard", tone: "blue" },
-  { label: "Menunggu Review", labelTone: "orange", value: "5", valueTone: "orange", suffix: "laporan", sub: "Perlu verifikasi & paraf Kepala Seksi", icon: "clock", tone: "amber" }
-];
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let stafData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getStaf();
+  }
+  return STAF_MOCK;
+}
 
 const ICONS = {
   users: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
@@ -29,9 +31,22 @@ let query = "";
 let statusFilter = "all";
 let jabatanFilter = "all";
 
-/* ===== RENDER STAT ===== */
+/* ===== RENDER STAT (dihitung dari data, bukan hard-coded) ===== */
 function renderStats() {
-  document.getElementById("st-stats").innerHTML = STATS.map((s) => `
+  const total = stafData.length;
+  const aktif = stafData.filter((s) => s.status === "AKTIF").length;
+  const bertugas = stafData.filter((s) => s.tugas > 0).length;
+  const beban = stafData.reduce((sum, s) => sum + (s.tugas || 0), 0);
+  const pct = total ? Math.round((aktif / total) * 100) : 0;
+
+  const stats = [
+    { label: "Total Staf", labelTone: "", value: String(total), valueTone: "", suffix: "personel", sub: "Personel terdaftar pada seksi", icon: "users", tone: "blue" },
+    { label: "Staf Aktif", labelTone: "green", value: String(aktif), valueTone: "green", suffix: `orang (${pct}%)`, sub: "Siap menerima disposisi harian", icon: "check", tone: "green" },
+    { label: "Sedang Bertugas", labelTone: "blue", value: String(bertugas), valueTone: "blue", suffix: "personel", sub: "Memiliki tugas berjalan", icon: "clipboard", tone: "blue" },
+    { label: "Total Beban Tugas", labelTone: "orange", value: String(beban), valueTone: "orange", suffix: "tugas", sub: "Akumulasi tugas seluruh seksi", icon: "clock", tone: "amber" }
+  ];
+
+  document.getElementById("st-stats").innerHTML = stats.map((s) => `
     <article class="st-stat">
       <div>
         <p class="st-stat-label${s.labelTone ? ` st-stat-label--${s.labelTone}` : ""}">${s.label}</p>
@@ -111,9 +126,9 @@ function renderGrid(rows) {
 
 /* ===== RENDER FOOTER ===== */
 function renderFooter(rows) {
-  const showing = page === 1 ? `Menampilkan 1-${rows.length} dari ${TOTAL_STAF_MOCK} staf seksi` : `Menampilkan 1-4 dari ${TOTAL_STAF_MOCK} staf seksi`;
+  const showing = page === 1 ? `Menampilkan 1-${rows.length} dari ${stafData.length} staf seksi` : `Menampilkan 1-4 dari ${stafData.length} staf seksi`;
   document.getElementById("st-showing").textContent = showing;
-  document.getElementById("st-count").textContent = `${rows.length} dari ${TOTAL_STAF_MOCK} staf`;
+  document.getElementById("st-count").textContent = `${rows.length} dari ${stafData.length} staf`;
   document.getElementById("st-prev").disabled = page === 1;
   document.getElementById("st-next").disabled = page === 2;
   document.querySelectorAll(".st-page-num").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.page) === page));
@@ -235,14 +250,32 @@ document.getElementById("btn-sinkron").addEventListener("click", () => {
 });
 
 /* ===== OPSI JABATAN (dinamis dari data) ===== */
-const jabatanSelect = document.getElementById("st-jabatan");
-[...new Set(stafData.map((s) => s.jabatan))].forEach((j) => {
-  const opt = document.createElement("option");
-  opt.value = j;
-  opt.textContent = j;
-  jabatanSelect.appendChild(opt);
-});
+function isiOpsiJabatan() {
+  const jabatanSelect = document.getElementById("st-jabatan");
+  [...new Set(stafData.map((s) => s.jabatan))].forEach((j) => {
+    const opt = document.createElement("option");
+    opt.value = j;
+    opt.textContent = j;
+    jabatanSelect.appendChild(opt);
+  });
+}
 
-/* ===== Inisialisasi ===== */
-renderStats();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("st-tbody");
+  tbody.innerHTML = `<tr class="st-empty"><td colspan="8">Memuat data staf...</td></tr>`;
+
+  try {
+    stafData = await loadData();
+  } catch (e) {
+    stafData = [];
+    tbody.innerHTML = `<tr class="st-empty"><td colspan="8">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  isiOpsiJabatan();
+  renderStats();
+  refresh();
+}
+
+init();

@@ -4,9 +4,19 @@
    detail, pagination dummy
    ============================================ */
 
-import { dokumenPgData, TOTAL_DOKUMEN_MOCK } from "../data/dokumen-pegawai.js";
+import { dokumenPgData as DOKUMEN_PG_MOCK } from "../data/dokumen-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let dokumenPgData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getDokumenSaya();
+  }
+  return DOKUMEN_PG_MOCK;
+}
 
 const STATE_KEY = "dokumen-saya-pg";
 
@@ -72,7 +82,7 @@ function renderTable() {
 
   /* Footer */
   document.getElementById("pgdk-showing").textContent =
-    `Menampilkan 1-${rows.length} dari ${TOTAL_DOKUMEN_MOCK} dokumen`;
+    `Menampilkan 1-${rows.length} dari ${dokumenPgData.length} dokumen`;
   persistState();
 }
 
@@ -130,7 +140,22 @@ document.getElementById("btn-buat").addEventListener("click", () => {
   showToast("Fitur buat dokumen menyusul");
 });
 
-/* ===== Inisialisasi ===== */
-restoreState();
-renderPagination();
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("pgdk-tbody");
+  tbody.innerHTML = `<tr class="pgdk-empty"><td colspan="6">Memuat data dokumen...</td></tr>`;
+
+  try {
+    dokumenPgData = await loadData();
+  } catch (e) {
+    dokumenPgData = [];
+    tbody.innerHTML = `<tr class="pgdk-empty"><td colspan="6">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  restoreState();
+  renderPagination();
+  renderTable();
+}
+
+init();

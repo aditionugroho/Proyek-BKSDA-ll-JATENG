@@ -4,16 +4,23 @@
    agenda hari terpilih dari jadwalData
    ============================================ */
 
-import { jadwalData, HARI_INI_MOCK } from "../data/jadwal.js";
+import { jadwalData as JADWAL_MOCK, HARI_INI_MOCK } from "../data/jadwal.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== STAT CARD ===== */
-const STATS = [
-  { label: "Hari Ini", value: "3", sub: "Kegiatan hari ini", icon: "calendar", tone: "blue" },
-  { label: "Minggu Ini", value: "12", sub: "Kegiatan minggu ini", icon: "grid", tone: "green" },
-  { label: "Mendatang", value: "25", sub: "Kegiatan mendatang", icon: "calendarPlus", tone: "orange" }
-];
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let jadwalData = [];
+let todayIso = HARI_INI_MOCK; // LIVE: diganti tanggal dari server
+let agendaDates = new Set();
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const res = await EOfficeAPI.getJadwal();
+    todayIso = res.hariIni || todayIso;
+    return res.agenda;
+  }
+  return JADWAL_MOCK;
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -33,17 +40,28 @@ function iso(y, m, d) {
 }
 
 /* ===== STATE ===== */
-const today = new Date(HARI_INI_MOCK); // simulasi "hari ini" = 29 Mei 2024
+let today = new Date(HARI_INI_MOCK);
 let viewYear = today.getFullYear();
 let viewMonth = today.getMonth();
 let selectedIso = HARI_INI_MOCK;
 
-/* Tanggal yang memiliki agenda (untuk titik penanda) */
-const agendaDates = new Set(jadwalData.map((a) => a.tanggal));
-
-/* ===== RENDER: stat card ===== */
+/* ===== RENDER: stat card (dihitung dari data) ===== */
 function renderStats() {
-  document.getElementById("kj-stats").innerHTML = STATS.map(
+  const akhirMinggu = new Date(todayIso);
+  akhirMinggu.setDate(akhirMinggu.getDate() + 6);
+  const mingguIso = iso(akhirMinggu.getFullYear(), akhirMinggu.getMonth(), akhirMinggu.getDate());
+
+  const hariIni = jadwalData.filter((a) => a.tanggal === todayIso).length;
+  const mingguIni = jadwalData.filter((a) => a.tanggal >= todayIso && a.tanggal <= mingguIso).length;
+  const mendatang = jadwalData.filter((a) => a.tanggal > todayIso).length;
+
+  const stats = [
+    { label: "Hari Ini", value: String(hariIni), sub: "Kegiatan hari ini", icon: "calendar", tone: "blue" },
+    { label: "Minggu Ini", value: String(mingguIni), sub: "Kegiatan 7 hari ke depan", icon: "grid", tone: "green" },
+    { label: "Mendatang", value: String(mendatang), sub: "Kegiatan mendatang", icon: "calendarPlus", tone: "orange" }
+  ];
+
+  document.getElementById("kj-stats").innerHTML = stats.map(
     (s) => `
       <article class="kj-stat">
         <span class="kj-stat-icon kj-stat-icon--${s.tone}">${ICONS[s.icon]}</span>
@@ -74,7 +92,7 @@ function renderCalendar() {
 
     const classes = ["kj-day"];
     if (d.getMonth() !== viewMonth) classes.push("is-muted");
-    if (key === HARI_INI_MOCK) classes.push("is-today");
+    if (key === todayIso) classes.push("is-today");
     if (key === selectedIso) classes.push("is-selected");
     if (agendaDates.has(key)) classes.push("has-agenda");
 
@@ -185,7 +203,28 @@ document.getElementById("btn-filter").addEventListener("click", (event) => {
   event.currentTarget.classList.toggle("is-active");
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-renderCalendar();
-renderAgenda();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const list = document.getElementById("kj-agenda-list");
+  list.innerHTML = `<p class="kj-agenda-empty">Memuat agenda...</p>`;
+
+  try {
+    jadwalData = await loadData();
+  } catch (e) {
+    jadwalData = [];
+    list.innerHTML = `<p class="kj-agenda-empty">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</p>`;
+    return;
+  }
+
+  today = new Date(todayIso);
+  viewYear = today.getFullYear();
+  viewMonth = today.getMonth();
+  selectedIso = todayIso;
+  agendaDates = new Set(jadwalData.map((a) => a.tanggal));
+
+  renderStats();
+  renderCalendar();
+  renderAgenda();
+}
+
+init();

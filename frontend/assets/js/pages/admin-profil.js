@@ -4,12 +4,24 @@
    assets/js/data/admin-profile.js
    ============================================ */
 
-import { ADMIN_PROFILE } from "../data/admin-profile.js";
+import { ADMIN_PROFILE as ADMIN_PROFILE_MOCK } from "../data/admin-profile.js";
 
-const PROFILE = ADMIN_PROFILE;
-const AKSES = ADMIN_PROFILE.akses;
-const AKTIVITAS = ADMIN_PROFILE.aktivitas;
-const LOGIN_INFO = ADMIN_PROFILE.loginInfo;
+/* ===== DATA: diisi loadProfil() — API saat LIVE, mock saat belum ===== */
+let PROFILE = ADMIN_PROFILE_MOCK;
+let AKSES = ADMIN_PROFILE_MOCK.akses;
+let AKTIVITAS = ADMIN_PROFILE_MOCK.aktivitas;
+let LOGIN_INFO = ADMIN_PROFILE_MOCK.loginInfo;
+
+async function loadProfil() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    try {
+      return await EOfficeAPI.getAdminProfil();
+    } catch (e) {
+      /* fallback ke mock bila server belum siap */
+    }
+  }
+  return ADMIN_PROFILE_MOCK;
+}
 
 /* ===== IKON SVG INLINE ===== */
 const ICONS = {
@@ -130,9 +142,17 @@ function renderLogin() {
   }).join("");
 }
 
-/* ===== Inisialisasi ===== */
-renderHero();
-renderInfo();
-renderAkses();
-renderAktivitas();
-renderLogin();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  PROFILE = await loadProfil();
+  AKSES = PROFILE.akses || [];
+  AKTIVITAS = PROFILE.aktivitas || [];
+  LOGIN_INFO = PROFILE.loginInfo || {};
+  renderHero();
+  renderInfo();
+  renderAkses();
+  renderAktivitas();
+  renderLogin();
+}
+
+init();

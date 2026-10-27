@@ -4,32 +4,35 @@
    dokumen mock, zoom, fullscreen, aksi modal
    ============================================ */
 
-import { SURAT_MASUK } from "../data/surat-masuk.js";
+import { SURAT_MASUK as SURAT_MASUK_MOCK } from "../data/surat-masuk.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== Ambil surat dari URL (?id=), fallback S.892 ===== */
-const FALLBACK = SURAT_MASUK.find((s) => s.nomor.startsWith("S.892"));
+/* ===== DATA: diisi loadDetail() — API saat LIVE, mock saat belum ===== */
+let data = null;
 
-const params = new URLSearchParams(window.location.search);
-const idParam = Number(params.get("id"));
-const surat = SURAT_MASUK.find((s) => s.id === idParam) || FALLBACK;
-
-/* Nilai default bila surat tidak punya atribut detail lengkap */
-const data = {
-  nomor: surat.nomor,
-  status: surat.status?.text || "Menunggu Disposisi",
-  prioritas: surat.prioritas?.text || "Segera",
-  sifat: surat.sifat || "Biasa",
-  tanggalDiterima: surat.tanggalDiterima || `${surat.tanggal}, 09:15 WIB`,
-  pengirimFull: surat.pengirimFull || `${surat.pengirim}, ${surat.pengirimSub}`,
-  nomorAsli: surat.nomorAsli || surat.nomor,
-  tanggalSurat: surat.tanggalSurat || surat.tanggal,
-  perihal: surat.perihal,
-  klasifikasi: surat.klasifikasi || ["000 - Umum"],
-  fileName: surat.fileName || "Dokumen_Surat.pdf",
-  fileSize: surat.fileSize || "1.2 MB"
-};
+async function loadDetail(id) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getSuratMasukDetail(id);
+  }
+  /* Mock: fallback S.892 bila ?id= tidak ditemukan */
+  const FALLBACK = SURAT_MASUK_MOCK.find((s) => s.nomor.startsWith("S.892"));
+  const surat = SURAT_MASUK_MOCK.find((s) => s.id === id) || FALLBACK;
+  return {
+    nomor: surat.nomor,
+    status: surat.status?.text || "Menunggu Disposisi",
+    prioritas: surat.prioritas?.text || "Segera",
+    sifat: surat.sifat || "Biasa",
+    tanggalDiterima: surat.tanggalDiterima || `${surat.tanggal}, 09:15 WIB`,
+    pengirimFull: surat.pengirimFull || `${surat.pengirim}, ${surat.pengirimSub}`,
+    nomorAsli: surat.nomorAsli || surat.nomor,
+    tanggalSurat: surat.tanggalSurat || surat.tanggal,
+    perihal: surat.perihal,
+    klasifikasi: surat.klasifikasi || ["000 - Umum"],
+    fileName: surat.fileName || "Dokumen_Surat.pdf",
+    fileSize: surat.fileSize || "1.2 MB"
+  };
+}
 
 /* ===== RENDER: header & kartu kiri ===== */
 function renderInfo() {
@@ -172,7 +175,17 @@ document.getElementById("btn-archive").addEventListener("click", () => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-renderInfo();
-renderMockDocument(data);
-applyZoom();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  try {
+    data = await loadDetail(Number(params.get("id")));
+  } catch (e) {
+    showToast("Gagal memuat detail surat. Periksa koneksi lalu muat ulang halaman.");
+    return;
+  }
+  renderInfo();
+  renderMockDocument(data);
+  applyZoom();
+}
+init();

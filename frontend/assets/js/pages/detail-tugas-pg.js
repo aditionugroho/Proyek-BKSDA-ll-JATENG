@@ -5,24 +5,29 @@
    Sub-tugas toggle, file, chat, timeline.
    ============================================ */
 
-import { tugasSayaData, TUGAS_DETAIL_PG } from "../data/tugas-saya.js";
+import { tugasSayaData as TUGAS_SAYA_MOCK, TUGAS_DETAIL_PG } from "../data/tugas-saya.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== Ambil tugas dari URL (?id=), fallback TGS-23-089 ===== */
-const params = new URLSearchParams(window.location.search);
-const idParam = Number(params.get("id"));
-const found = tugasSayaData.find((t) => t.id === idParam);
+/* ===== DATA: diisi loadDetail() — API saat LIVE, mock saat belum ===== */
+let tugas = null;
 
-const tugas = {
-  ...TUGAS_DETAIL_PG,
-  ...(found || {}),
-  /* Prioritaskan data per-item (cocok dengan baris diklik) */
-  subtasks: found?.subtasks || TUGAS_DETAIL_PG.subtasks,
-  files: found?.files?.length ? [...found.files] : [...TUGAS_DETAIL_PG.files],
-  diskusi: found?.diskusi?.length ? [...found.diskusi] : [...TUGAS_DETAIL_PG.diskusi],
-  timeline: found?.timeline?.length ? [...found.timeline] : [...TUGAS_DETAIL_PG.timeline]
-};
+async function loadDetail(id) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getTugasSayaDetail(id);
+  }
+  /* Mock: fallback TUGAS_DETAIL_PG bila ?id= tidak ditemukan */
+  const found = TUGAS_SAYA_MOCK.find((t) => t.id === id);
+  return {
+    ...TUGAS_DETAIL_PG,
+    ...(found || {}),
+    /* Prioritaskan data per-item (cocok dengan baris diklik) */
+    subtasks: found?.subtasks || TUGAS_DETAIL_PG.subtasks,
+    files: found?.files?.length ? [...found.files] : [...TUGAS_DETAIL_PG.files],
+    diskusi: found?.diskusi?.length ? [...found.diskusi] : [...TUGAS_DETAIL_PG.diskusi],
+    timeline: found?.timeline?.length ? [...found.timeline] : [...TUGAS_DETAIL_PG.timeline]
+  };
+}
 
 /* Status badge tone */
 const STATUS_TONE = {
@@ -273,9 +278,20 @@ document.getElementById("btn-review").addEventListener("click", () => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-renderInfo();
-renderSubtasks();
-renderFiles();
-renderChat();
-renderTimeline();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  try {
+    tugas = await loadDetail(Number(params.get("id")));
+  } catch (e) {
+    showToast("Gagal memuat detail tugas. Periksa koneksi lalu muat ulang halaman.");
+    return;
+  }
+  renderInfo();
+  renderSubtasks();
+  renderFiles();
+  renderChat();
+  renderTimeline();
+}
+
+init();

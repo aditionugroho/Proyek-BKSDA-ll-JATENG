@@ -168,6 +168,20 @@ document.getElementById("pgv-ajukan").addEventListener("click", () => {
     desc: "Surat akan diajukan untuk persetujuan dan penandatanganan elektronik. Lanjutkan?",
     confirmLabel: "Ya, Ajukan",
     onConfirm: () => {
+      const draft = JSON.parse(window.sessionStorage.getItem("draftSurat") || "null");
+
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE && draft) {
+        EOfficeAPI.createSuratKeluar({ ...draft, status: "Diajukan" })
+          .then(() => {
+            showToast("Surat diajukan");
+            setTimeout(() => {
+              window.location.href = "surat.html";
+            }, 800);
+          })
+          .catch(() => showToast("Gagal mengajukan surat. Periksa koneksi lalu coba lagi."));
+        return;
+      }
+
       showToast("Surat diajukan");
       setTimeout(() => {
         window.location.href = "surat.html";

@@ -4,7 +4,7 @@
    bersama lalu redirect ke daftar tugas
    ============================================ */
 
-import { TUGAS_SEKSI } from "../data/tugas-seksi.js";
+import { TUGAS_SEKSI as TUGAS_MOCK } from "../data/tugas-seksi.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
@@ -114,18 +114,41 @@ form.addEventListener("submit", (event) => {
   });
   if (!valid) return;
 
-  // Nomor otomatis: TGS-2023-08-0XX urut
-  const urut = TUGAS_SEKSI.length + 1;
-  const kode = `TGS-2023-08-${String(urut).padStart(3, "0")}`;
-
   const pic = stafSelect.value;
   const prioritas = document.querySelector('input[name="prioritas"]:checked').value;
   const deadlineRaw = document.getElementById("bt-deadline").value;
 
+  const sukses = () => {
+    showToast("Tugas berhasil dibuat");
+    // Redirect ke daftar tugas setelah 1 detik
+    setTimeout(() => {
+      window.location.href = "tugas-seksi.html";
+    }, 1000);
+  };
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    // LIVE: kode & atribut lain dibuat server
+    EOfficeAPI.createTugas({
+      judul: judulInput.value.trim(),
+      deskripsi: deskripsiInput.value.trim(),
+      pic: pic,
+      prioritas: prioritas === "Tinggi" ? "TINGGI" : "NORMAL",
+      deadline: deadlineRaw || null,
+      lampiran: files.slice()
+    })
+      .then(sukses)
+      .catch(() => showToast("Gagal membuat tugas. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
+  // MOCK: nomor otomatis TGS-2023-08-0XX urut
+  const urut = TUGAS_MOCK.length + 1;
+  const kode = `TGS-2023-08-${String(urut).padStart(3, "0")}`;
+
   const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
   const fmt = (d) => `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
 
-  TUGAS_SEKSI.unshift({
+  TUGAS_MOCK.unshift({
     id: Date.now(),
     judul: judulInput.value.trim(),
     kode,
@@ -144,12 +167,7 @@ form.addEventListener("submit", (event) => {
     status: "Belum Mulai"
   });
 
-  showToast("Tugas berhasil dibuat");
-
-  // Redirect ke daftar tugas setelah 1 detik
-  setTimeout(() => {
-    window.location.href = "tugas-seksi.html";
-  }, 1000);
+  sukses();
 });
 
 /* ===== BATAL (modal konfirmasi bila form terisi) ===== */
