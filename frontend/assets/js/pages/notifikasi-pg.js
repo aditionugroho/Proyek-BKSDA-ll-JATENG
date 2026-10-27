@@ -4,9 +4,19 @@
    (satu & semua), ringkasan dari data
    ============================================ */
 
-import { notifPgData } from "../data/notifikasi-pegawai.js";
+import { notifPgData as NOTIF_PG_MOCK } from "../data/notifikasi-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let notifPgData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getNotifikasiSaya();
+  }
+  return NOTIF_PG_MOCK;
+}
 
 const STATE_KEY = "notifikasi-pg";
 
@@ -106,6 +116,9 @@ document.getElementById("pgn-list").addEventListener("click", (event) => {
   if (!item) return;
   const notif = notifPgData.find((n) => String(n.id) === item.dataset.item);
   if (notif && notif.unread) {
+    if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+      EOfficeAPI.markNotifikasiRead(notif.id).catch(() => showToast("Gagal menyimpan status dibaca"));
+    }
     notif.unread = false;
     refresh();
   }
@@ -113,6 +126,9 @@ document.getElementById("pgn-list").addEventListener("click", (event) => {
 
 /* ===== EVENT: tandai semua dibaca ===== */
 document.getElementById("btn-mark-all").addEventListener("click", () => {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.markAllNotifikasiRead().catch(() => showToast("Gagal menyimpan status dibaca"));
+  }
   notifPgData.forEach((n) => (n.unread = false));
   refresh();
   showToast("Semua notifikasi ditandai dibaca");
@@ -123,6 +139,21 @@ document.getElementById("btn-pengaturan").addEventListener("click", () => {
   showToast("Fitur pengaturan notifikasi menyusul");
 });
 
-/* ===== Inisialisasi ===== */
-restoreState();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const listEl = document.getElementById("pgn-list");
+  listEl.innerHTML = `<p class="pgn-empty">Memuat notifikasi...</p>`;
+
+  try {
+    notifPgData = await loadData();
+  } catch (e) {
+    notifPgData = [];
+    listEl.innerHTML = `<p class="pgn-empty">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</p>`;
+    return;
+  }
+
+  restoreState();
+  refresh();
+}
+
+init();

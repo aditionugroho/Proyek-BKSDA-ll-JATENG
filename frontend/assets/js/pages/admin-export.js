@@ -1,5 +1,5 @@
-/* ============================================
-   EXPORT DATA & LAPORAN (ADMIN) — E-Office SKSDA
+﻿/* ============================================
+   EXPORT DATA & LAPORAN (ADMIN) â€” E-Office SKSDA
    Stat, kartu pilih data, filter tabel,
    modal format export, toast
    ============================================ */
@@ -7,7 +7,7 @@
 /* ===== MOCK DATA ===== */
 
 /* Stat card */
-const STATS = [
+const STATS_MOCK = [
   { label: "Surat Masuk", value: "1,248", badge: { text: "+8%", tone: "green" }, sub: "arsip", foot: "Total surat masuk", footRight: "Aktif" },
   { label: "Surat Keluar", value: "856", badge: { text: "+12%", tone: "green" }, sub: "arsip", foot: "Total surat keluar", footRight: "Tervalidasi" },
   { label: "Data Pengguna", value: "148", badge: { text: "132 aktif", tone: "blue" }, sub: "personel", foot: "Pengguna terdaftar SKSDA Jateng" },
@@ -15,7 +15,7 @@ const STATS = [
 ];
 
 /* Kartu pilih data untuk export */
-const EXPORTS = [
+const EXPORTS_MOCK = [
   {
     id: "masuk",
     icon: "mail",
@@ -59,7 +59,7 @@ const EXPORTS = [
 ];
 
 /* Daftar laporan terbaru */
-const REPORTS = [
+const REPORTS_MOCK = [
   { id: 1, nama: "Rekap Surat Masuk September 2026", jenis: "Surat Masuk", periode: "01\u201313 Sep 2026", format: "PDF", oleh: "Admin Sistem", tanggal: "13 Sep 2026", status: "Selesai" },
   { id: 2, nama: "Rekap Surat Keluar September 2026", jenis: "Surat Keluar", periode: "01\u201313 Sep 2026", format: "XLSX", oleh: "Admin Sistem", tanggal: "13 Sep 2026", status: "Selesai" },
   { id: 3, nama: "Daftar Pengguna Aktif", jenis: "Data Pengguna", periode: "September 2026", format: "XLSX", oleh: "Admin Sistem", tanggal: "12 Sep 2026", status: "Selesai" },
@@ -242,11 +242,54 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && backdrop.classList.contains("is-open")) closeModal();
 });
 
-/* Generate: toast + baris baru berstatus Diproses */
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let STATS = STATS_MOCK;
+let EXPORTS = EXPORTS_MOCK;
+let REPORTS = REPORTS_MOCK;
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const res = await EOfficeAPI.getExport();
+    return {
+      stats: res.stats || STATS_MOCK,
+      exports: res.exports || EXPORTS_MOCK,
+      reports: res.reports || REPORTS_MOCK
+    };
+  }
+  return { stats: STATS_MOCK, exports: EXPORTS_MOCK, reports: REPORTS_MOCK };
+}
+
+async function muatUlang() {
+  try {
+    const res = await loadData();
+    STATS = res.stats;
+    EXPORTS = res.exports;
+    REPORTS = res.reports;
+  } catch (e) {
+    console.error("Gagal memuat data export:", e);
+  }
+  renderStats();
+  renderPickCards();
+  renderTable();
+}
+
+/* Generate: LIVE via API, mock tambah baris lokal */
 document.getElementById("modal-generate").addEventListener("click", () => {
   if (!pendingExport) return;
 
   const format = document.querySelector('input[name="format"]:checked').value;
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.createExport({ jenis: pendingExport.title, format: format })
+      .then(() => {
+        closeModal();
+        showToast("Export sedang diproses...");
+        return muatUlang();
+      })
+      .catch(() => showToast("Gagal membuat export. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
   const now = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -275,7 +318,5 @@ document.getElementById("modal-generate").addEventListener("click", () => {
   showToast("Export sedang diproses...");
 });
 
-/* ===== Inisialisasi ===== */
-renderStats();
-renderPickCards();
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+muatUlang();

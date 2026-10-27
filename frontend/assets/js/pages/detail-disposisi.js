@@ -5,29 +5,32 @@
    disposisi ubah status + badge.
    ============================================ */
 
-import { disposisiPgData, DISPOSISI_DETAIL_PG } from "../data/disposisi-pegawai.js";
+import { disposisiPgData as DISPOSISI_PG_MOCK, DISPOSISI_DETAIL_PG } from "../data/disposisi-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== Ambil disposisi dari URL (?id=), fallback default ===== */
-const params = new URLSearchParams(window.location.search);
-const idParam = Number(params.get("id"));
-const found = disposisiPgData.find((d) => d.id === idParam);
+/* ===== DATA: diisi loadDetail() — API saat LIVE, mock saat belum ===== */
+let disposisi = null;
+let STATUS_KEY = "";
 
-/* Prioritaskan data per-item (cocok dengan baris yang diklik);
-   fallback ke DISPOSISI_DETAIL_PG bila field belum ada */
-const disposisi = {
-  ...DISPOSISI_DETAIL_PG,
-  ...(found || {}),
-  judul: found?.judul || DISPOSISI_DETAIL_PG.judul,
-  pemberi: found?.pemberi || DISPOSISI_DETAIL_PG.pemberi,
-  tenggat: found?.tenggat || DISPOSISI_DETAIL_PG.tenggat,
-  instruksi: found?.instruksiFull || DISPOSISI_DETAIL_PG.instruksi,
-  surat: found?.surat || DISPOSISI_DETAIL_PG.surat,
-  files: found?.files || DISPOSISI_DETAIL_PG.files
-};
-
-const STATUS_KEY = `disposisi_status_${disposisi.id}`;
+async function loadDetail(id) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getDisposisiSayaDetail(id);
+  }
+  /* Mock: prioritaskan data per-item (baris yang diklik);
+     fallback ke DISPOSISI_DETAIL_PG bila field belum ada */
+  const found = DISPOSISI_PG_MOCK.find((d) => d.id === id);
+  return {
+    ...DISPOSISI_DETAIL_PG,
+    ...(found || {}),
+    judul: found?.judul || DISPOSISI_DETAIL_PG.judul,
+    pemberi: found?.pemberi || DISPOSISI_DETAIL_PG.pemberi,
+    tenggat: found?.tenggat || DISPOSISI_DETAIL_PG.tenggat,
+    instruksi: found?.instruksiFull || DISPOSISI_DETAIL_PG.instruksi,
+    surat: found?.surat || DISPOSISI_DETAIL_PG.surat,
+    files: found?.files || DISPOSISI_DETAIL_PG.files
+  };
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -163,7 +166,19 @@ document.getElementById("pgdd-files").addEventListener("click", (event) => {
   showToast(`Mengunduh ${file.name}...`);
 });
 
-/* ===== Inisialisasi ===== */
-renderHeader();
-renderSurat();
-renderStatus();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  try {
+    disposisi = await loadDetail(Number(params.get("id")));
+  } catch (e) {
+    showToast("Gagal memuat detail disposisi. Periksa koneksi lalu muat ulang halaman.");
+    return;
+  }
+  STATUS_KEY = `disposisi_status_${disposisi.id}`;
+  renderHeader();
+  renderSurat();
+  renderStatus();
+}
+
+init();

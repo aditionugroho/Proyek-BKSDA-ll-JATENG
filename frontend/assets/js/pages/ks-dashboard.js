@@ -5,8 +5,10 @@
    Siap diganti fetch API.
    ============================================ */
 
-/* ===== MOCK DATA ===== */
-const dashboardData = {
+/* ===== DATA: diisi loadDashboard() — API saat LIVE, mock saat belum ===== */
+let dashboardData = null;
+
+const DASHBOARD_MOCK = {
   /* Baris stat card */
   stats: [
     { label: "Surat Masuk", value: 24, note: "+3 hari ini", noteIcon: "trendUp", tone: "blue", icon: "inbox" },
@@ -188,7 +190,25 @@ function renderDashboard() {
   renderProgress();
 }
 
-renderDashboard();
+/* ===== Muat data — API saat LIVE, mock saat belum ===== */
+async function loadDashboard() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getDashboardKS();
+  }
+  return DASHBOARD_MOCK;
+}
+
+async function init() {
+  try {
+    dashboardData = await loadDashboard();
+  } catch (e) {
+    console.error("Gagal memuat dashboard:", e);
+    return;
+  }
+  renderDashboard();
+}
+
+init();
 
 /* ===== RUNNING TEXT (PENGUMUMAN) — utilitas bersama ===== */
 import { initRunningText, listenRunningText } from "../utils/running-text.js";

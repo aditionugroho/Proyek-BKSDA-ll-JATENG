@@ -4,7 +4,7 @@
    ajukan/preview/simpan draft
    ============================================ */
 
-import { suratPgData } from "../data/surat-pegawai.js";
+import { suratPgData as SURAT_PG_MOCK } from "../data/surat-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
@@ -193,8 +193,16 @@ document.getElementById("btn-preview").addEventListener("click", () => {
 document.getElementById("btn-draft").addEventListener("click", () => {
   const draft = collectDraft();
 
-  // Tambah ke data Draft (tab Draft di halaman Surat)
-  suratPgData.unshift({
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    // LIVE: draft tersimpan di server
+    EOfficeAPI.createSuratKeluar({ ...draft, status: "Draft" })
+      .then(() => showToast("Draft disimpan"))
+      .catch(() => showToast("Gagal menyimpan draft. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
+  // Mock: tambah ke data Draft (tab Draft di halaman Surat)
+  SURAT_PG_MOCK.unshift({
     id: Date.now(),
     jenis: "draft",
     nomor: draft.nomor,

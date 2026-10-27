@@ -5,25 +5,29 @@
    data, checklist toggle + counter
    ============================================ */
 
-import { TUGAS_SEKSI, TUGAS_DETAIL } from "../data/tugas-seksi.js";
+import { TUGAS_SEKSI as TUGAS_MOCK, TUGAS_DETAIL } from "../data/tugas-seksi.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== Ambil tugas dari URL (?id=), fallback TGS-2023-11-042 ===== */
-const params = new URLSearchParams(window.location.search);
-const idParam = Number(params.get("id"));
-const tugas = TUGAS_SEKSI.find((t) => t.id === idParam) || TUGAS_DETAIL;
+/* ===== DATA: diisi loadDetail() — API saat LIVE, mock saat belum ===== */
+let data = null;
 
-/* Nilai aman bila data list tidak punya atribut detail */
-const data = {
-  ...TUGAS_DETAIL,
-  ...tugas,
-  checklist: tugas.checklist || TUGAS_DETAIL.checklist,
-  lampiran: tugas.lampiran || TUGAS_DETAIL.lampiran,
-  aktivitas: tugas.aktivitas || TUGAS_DETAIL.aktivitas,
-  deskripsi: tugas.deskripsi || TUGAS_DETAIL.deskripsi,
-  picRole: tugas.picRole || "Staf Polhut"
-};
+async function loadDetail(id) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getTugasDetail(id);
+  }
+  /* Mock: fallback TUGAS_DETAIL bila ?id= tidak ditemukan */
+  const tugas = TUGAS_MOCK.find((t) => t.id === id) || TUGAS_DETAIL;
+  return {
+    ...TUGAS_DETAIL,
+    ...tugas,
+    checklist: tugas.checklist || TUGAS_DETAIL.checklist,
+    lampiran: tugas.lampiran || TUGAS_DETAIL.lampiran,
+    aktivitas: tugas.aktivitas || TUGAS_DETAIL.aktivitas,
+    deskripsi: tugas.deskripsi || TUGAS_DETAIL.deskripsi,
+    picRole: tugas.picRole || "Staf Polhut"
+  };
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -183,11 +187,21 @@ document.getElementById("btn-review").addEventListener("click", () => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-renderHeader();
-renderDeskripsi();
-renderChecklist();
-renderLampiran();
-renderInfo();
-renderAktivitas();
-updateCounter();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  try {
+    data = await loadDetail(Number(params.get("id")));
+  } catch (e) {
+    showToast("Gagal memuat detail tugas. Periksa koneksi lalu muat ulang halaman.");
+    return;
+  }
+  renderHeader();
+  renderDeskripsi();
+  renderChecklist();
+  renderLampiran();
+  renderInfo();
+  renderAktivitas();
+  updateCounter();
+}
+init();

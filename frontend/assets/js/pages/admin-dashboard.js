@@ -1,5 +1,5 @@
-/* ============================================
-   DASHBOARD ADMIN — E-Office SKSDA
+﻿/* ============================================
+   DASHBOARD ADMIN â€” E-Office SKSDA
    Semua angka dari mock data di bawah;
    render dinamis via JS (siap diganti fetch API)
    ============================================ */
@@ -7,7 +7,8 @@
 /* ===== MOCK DATA ===== */
 
 /* Kartu statistik */
-const STATS = [
+const STATS_MOCK = [
+
   {
     label: "Total Pengguna",
     value: 148,
@@ -56,9 +57,10 @@ const STATS = [
 ];
 
 /* Tab & data chart (angka absolut; tinggi batang dihitung %) */
-const CHART_TABS = ["Surat Masuk", "Surat Keluar", "Draft Konsep", "Selesai Disposisi"];
+let CHART_TABS = ["Surat Masuk", "Surat Keluar", "Draft Konsep", "Selesai Disposisi"];
 
-const CHART_DATA = [
+const CHART_DATA_MOCK = [
+
   { month: "Mei", verified: 210, pending: 50 },
   { month: "Jun", verified: 250, pending: 48 },
   { month: "Jul", verified: 225, pending: 51 },
@@ -68,7 +70,8 @@ const CHART_DATA = [
 ];
 
 /* Audit trail */
-const AUDIT_TRAIL = [
+const AUDIT_TRAIL_MOCK = [
+
   {
     icon: "userPlus",
     tone: "blue",
@@ -107,7 +110,8 @@ const AUDIT_TRAIL = [
 ];
 
 /* Kesehatan sistem */
-const HEALTH = [
+const HEALTH_MOCK = [
+
   {
     label: "Database Cluster",
     badge: { text: "NORMAL", tone: "green" },
@@ -137,6 +141,32 @@ const HEALTH = [
     bottom: { type: "check", text: "Daring sejak 48 hari lalu" }
   }
 ];
+
+/* ===== DATA: diisi loadDashboard() — API saat LIVE, mock saat belum ===== */
+let STATS = STATS_MOCK;
+let CHART_DATA = CHART_DATA_MOCK;
+let AUDIT_TRAIL = AUDIT_TRAIL_MOCK;
+let HEALTH = HEALTH_MOCK;
+
+async function loadDashboard() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const res = await EOfficeAPI.getDashboardAdmin();
+    return {
+      stats: res.stats || STATS_MOCK,
+      chartTabs: res.chartTabs || CHART_TABS,
+      chartData: res.chartData || CHART_DATA_MOCK,
+      auditTrail: res.auditTrail || AUDIT_TRAIL_MOCK,
+      health: res.health || HEALTH_MOCK
+    };
+  }
+  return {
+    stats: STATS_MOCK,
+    chartTabs: CHART_TABS,
+    chartData: CHART_DATA_MOCK,
+    auditTrail: AUDIT_TRAIL_MOCK,
+    health: HEALTH_MOCK
+  };
+}
 
 /* ===== IKON SVG INLINE ===== */
 const ICONS = {
@@ -174,7 +204,7 @@ function renderStats() {
   if (!grid) return;
 
   grid.innerHTML = STATS.map((stat) => {
-    // Pojok kanan atas: badge / icon gear / panah ↗
+    // Pojok kanan atas: badge / icon gear / panah â†—
     let corner = `<span class="stat-corner">${ICONS.arrowUpRight}</span>`;
     if (stat.cornerBadge) {
       corner = `<span class="stat-corner-badge">${stat.cornerBadge.text}</span>`;
@@ -248,7 +278,7 @@ function renderChart() {
       </div>`;
   }).join("");
 
-  // Animasi: tinggi 0 → target setelah elemen dirender
+  // Animasi: tinggi 0 â†’ target setelah elemen dirender
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       plot.querySelectorAll(".chart-bar").forEach((bar) => {
@@ -313,10 +343,25 @@ function renderHealth() {
   }).join("");
 }
 
-/* ===== Inisialisasi ===== */
-renderHeroDate();
-renderStats();
-renderChartTabs();
-renderChart();
-renderAuditTrail();
-renderHealth();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  try {
+    const res = await loadDashboard();
+    STATS = res.stats;
+    CHART_TABS = res.chartTabs;
+    CHART_DATA = res.chartData;
+    AUDIT_TRAIL = res.auditTrail;
+    HEALTH = res.health;
+  } catch (e) {
+    console.error("Gagal memuat dashboard:", e);
+    return;
+  }
+  renderHeroDate();
+  renderStats();
+  renderChartTabs();
+  renderChart();
+  renderAuditTrail();
+  renderHealth();
+}
+
+init();

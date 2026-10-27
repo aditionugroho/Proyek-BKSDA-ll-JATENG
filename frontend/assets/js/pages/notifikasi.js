@@ -4,11 +4,21 @@
    tandai dibaca, pagination 2 halaman
    ============================================ */
 
-import { notifData } from "../data/notifikasi.js";
+import { notifData as NOTIF_MOCK } from "../data/notifikasi.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
 
 const STATE_KEY = "notifikasi-ks";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let notifData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getNotifikasi();
+  }
+  return NOTIF_MOCK;
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -211,7 +221,12 @@ document.getElementById("nt-list").addEventListener("click", (event) => {
   const readBtn = event.target.closest("[data-read]");
   if (readBtn) {
     const item = notifData.find((n) => String(n.id) === readBtn.dataset.read);
-    if (item) item.unread = false;
+    if (item) {
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        EOfficeAPI.markNotifikasiRead(item.id).catch(() => showToast("Gagal menyimpan status dibaca"));
+      }
+      item.unread = false;
+    }
     refresh();
     return;
   }
@@ -228,6 +243,9 @@ document.getElementById("nt-list").addEventListener("click", (event) => {
 
 /* ===== EVENT: tandai semua dibaca ===== */
 document.getElementById("btn-read-all").addEventListener("click", () => {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.markAllNotifikasiRead().catch(() => showToast("Gagal menyimpan status dibaca"));
+  }
   notifData.forEach((n) => (n.unread = false));
   refresh();
   showToast("Semua notifikasi ditandai dibaca");
@@ -254,6 +272,21 @@ document.querySelectorAll(".nt-page-num").forEach((btn) => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-restoreState();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const listEl = document.getElementById("nt-list");
+  listEl.innerHTML = `<p class="nt-empty">Memuat notifikasi...</p>`;
+
+  try {
+    notifData = await loadData();
+  } catch (e) {
+    notifData = [];
+    listEl.innerHTML = `<p class="nt-empty">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</p>`;
+    return;
+  }
+
+  restoreState();
+  refresh();
+}
+
+init();

@@ -4,11 +4,21 @@
    modal placeholder tugas baru
    ============================================ */
 
-import { tugasSayaData, TOTAL_BADGE_MOCK, TOTAL_FOOTER_MOCK } from "../data/tugas-saya.js";
+import { tugasSayaData as TUGAS_SAYA_MOCK } from "../data/tugas-saya.js";
 import { openModal } from "../components/modal.js";
 import { saveListState, loadListState } from "../utils/state.js";
 
 const STATE_KEY = "tugas-saya-pg";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let tugasSayaData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getTugasSaya();
+  }
+  return TUGAS_SAYA_MOCK;
+}
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -83,10 +93,10 @@ function renderTable() {
 
   /* Footer */
   document.getElementById("pgt-showing").textContent =
-    `Menampilkan 1-${rows.length} dari ${TOTAL_FOOTER_MOCK} tugas`;
+    `Menampilkan 1-${rows.length} dari ${tugasSayaData.length} tugas`;
 
   /* Badge tab Semua = total semua tugas */
-  document.getElementById("pgt-tab-count").textContent = TOTAL_BADGE_MOCK;
+  document.getElementById("pgt-tab-count").textContent = tugasSayaData.length;
   persistState();
 }
 
@@ -119,6 +129,21 @@ document.getElementById("btn-tugas-baru").addEventListener("click", () => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-restoreState();
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("pgt-tbody");
+  tbody.innerHTML = `<tr class="pgt-empty"><td colspan="6">Memuat data tugas...</td></tr>`;
+
+  try {
+    tugasSayaData = await loadData();
+  } catch (e) {
+    tugasSayaData = [];
+    tbody.innerHTML = `<tr class="pgt-empty"><td colspan="6">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  restoreState();
+  renderTable();
+}
+
+init();

@@ -175,6 +175,16 @@ for (let i = USERS.length; i < 148; i++) {
   });
 }
 
+/* ===== DATA: diisi loadUsers() — API saat LIVE, mock saat belum ===== */
+let users = [];
+
+async function loadUsers() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getUsers();
+  }
+  return USERS;
+}
+
 /* Panel bawah */
 const PANEL_RULES = {
   title: "Aturan Hak Akses & Keamanan",
@@ -220,10 +230,22 @@ const ICONS = {
 /* ===== STATE FILTER ===== */
 const state = { search: "", role: "all", status: "all", unit: "all", page: 1, perPage: 5 };
 
-/* ===== RENDER: stat card ===== */
+/* ===== RENDER: stat card (dihitung dari data) ===== */
 function renderStats() {
+  const total = users.length;
+  const aktif = users.filter((u) => u.status === "AKTIF").length;
+  const unitCount = new Set(users.map((u) => u.unitGroup)).size;
+  const perluTinjauan = users.filter((u) => u.status === "MENUNGGU").length;
+
+  const stats = [
+    { label: "Total Pengguna Terdaftar", value: total, badge: { text: "terdata", tone: "green" }, sub: "Pegawai terdata NIP", icon: "users", tone: "blue" },
+    { label: "Pengguna Aktif", value: aktif, badge: { text: `${total ? Math.round((aktif / total) * 100) : 0}%`, tone: "blue" }, sub: `${total - aktif} akun tidak aktif`, icon: "shield", tone: "green" },
+    { label: "Unit & Seksi Terhubung", value: unitCount, sub: "Resort / Subbag", icon: "layers", tone: "gray" },
+    { label: "Perlu Tinjauan Hak Akses", value: perluTinjauan, valueRed: perluTinjauan > 0, badge: perluTinjauan > 0 ? { text: "PERHATIAN", tone: "red" } : null, sub: "Belum diverifikasi", icon: "alert", tone: "red" }
+  ];
+
   const grid = document.getElementById("users-stats");
-  grid.innerHTML = USER_STATS.map((s) => {
+  grid.innerHTML = stats.map((s) => {
     const badge = s.badge ? `<span class="stat-badge stat-badge--${s.badge.tone}">${s.badge.text}</span>` : "";
     const sub2 = s.sub2 ? `<p class="stat-sub">${s.sub2}</p>` : "";
     return `
@@ -245,7 +267,7 @@ function renderStats() {
 /* ===== FILTER DATA ===== */
 function getFilteredUsers() {
   const q = state.search.trim().toLowerCase();
-  return USERS.filter((u) => {
+  return users.filter((u) => {
     const matchSearch =
       !q ||
       [u.nama, u.nip, u.username, u.email, u.unit, u.unitSub].some((f) => f.toLowerCase().includes(q));
@@ -455,7 +477,7 @@ function refresh() {
 document.getElementById("users-tbody").addEventListener("click", (event) => {
   const btn = event.target.closest("[data-action]");
   if (!btn) return;
-  const user = USERS.find((u) => String(u.id) === btn.dataset.id);
+  const user = users.find((u) => String(u.id) === btn.dataset.id);
   if (!user) return;
 
   if (btn.dataset.action === "edit") {
@@ -475,8 +497,18 @@ document.getElementById("users-tbody").addEventListener("click", (event) => {
       confirmLabel: "Ya, Hapus Akun",
       danger: true,
       onConfirm: () => {
-        const idx = USERS.indexOf(user);
-        if (idx !== -1) USERS.splice(idx, 1);
+        if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+          EOfficeAPI.deleteUser(user.id)
+            .then(() => {
+              const idx = users.indexOf(user);
+              if (idx !== -1) users.splice(idx, 1);
+              refresh();
+            })
+            .catch(() => console.error("Gagal menghapus pengguna:", user.username));
+          return;
+        }
+        const idx = users.indexOf(user);
+        if (idx !== -1) users.splice(idx, 1);
         console.log("[demo] akun dihapus:", user.username);
       }
     });
@@ -535,52 +567,72 @@ document.getElementById("pagination").addEventListener("click", (event) => {
 });
 
 /* ===== Inisialisasi ===== */
-renderStats();
-renderPanels();
-refresh();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("users-tbody");
+  tbody.innerHTML = `<tr><td colspan="8">Memuat data pengguna...</td></tr>`;
 
-/* ============================================
-   ANTREAN VERIFIKASI PENDAFTAR
-   Membaca eoffice_registrations (dari halaman
-   registrasi) — admin memverifikasi / menolak.
-   Setelah "aktif", akun bisa dipakai login.
-   ============================================ */
+  try {
+    users = await loadUsers();
+  } catch (e) {
+    users = [];
+    tbody.innerHTML = `<tr><td colspan="8">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderStats();
+  renderPanels();
+  refresh();
+  renderVerif();
+}
+
+init();
 
 const REG_KEY = "eoffice_registrations";
 
-function getRegs() {
+/* ============================================
+   ANTREAN VERIFIKASI PENDAFTAR
+   LIVE: GET /api/registrations + PUT /api/registrations/{id}/status
+   MOCK: localStorage eoffice_registrations (dari halaman registrasi)
+   ============================================ */
+
+async function getRegs() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getRegistrations();
+  }
   try { return JSON.parse(localStorage.getItem(REG_KEY) || "[]"); }
   catch { return []; }
 }
 
-function saveRegs(regs) {
-  localStorage.setItem(REG_KEY, JSON.stringify(regs));
-}
-
-function escHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+function escHtml(s) {  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[c]));
 }
 
 function setRegStatus(id, status) {
-  const regs = getRegs();
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.verifyRegistration(id, status)
+      .then(() => renderVerif())
+      .catch(() => console.error("Gagal memverifikasi pendaftar:", id));
+    return;
+  }
+  const regs = JSON.parse(localStorage.getItem(REG_KEY) || "[]");
   const target = regs.find((r) => String(r.daftarPada) === id);
   if (target) {
     target.status = status;
     target.diverifikasiPada = new Date().toISOString();
-    saveRegs(regs);
+    localStorage.setItem(REG_KEY, JSON.stringify(regs));
   }
   renderVerif();
 }
 
-function renderVerif() {
+async function renderVerif() {
   const section = document.getElementById("verif-section");
   const list = document.getElementById("verif-list");
   const count = document.getElementById("verif-count");
   if (!section || !list) return;
 
-  const regs = getRegs();
+  const regs = await getRegs();
   if (!regs.length) { section.hidden = true; return; }
   section.hidden = false;
 
@@ -621,5 +673,3 @@ function renderVerif() {
     btn.addEventListener("click", () => setRegStatus(btn.dataset.id, "ditolak"));
   });
 }
-
-renderVerif();

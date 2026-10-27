@@ -268,10 +268,29 @@ function validateForm() {
 /* ===== TOMBOL BAWAH ===== */
 const form = document.getElementById("form-surat");
 
+function payloadSuratKeluar(status) {
+  return {
+    agenda: document.getElementById("nomor-agenda").value.trim(),
+    tujuan: document.getElementById("tujuan-surat").value.trim(),
+    penandatangan: SIGNERS[signerSelect.value].label,
+    isi: editorBody.textContent.trim(),
+    lampiran: attachments.filter((a) => a.done).map((a) => ({ name: a.name, size: a.size })),
+    status: status
+  };
+}
+
 /* Simpan & Kirim (submit, dengan validasi) */
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!validateForm()) return;
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.createSuratKeluar(payloadSuratKeluar("Terkirim"))
+      .then(() => showToast("Surat keluar berhasil dibuat dan dikirim."))
+      .catch(() => showToast("Gagal mengirim surat. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
   showToast("Surat keluar berhasil dibuat dan dikirim.");
   console.log("[demo] surat keluar dikirim:", {
     agenda: document.getElementById("nomor-agenda").value,
@@ -284,6 +303,12 @@ form.addEventListener("submit", (event) => {
 
 /* Simpan Draft (tanpa validasi penuh) */
 document.getElementById("btn-draft").addEventListener("click", () => {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.createSuratKeluar(payloadSuratKeluar("Draft"))
+      .then(() => showToast("Draft surat keluar berhasil disimpan."))
+      .catch(() => showToast("Gagal menyimpan draft. Periksa koneksi lalu coba lagi."));
+    return;
+  }
   showToast("Draft surat keluar berhasil disimpan.");
   console.log("[demo] draft disimpan");
 });

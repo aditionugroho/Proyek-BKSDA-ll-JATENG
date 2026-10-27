@@ -7,8 +7,8 @@
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
-/* ===== MOCK DATA ===== */
-const disposisiData = [
+/* ===== MOCK DATA (fallback selama backend belum siap) ===== */
+const DISPOSISI_MOCK = [
   {
     id: 1,
     nomor: "DSP-10/23-001",
@@ -42,6 +42,16 @@ const disposisiData = [
 ];
 
 const TOTAL_MOCK = 24; // total sistem (untuk teks "dari N disposisi")
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let disposisiData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getDisposisi();
+  }
+  return DISPOSISI_MOCK;
+}
 
 /* ===== IKON ===== */
 const CLOCK_ICON =
@@ -106,6 +116,7 @@ function setFieldError(id, show) {
 
 REQUIRED.forEach((id) => {
   document.getElementById(id).addEventListener("change", () => setFieldError(id, false));
+  document.getElementById(id).addEventListener("input", () => setFieldError(id, false));
 });
 
 /* ===== SUBMIT: tambah disposisi baru ===== */
@@ -120,17 +131,40 @@ document.getElementById("dsp-form").addEventListener("submit", (event) => {
   });
   if (!valid) return;
 
-  // Generate nomor urut: DSP-10/23-0XX
-  const urut = disposisiData.length + 1;
-  const nomorBaru = `DSP-10/23-${String(urut).padStart(3, "0")}`;
-
   const suratLabel = document.getElementById("f-surat").value;
   const deadlineRaw = document.getElementById("f-deadline").value;
 
+  const afterSuccess = () => {
+    renderTable();
+    document.getElementById("dsp-form").reset();
+    REQUIRED.forEach((id) => setFieldError(id, false));
+    showToast("Disposisi berhasil dikirim");
+  };
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    // LIVE: id, nomor, dan tanggal dibuat oleh server
+    EOfficeAPI.createDisposisi({
+      surat: suratLabel,
+      pic: document.getElementById("f-staf").value,
+      deadline: deadlineRaw || null,
+      instruksi: document.getElementById("f-instruksi").value,
+      catatan: document.getElementById("f-catatan").value
+    })
+      .then((baru) => {
+        disposisiData.unshift(baru);
+        afterSuccess();
+      })
+      .catch(() => showToast("Gagal mengirim disposisi. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+
+  // MOCK: nomor urut & tanggal dibuat lokal
+  const urut = disposisiData.length + 1;
+
   disposisiData.unshift({
     id: Date.now(),
-    nomor: nomorBaru,
-    surat: suratLabel.length > 27 ? `${suratLabel.slice(0, 27)}` : suratLabel,
+    nomor: `DSP-10/23-${String(urut).padStart(3, "0")}`,
+    surat: suratLabel,
     pic: document.getElementById("f-staf").value,
     tanggal: formatTanggal(new Date()),
     deadline: deadlineRaw ? formatTanggal(new Date(deadlineRaw)) : "",
@@ -138,10 +172,7 @@ document.getElementById("dsp-form").addEventListener("submit", (event) => {
     catatan: document.getElementById("f-catatan").value
   });
 
-  renderTable();
-  document.getElementById("dsp-form").reset();
-  REQUIRED.forEach((id) => setFieldError(id, false));
-  showToast("Disposisi berhasil dikirim");
+  afterSuccess();
 });
 
 /* ===== KLIK BARIS → MODAL DETAIL ===== */
@@ -186,5 +217,20 @@ document.querySelectorAll(".kdp-filter-btn").forEach((btn) => {
   btn.addEventListener("click", () => btn.classList.toggle("is-active"));
 });
 
-/* ===== Inisialisasi ===== */
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("dsp-tbody");
+  tbody.innerHTML = `<tr><td colspan="3">Memuat data disposisi...</td></tr>`;
+
+  try {
+    disposisiData = await loadData();
+  } catch (e) {
+    disposisiData = [];
+    tbody.innerHTML = `<tr><td colspan="3">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderTable();
+}
+
+init();

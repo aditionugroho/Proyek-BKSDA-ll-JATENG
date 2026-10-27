@@ -111,6 +111,7 @@
 
   </main>
 
+  <script src="assets/js/api.js"></script>
   <script>
     const ROLE_LABEL = { admin: "Admin", "kepala-seksi": "Kepala Seksi", pegawai: "Staff/Pegawai" };
     const ROLE_DEST = { admin: "pages/admin/dashboard.html", "kepala-seksi": "pages/kepala-seksi/dashboard.html", pegawai: "pages/pegawai/dashboard.html" };
@@ -172,52 +173,46 @@
         document.getElementById("login-btn-text").textContent = "Masuk ke Portal";
       };
 
-      // Cari data registrasi yang cocok dengan ID/nama yang dimasukkan
-      const idInput = uid.value.trim().toLowerCase();
-      let match = null;
-      try {
-        const regs = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
-        match = regs.find(function(r) {
-          return String(r.idAtauEmail).toLowerCase() === idInput || String(r.nama).toLowerCase() === idInput;
-        }) || null;
-      } catch (e) { match = null; }
-
-      // 1) Ditolak admin → tidak boleh masuk
-      if (match && match.status === "ditolak") {
-        showAlert("danger", "login.rejected", "Pendaftaran akun Anda ditolak Admin.");
-        alertBox.classList.add("show");
-        resetBtn();
-        return;
-      }
-
-      // 2) Akun baru (registrasi mandiri / buatan admin) menunggu acc admin → belum boleh masuk.
-      //    Setelah di-acc (status aktif), selamanya langsung masuk tanpa acc lagi.
-      if (match && match.status === "menunggu-verifikasi") {
-        showAlert("warn", "login.pending", "Akun Anda sedang menunggu verifikasi Admin.");
-        alertBox.classList.add("show");
-        resetBtn();
-        return;
-      }
-
-      // 3) Akun sudah aktif: kata sandi wajib cocok
-      if (match && match.status === "aktif" && match.kataSandi && pw.value !== match.kataSandi) {
-        showAlert("danger", "login.wrongPw", "ID pengguna atau kata sandi salah.");
-        alertBox.classList.add("show");
-        pw.classList.add("input-error");
-        resetBtn();
-        return;
-      }
-      hideAlert();
-
-      const btn = document.getElementById("login-btn");
-      btn.disabled = true;
+      document.getElementById("login-btn").disabled = true;
       document.getElementById("login-btn-text").textContent = "Memproses...";
 
-      const role = document.getElementById("role").value;
-      const session = { userId: uid.value.trim(), role, loginAt: new Date().toISOString() };
-      localStorage.setItem("eoffice_session", JSON.stringify(session));
+      // Login lewat lapisan API (mock selama backend belum siap,
+      // otomatis pindah ke Laravel saat API_CONFIG.LIVE = true)
+      EOfficeAPI.login(uid.value.trim(), pw.value)
+        .then(function (res) {
+          if (res.status === "rejected") {
+            showAlert("danger", "login.rejected", "Pendaftaran akun Anda ditolak Admin.");
+            alertBox.classList.add("show");
+            resetBtn();
+            return;
+          }
+          if (res.status === "pending") {
+            showAlert("warn", "login.pending", "Akun Anda sedang menunggu verifikasi Admin.");
+            alertBox.classList.add("show");
+            resetBtn();
+            return;
+          }
+          if (res.status === "invalid") {
+            showAlert("danger", "login.wrongPw", "ID pengguna atau kata sandi salah.");
+            alertBox.classList.add("show");
+            pw.classList.add("input-error");
+            resetBtn();
+            return;
+          }
+          hideAlert();
 
-      location.href = ROLE_DEST[role] || ROLE_DEST.admin;
+          // Role final: dari server bila ada (mode live), kalau tidak dari dropdown
+          const role = (res.user && res.user.role) || document.getElementById("role").value;
+          const session = { userId: uid.value.trim(), role, loginAt: new Date().toISOString() };
+          localStorage.setItem("eoffice_session", JSON.stringify(session));
+
+          location.href = ROLE_DEST[role] || ROLE_DEST.admin;
+        })
+        .catch(function () {
+          showAlert("danger", "login.errorServer", "Tidak dapat menghubungi server. Coba beberapa saat lagi.");
+          alertBox.classList.add("show");
+          resetBtn();
+        });
     });
 
     // Toggle lihat sandi

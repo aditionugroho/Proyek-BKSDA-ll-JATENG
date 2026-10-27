@@ -4,10 +4,20 @@
    prioritas, search, baris klikable
    ============================================ */
 
-import { disposisiPgData } from "../data/disposisi-pegawai.js";
+import { disposisiPgData as DISPOSISI_PG_MOCK } from "../data/disposisi-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 import { saveListState, loadListState } from "../utils/state.js";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let disposisiPgData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getDisposisiSaya();
+  }
+  return DISPOSISI_PG_MOCK;
+}
 
 const STATE_KEY = "disposisi-saya-pg";
 
@@ -170,7 +180,22 @@ document.getElementById("btn-lapor").addEventListener("click", () => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-renderTabCount();
-restoreState();
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("pgd-tbody");
+  tbody.innerHTML = `<tr class="pgd-empty"><td colspan="5">Memuat data disposisi...</td></tr>`;
+
+  try {
+    disposisiPgData = await loadData();
+  } catch (e) {
+    disposisiPgData = [];
+    tbody.innerHTML = `<tr class="pgd-empty"><td colspan="5">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderTabCount();
+  restoreState();
+  renderTable();
+}
+
+init();

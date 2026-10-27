@@ -212,19 +212,36 @@ form.addEventListener("submit", (event) => {
   spinner.className = "spinner";
   saveBtn.insertBefore(spinner, saveBtnText);
 
-  setTimeout(() => {
-    // Simpan hasil ke sessionStorage (ganti dengan POST API bila sudah tersedia)
-    window.sessionStorage.setItem(
-      SESSION_KEY,
-      JSON.stringify({ ...collectValues(), savedAt: new Date().toISOString() })
-    );
-
+  const selesai = () => {
     clearDraft();
-
     spinner.remove();
     saveBtn.disabled = false;
     saveBtnText.textContent = "Simpan Perubahan";
     showToast("Perubahan Sukses - Profil Administrator berhasil diperbarui ke server SKSDA.");
+  };
+
+  const gagal = () => {
+    spinner.remove();
+    saveBtn.disabled = false;
+    saveBtnText.textContent = "Simpan Perubahan";
+    showToast("Gagal menyimpan. Periksa koneksi lalu coba lagi.");
+  };
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const v = collectValues();
+    EOfficeAPI.updateAdminProfil({ nama: v.nama, email: v.email, telepon: v.telepon })
+      .then(selesai)
+      .catch(gagal);
+    return;
+  }
+
+  setTimeout(() => {
+    // Mock: simpan hasil ke sessionStorage
+    window.sessionStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ ...collectValues(), savedAt: new Date().toISOString() })
+    );
+    selesai();
   }, 1500);
 });
 

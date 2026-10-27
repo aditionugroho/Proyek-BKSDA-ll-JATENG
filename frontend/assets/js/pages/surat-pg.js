@@ -4,12 +4,21 @@
    modal preview ringkas
    ============================================ */
 
-import { suratPgData, TOTAL_SURAT_MOCK } from "../data/surat-pegawai.js";
+import { suratPgData as SURAT_PG_MOCK } from "../data/surat-pegawai.js";
 import { showToast } from "../components/toast.js";
-import { saveListState, loadListState } from "../utils/state.js";
 import { saveListState, loadListState } from "../utils/state.js";
 
 const STATE_KEY = "surat-pg";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let suratPgData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getSuratSaya();
+  }
+  return SURAT_PG_MOCK;
+}
 
 /* ===== IKON ===== */
 const EYE_ICON =
@@ -93,7 +102,7 @@ function renderTable() {
 
   /* Footer */
   document.getElementById("pgs-showing").textContent =
-    `Menampilkan 1-${rows.length} dari ${TOTAL_SURAT_MOCK} surat`;
+    `Menampilkan 1-${rows.length} dari ${suratPgData.length} surat`;
   document.getElementById("pgs-prev").disabled = true;
   document.getElementById("pgs-next").disabled = true;
   persistState();
@@ -137,6 +146,21 @@ document.getElementById("pgs-tbody").addEventListener("click", (event) => {
   window.location.href = `detail-surat.html?id=${btn.dataset.preview}`;
 });
 
-/* ===== Inisialisasi ===== */
-restoreState();
-renderTable();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("pgs-tbody");
+  tbody.innerHTML = `<tr class="pgs-empty"><td colspan="5">Memuat data surat...</td></tr>`;
+
+  try {
+    suratPgData = await loadData();
+  } catch (e) {
+    suratPgData = [];
+    tbody.innerHTML = `<tr class="pgs-empty"><td colspan="5">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  restoreState();
+  renderTable();
+}
+
+init();

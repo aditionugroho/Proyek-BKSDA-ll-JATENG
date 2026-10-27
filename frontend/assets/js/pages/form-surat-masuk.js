@@ -211,28 +211,48 @@ function validateForm() {
 /* ===== TOMBOL BAWAH ===== */
 const form = document.getElementById("form-surat");
 
+function kirimSuratMasuk(lalu) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    EOfficeAPI.createSuratMasuk({
+      agenda: document.getElementById("nomor-agenda").value.trim(),
+      nomor: document.getElementById("nomor-surat").value.trim(),
+      asal: document.getElementById("asal-surat").value.trim(),
+      perihal: document.getElementById("perihal").value.trim(),
+      instruksi: document.getElementById("instruksi").value.trim(),
+      lampiran: attachments.filter((a) => a.done).map((a) => ({ name: a.name, size: a.size }))
+    })
+      .then(() => { showToast("Surat berhasil disimpan"); lalu(); })
+      .catch(() => showToast("Gagal menyimpan surat. Periksa koneksi lalu coba lagi."));
+    return;
+  }
+  showToast("Surat berhasil disimpan");
+  lalu();
+}
+
 /* Simpan Surat (submit) */
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!validateForm()) return;
-  showToast("Surat berhasil disimpan");
-  console.log("[demo] surat masuk disimpan:", {
-    agenda: document.getElementById("nomor-agenda").value,
-    nomor: document.getElementById("nomor-surat").value,
-    lampiran: attachments.filter((a) => a.done).length
+  kirimSuratMasuk(() => {
+    console.log("[demo] surat masuk disimpan:", {
+      agenda: document.getElementById("nomor-agenda").value,
+      nomor: document.getElementById("nomor-surat").value,
+      lampiran: attachments.filter((a) => a.done).length
+    });
   });
 });
 
 /* Simpan & Tambah Baru: simpan lalu reset form ke nilai default */
 document.getElementById("btn-save-new").addEventListener("click", () => {
   if (!validateForm()) return;
-  showToast("Surat berhasil disimpan");
-  form.reset();
-  applyDefaults();
-  // Kembalikan lampiran awal (1 berkas demo)
-  attachments.length = 0;
-  attachments.push({ name: "Surat_Permohonan_Kawasan_Hutan.pdf", size: "2.4 MB", progress: 100, done: true, file: null });
-  renderAttachments();
+  kirimSuratMasuk(() => {
+    form.reset();
+    applyDefaults();
+    // Kembalikan lampiran awal (1 berkas demo)
+    attachments.length = 0;
+    attachments.push({ name: "Surat_Permohonan_Kawasan_Hutan.pdf", size: "2.4 MB", progress: 100, done: true, file: null });
+    renderAttachments();
+  });
 });
 
 /* Batal: kembali ke halaman pilihan jenis surat */

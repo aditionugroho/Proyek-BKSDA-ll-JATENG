@@ -4,9 +4,20 @@
    adaptasi + chip sumber + agenda pribadi)
    ============================================ */
 
-import { jadwalPegawaiData } from "../data/jadwal-pegawai.js";
+import { jadwalPegawaiData as JADWAL_PG_MOCK } from "../data/jadwal-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
+
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let jadwalPegawaiData = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const res = await EOfficeAPI.getJadwalSaya();
+    return res.agenda;
+  }
+  return JADWAL_PG_MOCK;
+}
 
 /* ===== UTIL ===== */
 const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -25,7 +36,7 @@ let viewYear = today.getFullYear();
 let viewMonth = today.getMonth();
 let selectedIso = todayIso; // default: hari ini (nyata)
 
-const agendaDates = new Set(jadwalPegawaiData.map((a) => a.tanggal));
+let agendaDates = new Set(); // diisi ulang setelah data termuat
 
 /* ===== IKON ===== */
 const ICONS = {
@@ -344,5 +355,21 @@ document.getElementById("btn-tambah").addEventListener("click", () => {
   });
 });
 
-/* ===== Inisialisasi ===== */
-refreshAll();
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const listEl = document.getElementById("pgj-agenda-list");
+  listEl.innerHTML = `<p class="pgj-agenda-empty">Memuat agenda...</p>`;
+
+  try {
+    jadwalPegawaiData = await loadData();
+  } catch (e) {
+    jadwalPegawaiData = [];
+    listEl.innerHTML = `<p class="pgj-agenda-empty">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</p>`;
+    return;
+  }
+
+  agendaDates = new Set(jadwalPegawaiData.map((a) => a.tanggal));
+  refreshAll();
+}
+
+init();

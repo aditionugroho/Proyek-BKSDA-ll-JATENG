@@ -4,8 +4,8 @@
    navigasi halaman detail (placeholder)
    ============================================ */
 
-/* ===== MOCK DATA: surat terakhir diinput (diekspor untuk halaman detail) ===== */
-export const SURAT_TERAKHIR = [
+/* ===== MOCK DATA: surat terakhir diinput ===== */
+export const SURAT_TERAKHIR_MOCK = [
   {
     id: 1,
     nomor: "S.123/SKSDA-JT/TU/09/2026",
@@ -38,6 +38,16 @@ export const SURAT_TERAKHIR = [
 /* Halaman detail (dibuat khusus untuk admin) */
 const DETAIL_URL = "detail-surat-admin.html";
 
+/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
+let suratTerakhir = [];
+
+async function loadData() {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getSuratTerbaru();
+  }
+  return SURAT_TERAKHIR_MOCK;
+}
+
 /* ===== RENDER: baris tabel ===== */
 function renderTable(data) {
   const tbody = document.getElementById("surat-tbody");
@@ -69,7 +79,7 @@ function renderTable(data) {
 /* ===== SEARCH: filter client-side (nomor / pengirim / perihal) ===== */
 document.getElementById("table-search").addEventListener("input", (event) => {
   const q = event.target.value.trim().toLowerCase();
-  const filtered = SURAT_TERAKHIR.filter((s) =>
+  const filtered = suratTerakhir.filter((s) =>
     [s.nomor, s.pihak, s.perihal].some((f) => f.toLowerCase().includes(q))
   );
   renderTable(filtered);
@@ -79,9 +89,24 @@ document.getElementById("table-search").addEventListener("input", (event) => {
 document.getElementById("surat-tbody").addEventListener("click", (event) => {
   const btn = event.target.closest(".detail-btn");
   if (!btn) return;
-  const surat = SURAT_TERAKHIR.find((s) => String(s.id) === btn.dataset.id);
+  const surat = suratTerakhir.find((s) => String(s.id) === btn.dataset.id);
   window.location.href = `${DETAIL_URL}?id=${surat.id}`;
 });
 
-/* ===== Inisialisasi ===== */
-renderTable(SURAT_TERAKHIR);
+/* ===== Inisialisasi: muat data dulu, baru render ===== */
+async function init() {
+  const tbody = document.getElementById("surat-tbody");
+  tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Memuat data surat...</td></tr>`;
+
+  try {
+    suratTerakhir = await loadData();
+  } catch (e) {
+    suratTerakhir = [];
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
+    return;
+  }
+
+  renderTable(suratTerakhir);
+}
+
+init();

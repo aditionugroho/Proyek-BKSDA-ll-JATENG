@@ -49,40 +49,58 @@
   <footer class="pg-footer">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
 
   <!-- ===== Skrip ===== -->
+  <script src="../../assets/js/api.js"></script>
   <script type="module" src="../../assets/js/auth.js"></script>
   <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
   <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
   <script type="module">
-    import { dokumenPgData } from "../../assets/js/data/dokumen-pegawai.js";
+    import { dokumenPgData as MOCK } from "../../assets/js/data/dokumen-pegawai.js";
 
-    const id = Number(new URLSearchParams(location.search).get("id"));
-    const d = dokumenPgData.find((x) => x.id === id) || dokumenPgData[0];
+    async function loadDetail(id) {
+      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+        return EOfficeAPI.getDokumenSayaDetail(id);
+      }
+      return MOCK.find((x) => x.id === id) || MOCK[0];
+    }
 
-    document.getElementById("dg-crumb").textContent = d.nama;
-    document.getElementById("dg-title").textContent = d.nama;
-    document.getElementById("dg-sub").textContent = `${d.kategori} \u2022 ${d.tanggal}`;
+    async function init() {
+      const id = Number(new URLSearchParams(location.search).get("id"));
+      let d;
+      try {
+        d = await loadDetail(id);
+      } catch (e) {
+        document.getElementById("dg-title").textContent = "Gagal memuat detail dokumen";
+        return;
+      }
 
-    const TONE = { green: "green", gray: "gray", blue: "blue", red: "red" };
-    const badge = document.getElementById("dg-badge");
-    badge.textContent = d.status.text;
-    badge.className = `dg-badge dg-badge--${TONE[d.status.tone] || "gray"}`;
+      document.getElementById("dg-crumb").textContent = d.nama;
+      document.getElementById("dg-title").textContent = d.nama;
+      document.getElementById("dg-sub").textContent = `${d.kategori} \u2022 ${d.tanggal}`;
 
-    const rows = [
-      ["Nomor", d.nomor === "-" ? "Belum ada nomor (draft)" : d.nomor, d.nomor !== "-"],
-      ["Kategori", d.kategori],
-      ["Tanggal", d.tanggal],
-      ["Status", d.status.text]
-    ];
+      const TONE = { green: "green", gray: "gray", blue: "blue", red: "red" };
+      const badge = document.getElementById("dg-badge");
+      badge.textContent = d.status.text;
+      badge.className = `dg-badge dg-badge--${TONE[d.status.tone] || "gray"}`;
 
-    document.getElementById("dg-info").innerHTML = rows
-      .map(([l, v, mono]) => `
-        <div class="dg-field">
-          <p class="dg-label">${l}</p>
-          <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-        </div>`)
-      .join("");
+      const rows = [
+        ["Nomor", d.nomor === "-" ? "Belum ada nomor (draft)" : d.nomor, d.nomor !== "-"],
+        ["Kategori", d.kategori],
+        ["Tanggal", d.tanggal],
+        ["Status", d.status.text]
+      ];
 
-    document.title = `${d.nama} - E-Office SKSDA`;
+      document.getElementById("dg-info").innerHTML = rows
+        .map(([l, v, mono]) => `
+          <div class="dg-field">
+            <p class="dg-label">${l}</p>
+            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
+          </div>`)
+        .join("");
+
+      document.title = `${d.nama} - E-Office SKSDA`;
+    }
+
+    init();
   </script>
 </body>
 </html>
