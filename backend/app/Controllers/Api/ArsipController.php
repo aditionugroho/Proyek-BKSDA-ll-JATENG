@@ -153,6 +153,10 @@ class ArsipController extends BaseController
 
     public function index()
     {
+        $tahun = trim(
+            (string) $this->request->getGet('tahun')
+        );
+
         $jenis = trim(
             (string) $this->request->getGet('jenis')
         );
@@ -201,7 +205,37 @@ class ArsipController extends BaseController
             ], 422);
         }
 
+                // VALIDASI TAHUN
+        if (
+            $tahun !== '' &&
+            (
+                !preg_match('/^[0-9]{4}$/', $tahun) ||
+                (int) $tahun < 1000 ||
+                (int) $tahun > 9998
+            )
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Tahun harus antara 1000 dan 9998.',
+            ], 422);
+        }
+
         $this->baseQuery();
+
+        // FILTER TAHUN ARSIP
+        if ($tahun !== '') {
+            $tahunBerikutnya = (int) $tahun + 1;
+
+            $this->arsipModel
+                ->where(
+                    'arsip.tanggal_arsip >=',
+                    $tahun . '-01-01 00:00:00'
+                )
+                ->where(
+                    'arsip.tanggal_arsip <',
+                    $tahunBerikutnya . '-01-01 00:00:00'
+                );
+        }
 
         /*
         |--------------------------------------------------------------------------
