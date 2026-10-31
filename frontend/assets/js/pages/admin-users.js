@@ -658,7 +658,7 @@ async function renderVerif() {
     li.innerHTML = `
       <div class="verif-info">
         <p class="verif-nama">${escHtml(r.nama)}</p>
-        <p class="verif-meta">${escHtml(r.idAtauEmail)} &bull; ${new Date(r.daftarPada).toLocaleString("id-ID")}</p>
+        <p class="verif-meta">${escHtml(r.idAtauEmail)}${r.resort ? " &bull; Resort " + escHtml(r.resort) : ""} &bull; ${new Date(r.daftarPada).toLocaleString("id-ID")}</p>
       </div>
       <span class="verif-chip role">${roleLabel}</span>
       ${chip}

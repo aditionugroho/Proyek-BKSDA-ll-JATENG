@@ -4,6 +4,7 @@
    tambah disposisi baru, modal detail
    ============================================ */
 
+import { SURAT_MASUK as SURAT_MASUK_MOCK } from "../data/surat-masuk.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
 
@@ -51,6 +52,23 @@ async function loadData() {
     return EOfficeAPI.getDisposisi();
   }
   return DISPOSISI_MOCK;
+}
+
+/* ===== SARAN NOMOR SURAT (datalist) — mengurangi salah ketik ===== */
+async function isiDaftarSurat() {
+  let daftar = [];
+  try {
+    daftar = window.EOfficeAPI && EOfficeAPI.config.LIVE
+      ? await EOfficeAPI.getSuratMasuk()
+      : SURAT_MASUK_MOCK;
+  } catch (e) {
+    return; // saran opsional; gagal memuat tidak menghalangi form
+  }
+  const datalist = document.getElementById("daftar-surat");
+  if (!datalist) return;
+  datalist.innerHTML = daftar
+    .map((s) => `<option value="${s.nomor} - ${s.perihal}"></option>`)
+    .join("");
 }
 
 /* ===== IKON ===== */
@@ -154,7 +172,7 @@ document.getElementById("dsp-form").addEventListener("submit", (event) => {
         disposisiData.unshift(baru);
         afterSuccess();
       })
-      .catch(() => showToast("Gagal mengirim disposisi. Periksa koneksi lalu coba lagi."));
+      .catch((err) => showToast((err && err.message) || "Gagal mengirim disposisi. Periksa koneksi lalu coba lagi."));
     return;
   }
 
@@ -221,6 +239,8 @@ document.querySelectorAll(".kdp-filter-btn").forEach((btn) => {
 async function init() {
   const tbody = document.getElementById("dsp-tbody");
   tbody.innerHTML = `<tr><td colspan="3">Memuat data disposisi...</td></tr>`;
+
+  isiDaftarSurat(); // saran nomor surat — jalan paralel, tidak menahan tabel
 
   try {
     disposisiData = await loadData();

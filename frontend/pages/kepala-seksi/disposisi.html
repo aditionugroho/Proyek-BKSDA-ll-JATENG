@@ -46,7 +46,8 @@
 
         <div class="kdp-field">
           <label class="kdp-label" for="f-surat">Nomor Surat</label>
-          <input type="text" id="f-surat" placeholder="Contoh: SM-2023/10/001 - Laporan Patroli Kawasan" autocomplete="off" />
+          <input type="text" id="f-surat" list="daftar-surat" placeholder="Contoh: SM-2023/10/001 - Laporan Patroli Kawasan" autocomplete="off" />
+          <datalist id="daftar-surat"></datalist>
           <p class="kdp-hint">Ketik manual nomor surat masuk beserta perihal singkat.<br />Format: <strong>Nomor Surat - Perihal</strong> (contoh: <strong>SM-2023/10/045 - Undangan Rapat Koordinasi</strong>)</p>
           <p class="kdp-error" id="f-surat-error" hidden>Wajib diisi</p>
         </div>

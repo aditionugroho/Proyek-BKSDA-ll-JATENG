@@ -195,6 +195,9 @@ const EOfficeAPI = (() => {
        Body   : { "surat": "...", "pic": "...", "deadline": "2023-10-26"|null,
                   "instruksi": "...", "catatan": "..." }
        Balasan: objek disposisi yang baru dibuat (bentuk sama seperti item GET)
+       Validasi: server WAJIB memeriksa "surat" terhadap daftar surat
+       terdaftar — bila nomor tidak ditemukan: 422 { "message": "Nomor surat
+       tidak ditemukan. Periksa kembali nomor surat masuk." }
      ============================================ */
 
   async function getDisposisi() {
@@ -379,7 +382,8 @@ const EOfficeAPI = (() => {
      KONTRAK (LIVE):
        POST /api/register
        Body   : { "nama": "...", "id_pengguna": "...", "kata_sandi": "...",
-                  "role": "admin|kepala-seksi|pegawai" }
+                  "role": "admin|kepala-seksi|pegawai",
+                  "resort": "Cilacap|Wonosobo|Pemalang" }
        Balasan: 201 { "status": "pending" }  -> menunggu verifikasi admin
                 409 { "code": "duplicate" } -> ID/email sudah terdaftar
      ============================================ */
@@ -405,6 +409,7 @@ const EOfficeAPI = (() => {
           idAtauEmail: payload.id_pengguna,
           kataSandi: payload.kata_sandi,
           role: payload.role,
+          resort: payload.resort || "",
           sumber: "registrasi-mandiri",
           status: "menunggu-verifikasi",
           daftarPada: new Date().toISOString()
