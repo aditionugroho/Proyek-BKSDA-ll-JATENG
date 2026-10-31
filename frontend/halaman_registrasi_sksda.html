@@ -92,6 +92,17 @@
             </select>
           </div>
 
+          <div class="form-field">
+            <label class="form-label" for="resort">Resort <span class="req">*</span></label>
+            <select id="resort" name="resort">
+              <option value="" selected disabled>Pilih resort wilayah kerja Anda...</option>
+              <option value="Cilacap">Resort Cilacap</option>
+              <option value="Wonosobo">Resort Wonosobo</option>
+              <option value="Pemalang">Resort Pemalang</option>
+            </select>
+            <p class="form-error" id="resort-error">Wajib dipilih</p>
+          </div>
+
           <button type="button" class="submit-btn" id="next-1">
             <span data-i18n="reg.next">Lanjut</span>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -153,6 +164,10 @@
             <li>
               <span class="summary-label" data-i18n="reg.sum.role">Role</span>
               <span class="summary-value" id="sum-role">—</span>
+            </li>
+            <li>
+              <span class="summary-label">Resort</span>
+              <span class="summary-value" id="sum-resort">—</span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.pass">Kata Sandi</span>
@@ -251,6 +266,10 @@
         const roleVal = document.getElementById("role").value;
         const roleSel = document.querySelector('#role option[value="' + roleVal + '"]');
         document.getElementById("sum-role").textContent = roleSel ? roleSel.textContent : roleVal;
+        const resortSel = document.getElementById("resort");
+        document.getElementById("sum-resort").textContent = resortSel.value
+          ? (resortSel.querySelector('option[value="' + resortSel.value + '"]') || {}).textContent || resortSel.value
+          : "—";
       }
     }
 
@@ -258,6 +277,7 @@
       let ok = true;
       if (!document.getElementById("nama").value.trim()) { setError("nama", true, "reg.err.required"); ok = false; }
       if (!document.getElementById("idemail").value.trim()) { setError("idemail", true, "reg.err.required"); ok = false; }
+      if (!document.getElementById("resort").value) { setError("resort", true, "reg.err.required"); ok = false; }
       return ok;
     }
 
@@ -275,8 +295,9 @@
     document.getElementById("back-2").addEventListener("click", function() { goStep(1); });
     document.getElementById("back-3").addEventListener("click", function() { goStep(2); });
 
-    ["nama", "idemail", "password", "konfirmasi"].forEach(function(id) {
+    ["nama", "idemail", "resort", "password", "konfirmasi"].forEach(function(id) {
       document.getElementById(id).addEventListener("input", function() { setError(id, false); });
+      document.getElementById(id).addEventListener("change", function() { setError(id, false); });
     });
 
     document.getElementById("reg-form").addEventListener("submit", function(e) { e.preventDefault(); });
@@ -354,7 +375,8 @@
         nama: document.getElementById("nama").value.trim(),
         id_pengguna: document.getElementById("idemail").value.trim(),
         kata_sandi: document.getElementById("password").value,
-        role: document.getElementById("role").value
+        role: document.getElementById("role").value,
+        resort: document.getElementById("resort").value
       })
         .then(function (res) {
           if (res.status === "duplicate") {
