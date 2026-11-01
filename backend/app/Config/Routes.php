@@ -856,3 +856,52 @@ $routes->group(
         );
     }
 );
+
+// ==========================================
+// E10 - Input Realisasi Anggaran
+// ==========================================
+
+$routes->group(
+    'api/realisasi-anggaran',
+    static function ($routes) {
+
+        // READ: Admin, Kepala Seksi, Staf
+        $routes->get(
+            '',
+            'Api\RealisasiAnggaranController::index',
+            ['filter' => 'role:admin,kepala_seksi,staf']
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\RealisasiAnggaranController::show/$1',
+            ['filter' => 'role:admin,kepala_seksi,staf']
+        );
+
+        // WRITE: Admin dan Kepala Seksi
+        $routes->post(
+            '',
+            'Api\RealisasiAnggaranController::create',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+
+        $routes->patch(
+            '(:num)',
+            'Api\RealisasiAnggaranController::update/$1',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+
+        $routes->put(
+            '(:num)',
+            'Api\RealisasiAnggaranController::update/$1',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+
+        // IMPORT CSV: Admin dan Kepala Seksi
+        $routes->post(
+            'import',
+            'Api\RealisasiAnggaranController::import',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+    }
+);
