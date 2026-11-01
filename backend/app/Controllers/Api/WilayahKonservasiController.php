@@ -6,6 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\ResortModel;
 use App\Models\WilayahKonservasiModel;
 use CodeIgniter\API\ResponseTrait;
+use App\Models\AuthTokenModel;
+use App\Models\UserModel;
 
 class WilayahKonservasiController extends BaseController
 {
@@ -24,8 +26,54 @@ class WilayahKonservasiController extends BaseController
     // GET ALL WILAYAH KONSERVASI
     // ==========================================
 
+    private function getAuthenticatedUser(): ?array
+{
+    $authHeader = $this->request->getHeaderLine('Authorization');
+
+    if (!preg_match('/^Bearer\s+(\S+)$/i', $authHeader, $matches)) {
+        return null;
+    }
+
+    $tokenHash = hash('sha256', $matches[1]);
+
+    $token = (new AuthTokenModel())
+        ->where('token_hash', $tokenHash)
+        ->where('revoked_at', null)
+        ->first();
+
+    if (
+        !$token ||
+        empty($token['expires_at']) ||
+        strtotime($token['expires_at']) <= time()
+    ) {
+        return null;
+    }
+
+    return (new UserModel())
+        ->where('id', $token['user_id'])
+        ->where('status', 1)
+        ->first();
+}
+
     public function index()
     {
+        $user = $this->getAuthenticatedUser();
+
+if (!$user) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Pengguna tidak terautentikasi.',
+    ], 401);
+}
+
+$isStaf = $user['role'] === 'staf';
+
+if ($isStaf && empty($user['resort_id'])) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Akun belum memiliki resort.',
+    ], 403);
+}
         $search = trim((string) $this->request->getGet('search'));
         $resortId = $this->request->getGet('resort_id');
         $status = $this->request->getGet('status');
@@ -61,12 +109,19 @@ class WilayahKonservasiController extends BaseController
                 ->groupEnd();
         }
 
-        if ($resortId !== null) {
-            $this->wilayah->where(
-                'resort_id',
-                (int) $resortId
-            );
-        }
+        if ($isStaf) {
+    // Resort Staf ditentukan dari database, bukan URL.
+    $this->wilayah->where(
+        'resort_id',
+        (int) $user['resort_id']
+    );
+} elseif ($resortId !== null) {
+    // Admin dan Kepala Seksi dapat memfilter resort.
+    $this->wilayah->where(
+        'resort_id',
+        (int) $resortId
+    );
+}
 
         if ($status !== null) {
             $this->wilayah->where(
@@ -111,6 +166,30 @@ class WilayahKonservasiController extends BaseController
                 'message' => 'Wilayah konservasi tidak ditemukan.',
             ], 404);
         }
+
+
+        $user = $this->getAuthenticatedUser();
+
+if (!$user) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Pengguna tidak terautentikasi.',
+    ], 401);
+}
+
+if (
+    $user['role'] === 'staf' &&
+    (
+        empty($user['resort_id']) ||
+        (int) $wilayah['resort_id'] !== (int) $user['resort_id']
+    )
+) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Wilayah konservasi tidak ditemukan.',
+    ], 404);
+}
+
 
         return $this->respond([
             'status' => true,

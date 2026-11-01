@@ -235,6 +235,11 @@ class AuthController extends BaseController
 
                     'jabatan' =>
                         $user['jabatan'],
+
+                    'resort_id' =>
+                        isset($user['resort_id']) && $user['resort_id'] !== null
+                            ? (int) $user['resort_id']
+                            : null,
                 ],
             ],
         ], 200);
