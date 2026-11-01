@@ -814,3 +814,45 @@ $routes->group(
         );
     }
 );
+
+// ==========================================
+// E10 - Master Target Kinerja Triwulan
+// ==========================================
+
+$routes->group(
+    'api/target-triwulan',
+    static function ($routes) {
+
+        // READ: Admin, Kepala Seksi, Staf
+        $routes->get(
+            '',
+            'Api\TargetTriwulanController::index',
+            ['filter' => 'role:admin,kepala_seksi,staf']
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\TargetTriwulanController::show/$1',
+            ['filter' => 'role:admin,kepala_seksi,staf']
+        );
+
+        // WRITE: Admin dan Kepala Seksi
+        $routes->post(
+            '',
+            'Api\TargetTriwulanController::create',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+
+        $routes->patch(
+            '(:num)',
+            'Api\TargetTriwulanController::update/$1',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+
+        $routes->put(
+            '(:num)',
+            'Api\TargetTriwulanController::update/$1',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+    }
+);
