@@ -587,51 +587,54 @@ class ArsipController extends BaseController
     private function resolveFilePath(
         string $storedPath
     ): ?string {
-        $storedPath = trim($storedPath);
+        $relativePath = str_replace(
+            '\\',
+            '/',
+            trim($storedPath)
+        );
 
-        if ($storedPath === '') {
+        // Hanya izinkan path dari dua folder dokumen.
+        if (!preg_match(
+            '#^(surat_masuk|surat_keluar)/[A-Za-z0-9._-]+$#D',
+            $relativePath,
+            $matches
+        )) {
             return null;
         }
 
-        if (is_file($storedPath)) {
-            $realPath = realpath($storedPath);
+        $jenis = $matches[1];
 
-            return $realPath !== false
-                ? $realPath
-                : $storedPath;
-        }
-
-        $relativePath = ltrim(
-            str_replace(
-                [
-                    '/',
-                    '\\',
-                ],
-                DIRECTORY_SEPARATOR,
-                $storedPath
-            ),
-            DIRECTORY_SEPARATOR
+        $baseDir = realpath(
+            WRITEPATH . 'uploads/' . $jenis
         );
 
-        $candidates = [
-            WRITEPATH . $relativePath,
-            ROOTPATH . $relativePath,
-            FCPATH . $relativePath,
-        ];
+        $filePath = realpath(
+            WRITEPATH . 'uploads/' . $relativePath
+        );
 
-        foreach ($candidates as $candidate) {
-            if (!is_file($candidate)) {
-                continue;
-            }
-
-            $realPath = realpath($candidate);
-
-            if ($realPath !== false) {
-                return $realPath;
-            }
+        if (
+            $baseDir === false ||
+            $filePath === false ||
+            !is_file($filePath)
+        ) {
+            return null;
         }
 
-        return null;
+        // Cegah path traversal dan symlink keluar folder.
+        $basePrefix = rtrim(
+            $baseDir,
+            DIRECTORY_SEPARATOR
+        ) . DIRECTORY_SEPARATOR;
+
+        if (strncmp(
+            $filePath,
+            $basePrefix,
+            strlen($basePrefix)
+        ) !== 0) {
+            return null;
+        }
+
+        return $filePath;
     }
 
     /*
@@ -704,22 +707,36 @@ class ArsipController extends BaseController
             ], 404);
         }
 
-        $filePath =
-            $this->resolveFilePath(
-                $surat['file_path']
-            );
+        // Normalisasi path file dari database.
+        $relativePath = str_replace(
+            '\\',
+            '/',
+            trim((string) $surat['file_path'])
+        );
 
-        if (
-            $filePath === null ||
-            !is_file($filePath)
-        ) {
+        // Pastikan folder file sesuai dengan jenis arsip.
+        $expectedPrefix = $arsip['jenis'] . '/';
+
+        if (!str_starts_with($relativePath, $expectedPrefix)) {
             return $this->respond([
                 'status' => false,
-                'message' =>
-                    'File dokumen arsip tidak ditemukan.',
+                'message' => 'Lokasi file tidak sesuai jenis arsip.',
+            ], 422);
+        }
+
+        // Resolusi file hanya dari direktori yang diizinkan.
+        $filePath = $this->resolveFilePath(
+            $relativePath
+        );
+
+        if ($filePath === null || !is_file($filePath)) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'File dokumen arsip tidak ditemukan.',
             ], 404);
         }
 
+        // Catat aktivitas unduhan.
         $this->logActivity(
             'download',
             (int) $id,
@@ -730,15 +747,12 @@ class ArsipController extends BaseController
             '.'
         );
 
+        // Kirim file arsip.
         return $this->response
-            ->download(
-                $filePath,
-                null
-            )
-            ->setFileName(
-                basename($filePath)
-            );
+            ->download($filePath, null)
+            ->setFileName(basename($filePath));
     }
+
     public function update($id = null)
     {
         if (
