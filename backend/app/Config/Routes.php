@@ -776,16 +776,41 @@ $routes->post(
 // ==========================================
 
 // Sementara Admin only sampai scope resort diverifikasi.
+// E08 - Master Wilayah Konservasi
 $routes->group(
     'api/wilayah-konservasi',
-    [
-        'filter' => 'role:admin',
-    ],
     static function ($routes) {
-        $routes->get('', 'Api\WilayahKonservasiController::index');
-        $routes->get('(:num)', 'Api\WilayahKonservasiController::show/$1');
-        $routes->post('', 'Api\WilayahKonservasiController::create');
-        $routes->patch('(:num)', 'Api\WilayahKonservasiController::update/$1');
-        $routes->put('(:num)', 'Api\WilayahKonservasiController::update/$1');
+
+        // READ: Admin, Kepala Seksi, Staf
+        $routes->get(
+            '',
+            'Api\WilayahKonservasiController::index',
+            ['filter' => 'role:admin,kepala_seksi,staf']
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\WilayahKonservasiController::show/$1',
+            ['filter' => 'role:admin,kepala_seksi,staf']
+        );
+
+        // WRITE: Admin only
+        $routes->post(
+            '',
+            'Api\WilayahKonservasiController::create',
+            ['filter' => 'role:admin']
+        );
+
+        $routes->patch(
+            '(:num)',
+            'Api\WilayahKonservasiController::update/$1',
+            ['filter' => 'role:admin']
+        );
+
+        $routes->put(
+            '(:num)',
+            'Api\WilayahKonservasiController::update/$1',
+            ['filter' => 'role:admin']
+        );
     }
 );
