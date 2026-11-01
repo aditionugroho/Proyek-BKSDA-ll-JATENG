@@ -769,3 +769,23 @@ $routes->post(
         'filter' => 'role:admin,staf',
     ]
 );
+
+// ==========================================
+// E08 - MASTER WILAYAH KONSERVASI
+// Issue #38
+// ==========================================
+
+// Sementara Admin only sampai scope resort diverifikasi.
+$routes->group(
+    'api/wilayah-konservasi',
+    [
+        'filter' => 'role:admin',
+    ],
+    static function ($routes) {
+        $routes->get('', 'Api\WilayahKonservasiController::index');
+        $routes->get('(:num)', 'Api\WilayahKonservasiController::show/$1');
+        $routes->post('', 'Api\WilayahKonservasiController::create');
+        $routes->patch('(:num)', 'Api\WilayahKonservasiController::update/$1');
+        $routes->put('(:num)', 'Api\WilayahKonservasiController::update/$1');
+    }
+);
