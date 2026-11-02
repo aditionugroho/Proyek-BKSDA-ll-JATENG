@@ -1,5 +1,5 @@
-/* ============================================
-   LAPORAN (KEPALA SEKSI) — E-Office SKSDA
+﻿/* ============================================
+   LAPORAN (KEPALA SEKSI) â€” E-Office SKSDA
    laporanData per periode + render, filter
    periode, simulasi kosong, unduh & cetak
    ============================================ */
@@ -7,7 +7,7 @@
 import { laporanData as LAPORAN_MOCK } from "../data/laporan.js";
 import { showToast } from "../components/toast.js";
 
-/* ===== DATA: diisi loadLaporan() — API saat LIVE, mock saat belum ===== */
+/* ===== DATA: diisi loadLaporan() â€” API saat LIVE, mock saat belum ===== */
 let laporanData = null;
 
 async function loadLaporan(periode) {
@@ -88,7 +88,7 @@ async function loadTargetRealisasi(tahun, resort) {
   return TARGET_REALISASI_MOCK[resort] || TARGET_REALISASI_MOCK.semua;
 }
 
-/* Warna bar realisasi: hijau tidak dipakai — biru >=80, amber 60-79, merah <60 */
+/* Warna bar realisasi: hijau tidak dipakai â€” biru >=80, amber 60-79, merah <60 */
 function toneRealisasi(nilai) {
   if (nilai >= 80) return "";
   if (nilai >= 60) return " is-warning";
@@ -161,7 +161,6 @@ const ICONS = {
 
 /* ===== STATE ===== */
 let currentKey = "2026-09";
-let emptySim = false;
 
 /* ===== PERIODE AKTIF (laporanData = objek periode yang sedang dimuat) ===== */
 function getPeriod() {
@@ -172,11 +171,6 @@ function getPeriod() {
 function renderInfo() {
   const period = getPeriod();
   const el = document.getElementById("lp-info-text");
-
-  if (emptySim) {
-    el.innerHTML = "Menampilkan data: <strong>Simulasi kosong</strong> &#8226; Tidak ada data untuk periode ini";
-    return;
-  }
 
   if (!period) {
     el.innerHTML = "Menampilkan data: <strong>Periode tidak tersedia</strong> &#8226; Tidak ada data untuk periode ini";
@@ -191,7 +185,7 @@ function renderInfo() {
 /* ===== RENDER: stat card ===== */
 function renderStats() {
   const period = getPeriod();
-  const stats = emptySim || !period
+  const stats = !period
     ? [
         { value: "0", label: "Surat Masuk", sub: "-", icon: "inbox", tone: "blue" },
         { value: "0", label: "Surat Keluar", sub: "-", icon: "send", tone: "blue" },
@@ -220,7 +214,7 @@ function renderProgress() {
   const wrap = document.getElementById("lp-progress");
   const period = getPeriod();
 
-  if (emptySim || !period) {
+  if (!period) {
     wrap.innerHTML = `<p class="lp-progress-empty">Tidak ada data untuk periode ini.</p>`;
     return;
   }
@@ -246,7 +240,7 @@ function renderAktivitas() {
   const tbody = document.getElementById("lp-aktivitas");
   const period = getPeriod();
 
-  if (emptySim || !period) {
+  if (!period) {
     tbody.innerHTML = `<tr class="lp-empty-row"><td colspan="2">Tidak ada data untuk periode ini.</td></tr>`;
     return;
   }
@@ -280,8 +274,6 @@ document.getElementById("btn-tampilkan").addEventListener("click", async () => {
   const tahun = document.getElementById("lp-tahun").value;
   const bulan = document.getElementById("lp-bulan").value;
   currentKey = `${tahun}-${bulan}`;
-  emptySim = false;
-  document.getElementById("btn-simulasi").classList.remove("is-active");
 
   try {
     laporanData = await loadLaporan(currentKey);
@@ -357,14 +349,6 @@ document.getElementById("btn-pdf-tr").addEventListener("click", () => {
 document.getElementById("tr-metrik").addEventListener("change", renderTargetRealisasi);
 document.getElementById("tr-triwulan").addEventListener("change", renderTargetRealisasi);
 document.getElementById("tr-resort").addEventListener("change", refreshTargetRealisasi);
-
-/* ===== EVENT: Simulasi Kosong (toggle) ===== */
-document.getElementById("btn-simulasi").addEventListener("click", (event) => {
-  emptySim = !emptySim;
-  event.currentTarget.classList.toggle("is-active", emptySim);
-  renderLaporan();
-  showToast(emptySim ? "Simulasi data kosong aktif" : "Kembali ke data normal");
-});
 
 /* ===== EVENT: unduh & cetak ===== */
 document.getElementById("btn-pdf").addEventListener("click", () => showToast("PDF sedang disiapkan..."));
