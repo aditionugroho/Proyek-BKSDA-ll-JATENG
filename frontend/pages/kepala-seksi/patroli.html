@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#2563EB" />
+  <link rel="apple-touch-icon" href="/assets/js/images/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="E-Office SKSDA" />
+  <title>Laporan Patroli - E-Office SKSDA</title>
+
+  <!-- ===== Stylesheet (path relatif dari pages/kepala-seksi/) ===== -->
+  <link rel="stylesheet" href="../../assets/css/variables.css" />
+  <link rel="stylesheet" href="../../assets/css/base.css" />
+  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+  <link rel="stylesheet" href="../../assets/css/pages/patroli.css" />
+</head>
+<body>
+
+  <!-- ===== Layout bersama (dirender via JS) ===== -->
+  <aside id="ks-sidebar"></aside>
+  <header id="ks-navbar"></header>
+
+  <!-- ===== Konten halaman ===== -->
+  <main class="main-content">
+
+    <!-- ===== 1. HEADER ===== -->
+    <section class="pgs-head">
+      <div>
+        <h1 class="pgs-title">Laporan Patroli</h1>
+        <p class="pgs-desc">Tinjauan laporan patroli petugas dari lapangan per wilayah dan petugas.</p>
+      </div>
+    </section>
+
+    <!-- ===== 2. DAFTAR LAPORAN ===== -->
+    <section class="pt-card" aria-label="Daftar laporan patroli">
+      <div class="pt-card-head">
+        <div>
+          <h2 class="pt-card-title">Semua Laporan Patroli</h2>
+          <p class="pt-card-sub">Ketuk baris untuk melihat detail dan galeri foto &bull; <span id="pt-hasil-count">0 laporan</span></p>
+        </div>
+        <div class="pt-filter">
+          <select class="pt-select" id="pt-filter-resort" aria-label="Filter resort">
+            <option value="all" selected>Semua Resort</option>
+            <option value="Cilacap">Cilacap</option>
+            <option value="Wonosobo">Wonosobo</option>
+            <option value="Pemalang">Pemalang</option>
+          </select>
+          <select class="pt-select" id="pt-filter-petugas" aria-label="Filter petugas">
+            <option value="all" selected>Semua Petugas</option>
+          </select>
+          <input type="date" class="pt-input" id="pt-filter-dari" title="Periode dari" aria-label="Periode dari" />
+          <input type="date" class="pt-input" id="pt-filter-sampai" title="Periode sampai" aria-label="Periode sampai" />
+          <button type="button" class="pt-btn pt-btn--outline" id="pt-filter-reset">Reset</button>
+          <input type="search" class="pt-input" id="pt-filter-cari" placeholder="Cari temuan..." style="max-width:180px" />
+        </div>
+      </div>
+
+      <div class="pt-table-wrap">
+        <table class="pt-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Petugas</th>
+              <th>Wilayah</th>
+              <th>Catatan / Temuan</th>
+              <th>Foto</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="pt-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="ks-footer">
+    &copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.
+  </footer>
+
+  <!-- ===== Lightbox foto ===== -->
+  <div id="pt-lightbox" class="pt-lightbox" hidden>
+    <button type="button" class="pt-lightbox-close" id="pt-lightbox-close" aria-label="Tutup">&times;</button>
+    <img id="pt-lightbox-img" src="" alt="Foto laporan patroli" />
+  </div>
+
+  <!-- ===== Skrip ===== -->
+  <script src="../../assets/js/api.js"></script>
+  <script type="module" src="../../assets/js/auth.js"></script>
+  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
+  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
+  <script type="module" src="../../assets/js/pages/patroli-ks.js"></script>
+  <script src="/sw-register.js"></script>
+</body>
+</html>

@@ -7,6 +7,7 @@
 import { SURAT_MASUK as SURAT_MASUK_MOCK } from "../data/surat-masuk.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
+import { tambahNotif } from "../utils/notif-mock.js";
 
 /* ===== MOCK DATA (fallback selama backend belum siap) ===== */
 const DISPOSISI_MOCK = [
@@ -178,6 +179,16 @@ document.getElementById("dsp-form").addEventListener("submit", (event) => {
 
   // MOCK: nomor urut & tanggal dibuat lokal
   const urut = disposisiData.length + 1;
+
+  // Pemicu notif: pegawai tujuan diberi tahu (mock)
+  tambahNotif("pegawai", {
+    judul: "Disposisi baru dari Kepala Seksi",
+    teks: `${suratLabel} — instruksi: ${document.getElementById("f-instruksi").value}.`,
+    kategori: "disposisi",
+    icon: "plus",
+    tone: "blue",
+    aksi: { label: "Lihat Disposisi", href: "disposisi-saya.html" }
+  });
 
   disposisiData.unshift({
     id: Date.now(),

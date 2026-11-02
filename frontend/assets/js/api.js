@@ -211,6 +211,11 @@ const EOfficeAPI = (() => {
   /* ============================================
      NOTIFIKASI
      KONTRAK (LIVE):
+       Tipe yang dipicu SERVER (frontend tidak membuat notif):
+       - suratMasukBaru   (admin input surat  -> utk KS)
+       - disposisiBaru    (KS kirim disposisi -> utk pegawai tujuan)
+       - patroliBaru      (petugas kirim laporan patroli -> utk KS)
+       - statusBerubah    (disposisi selesai / laporan direview -> utk pihak terkait)
        GET  /api/notifikasi  (butuh token)
        Balasan: [ { "id": 1, "tipe": "suratMasukBaru", "kategori": "surat",
                     "judul": "...", "teks": "...", "meta": "...", "waktu": "5 mnt lalu",
@@ -391,6 +396,108 @@ const EOfficeAPI = (() => {
   async function getTargetRealisasi(tahun, resort) {
     const q = "tahun=" + encodeURIComponent(tahun) + (resort && resort !== "semua" ? "&resort=" + encodeURIComponent(resort) : "");
     return request("GET", "/target-realisasi?" + q);
+  }
+
+  /* ============================================
+     LAPORAN PATROLI (petugas lapangan, dari HP)
+     KONTRAK (LIVE):
+       POST /api/laporan-patroli  (butuh token, multipart/form-data)
+       Field  : tanggal=2026-11-02, resort=Cilacap|Wonosobo|Pemalang,
+                catatan="...", foto[]=<file gambar> (0..n buah)
+       Petugas TIDAK dikirim dari form — diambil server dari token.
+       Balasan: 201 objek laporan baru (bentuk sama seperti GET)
+
+       GET /api/laporan-patroli  (butuh token)
+       Query opsional: ?resort=&petugas=&dari=YYYY-MM-DD&sampai=YYYY-MM-DD
+       HAK AKSES: server HARUS memfilter sesuai role & resort yang
+       diizinkan untuk pemilik token (mis. KS Wilayah II hanya resort
+       Wilayah II) — data resort lain tidak pernah dikirim ke browser.
+       Balasan: [ { "id": 1, "petugas": "Budi Santoso", "resort": "Cilacap",
+                    "tanggal": "2026-11-02", "catatan": "...",
+                    "status": "Terkirim|Direview", "dibuatPada": "ISO-8601",
+                    "foto": [ "https://.../foto1.jpg" ] } ]
+
+       GET /api/laporan-patroli/{id} — satu laporan + array foto
+     ============================================ */
+
+  async function getLaporanPatroli() {
+    return request("GET", "/laporan-patroli");
+  }
+
+  async function getLaporanPatroliDetail(id) {
+    return request("GET", "/laporan-patroli/" + id);
+  }
+
+  async function createLaporanPatroli(payload) {
+    /* payload = { tanggal, resort, catatan, foto: [File|dataURL] } */
+    if (!API_CONFIG.LIVE) return mockCreatePatroli(payload);
+
+    const form = new FormData();
+    form.append("tanggal", payload.tanggal);
+    form.append("resort", payload.resort);
+    form.append("catatan", payload.catatan);
+    (payload.foto || []).forEach((f) => {
+      if (f instanceof File) form.append("foto[]", f, f.name);
+    });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000); // upload foto: 60 dtk
+    try {
+      const res = await fetch(API_CONFIG.BASE_URL + "/laporan-patroli", {
+        method: "POST",
+        headers: Object.assign(
+          { Accept: "application/json" },
+          getToken() ? { Authorization: "Bearer " + getToken() } : {}
+        ),
+        body: form,
+        signal: controller.signal
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error((data && data.message) || "Gagal menyimpan laporan patroli.");
+        err.status = res.status;
+        err.data = data;
+        throw err;
+      }
+      return data;
+    } catch (e) {
+      if (e.name === "AbortError") throw new Error("Waktu upload habis. Coba dengan foto lebih kecil.");
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /* ---------- MOCK: localStorage (foto base64, bertahan antar-refresh) ---------- */
+
+  function mockCreatePatroli(payload) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        let session = null;
+        try { session = JSON.parse(window.sessionStorage.getItem("eoffice_session") || window.localStorage.getItem("eoffice_session") || "null"); } catch (e) {}
+        const KEY = "eoffice_laporan_patroli";
+        let daftar = [];
+        try { daftar = JSON.parse(window.localStorage.getItem(KEY) || "[]"); } catch (e) {}
+        const baru = {
+          id: "LP-" + Date.now(),
+          petugas: (session && session.userId) || "Petugas",
+          resort: payload.resort,
+          tanggal: payload.tanggal,
+          catatan: payload.catatan,
+          status: "Terkirim",
+          dibuatPada: new Date().toISOString(),
+          foto: (payload.foto || []).filter((f) => typeof f === "string")
+        };
+        daftar.unshift(baru);
+        window.localStorage.setItem(KEY, JSON.stringify(daftar));
+        resolve(baru);
+      }, 500);
+    });
+  }
+
+  function mockGetPatroli() {
+    try { return JSON.parse(window.localStorage.getItem("eoffice_laporan_patroli") || "[]"); }
+    catch (e) { return []; }
   }
 
   /* ============================================
@@ -758,6 +865,12 @@ const EOfficeAPI = (() => {
     getDashboardKS: getDashboardKS,
     getLaporan: getLaporan,
     getTargetRealisasi: getTargetRealisasi,
+    getLaporanPatroli: function () {
+      if (!API_CONFIG.LIVE) return Promise.resolve(mockGetPatroli());
+      return getLaporanPatroli();
+    },
+    getLaporanPatroliDetail: getLaporanPatroliDetail,
+    createLaporanPatroli: createLaporanPatroli,
     register: register,
     getProfil: getProfil,
     updateProfil: updateProfil,

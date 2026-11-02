@@ -26,6 +26,7 @@ export const KS_MENU = [
   { label: "Direktori Staf", href: "direktori-staf.html", icon: "users" },
   { label: "Arsip", href: "arsip.html", icon: "archive" },
   { label: "Laporan", href: "laporan.html", icon: "fileText" },
+  { label: "Laporan Patroli", href: "patroli.html", icon: "checkSquare" },
   { label: "Notifikasi", href: "notifikasi.html", icon: "bell" },
   { label: "Pengaturan", href: "pengaturan.html", icon: "settings" },
   { label: "Profil", href: "profil.html", icon: "userCircle" }

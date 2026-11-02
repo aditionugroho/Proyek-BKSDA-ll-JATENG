@@ -1,9 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n-title="title.reg">Buat Akun — E-Office SKSDA Wilayah II Pemalang</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#2563EB" />
+  <link rel="apple-touch-icon" href="/assets/js/images/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="E-Office SKSDA" />
+  <title data-i18n-title="title.reg">Buat Akun â€” E-Office SKSDA Wilayah II Pemalang</title>
   <meta name="description" content="Daftarkan akun untuk akses portal resmi E-Office SKSDA Wilayah II Pemalang." />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/pages/registrasi.css" />
@@ -155,19 +161,19 @@
           <ul class="summary">
             <li>
               <span class="summary-label" data-i18n="reg.sum.nama">Nama Lengkap</span>
-              <span class="summary-value" id="sum-nama">—</span>
+              <span class="summary-value" id="sum-nama">â€”</span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.id">ID Resmi / Email</span>
-              <span class="summary-value" id="sum-idemail">—</span>
+              <span class="summary-value" id="sum-idemail">â€”</span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.role">Role</span>
-              <span class="summary-value" id="sum-role">—</span>
+              <span class="summary-value" id="sum-role">â€”</span>
             </li>
             <li>
               <span class="summary-label">Resort</span>
-              <span class="summary-value" id="sum-resort">—</span>
+              <span class="summary-value" id="sum-resort">â€”</span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.pass">Kata Sandi</span>
@@ -206,7 +212,7 @@
         </span>
         <h2 class="success-title" data-i18n="reg.success.title">Akun Berhasil Didaftarkan!</h2>
         <p class="success-desc" data-i18n="reg.success.desc">Registrasi Anda akan diverifikasi oleh Admin terlebih dahulu. Setelah disetujui, Anda bisa langsung masuk kapan saja tanpa verifikasi ulang.</p>
-        <p class="success-count"><span data-i18n="reg.success.count.pre">Mengalihkan ke halaman masuk dalam</span> <strong id="count-num">3</strong> <span data-i18n="reg.success.count.post">detik…</span></p>
+        <p class="success-count"><span data-i18n="reg.success.count.pre">Mengalihkan ke halaman masuk dalam</span> <strong id="count-num">3</strong> <span data-i18n="reg.success.count.post">detikâ€¦</span></p>
         <a href="login.html" class="success-link" data-i18n="reg.success.link">Masuk sekarang</a>
       </div>
 
@@ -269,7 +275,7 @@
         const resortSel = document.getElementById("resort");
         document.getElementById("sum-resort").textContent = resortSel.value
           ? (resortSel.querySelector('option[value="' + resortSel.value + '"]') || {}).textContent || resortSel.value
-          : "—";
+          : "â€”";
       }
     }
 
@@ -428,5 +434,6 @@
     });
   </script>
   <script src="assets/js/components/i18n.js"></script>
+  <script src="/sw-register.js"></script>
 </body>
 </html>

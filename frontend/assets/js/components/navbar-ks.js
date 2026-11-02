@@ -30,9 +30,10 @@ function renderKsNavbar() {
     <div class="ks-navbar-right">
 
       <!-- Notifikasi (klik → halaman notifikasi) -->
-      <a href="notifikasi.html" class="ks-icon-btn" aria-label="Notifikasi" title="Notifikasi">
+      <a href="notifikasi.html" class="ks-icon-btn" aria-label="Notifikasi" title="Notifikasi" style="position:relative">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <span class="ks-icon-dot" aria-hidden="true"></span>
+        <span id="ks-notif-badge" style="position:absolute;top:-2px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#DC2626;color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center;display:none" aria-label="Notifikasi belum dibaca"></span>
       </a>
 
       <!-- Pengaturan (klik → halaman pengaturan) -->
@@ -51,6 +52,10 @@ function renderKsNavbar() {
 }
 
 renderKsNavbar();
+
+/* Badge jumlah notifikasi belum dibaca */
+import { pasangBadgeNotif } from "../utils/notif-mock.js";
+pasangBadgeNotif("ks", document.getElementById("ks-notif-badge"));
 
 /* Pencarian global: Enter → halaman hasil pencarian */
 const ksSearch = document.querySelector("#ks-navbar input[type='search']");

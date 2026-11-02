@@ -1,8 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#2563EB" />
+  <link rel="apple-touch-icon" href="/assets/js/images/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="E-Office SKSDA" />
   <title>Laporan - E-Office SKSDA</title>
 
   <!-- ===== Stylesheet (path relatif dari pages/kepala-seksi/) ===== -->
@@ -87,12 +93,23 @@
             <option value="anggaran" selected>Realisasi Anggaran</option>
             <option value="kinerja">Capaian Kinerja</option>
           </select>
+          <select id="tr-triwulan" class="lp-select" aria-label="Triwulan">
+            <option value="all" selected>Semua Triwulan</option>
+            <option value="TW I">TW I</option>
+            <option value="TW II">TW II</option>
+            <option value="TW III">TW III</option>
+            <option value="TW IV">TW IV</option>
+          </select>
           <select id="tr-resort" class="lp-select" aria-label="Resort">
             <option value="semua" selected>Semua Resort</option>
             <option value="Cilacap">Cilacap</option>
             <option value="Wonosobo">Wonosobo</option>
             <option value="Pemalang">Pemalang</option>
           </select>
+          <button type="button" class="lp-btn lp-btn--outline" id="btn-pdf-tr">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Unduh PDF Triwulan
+          </button>
         </div>
       </div>
       <div class="lp-tr-legend" aria-hidden="true">
@@ -208,11 +225,15 @@
     &copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.
   </footer>
 
+  <!-- ===== Lembar cetak PDF triwulan (hanya tampil saat cetak) ===== -->
+  <div id="tr-print-sheet" aria-hidden="true"></div>
+
   <!-- ===== Skrip ===== -->
   <script src="../../assets/js/api.js"></script>
   <script type="module" src="../../assets/js/auth.js"></script>
   <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
   <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
   <script type="module" src="../../assets/js/pages/laporan.js"></script>
+  <script src="/sw-register.js"></script>
 </body>
 </html>

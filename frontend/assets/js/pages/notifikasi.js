@@ -7,6 +7,7 @@
 import { notifData as NOTIF_MOCK } from "../data/notifikasi.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
+import { ambilNotif, tandaiDibaca, tandaiSemuaDibaca } from "../utils/notif-mock.js";
 
 const STATE_KEY = "notifikasi-ks";
 
@@ -17,7 +18,8 @@ async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     return EOfficeAPI.getNotifikasi();
   }
-  return NOTIF_MOCK;
+  /* Mock: notifikasi dinamis (pemicu aksi pengguna) + data contoh */
+  return [...ambilNotif("ks"), ...NOTIF_MOCK];
 }
 
 /* ===== IKON ===== */
@@ -224,6 +226,8 @@ document.getElementById("nt-list").addEventListener("click", (event) => {
     if (item) {
       if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
         EOfficeAPI.markNotifikasiRead(item.id).catch(() => showToast("Gagal menyimpan status dibaca"));
+      } else {
+        tandaiDibaca("ks", item.id); // persist notifikasi dinamis
       }
       item.unread = false;
     }
@@ -245,6 +249,8 @@ document.getElementById("nt-list").addEventListener("click", (event) => {
 document.getElementById("btn-read-all").addEventListener("click", () => {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     EOfficeAPI.markAllNotifikasiRead().catch(() => showToast("Gagal menyimpan status dibaca"));
+  } else {
+    tandaiSemuaDibaca("ks");
   }
   notifData.forEach((n) => (n.unread = false));
   refresh();

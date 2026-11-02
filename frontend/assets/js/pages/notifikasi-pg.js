@@ -7,6 +7,7 @@
 import { notifPgData as NOTIF_PG_MOCK } from "../data/notifikasi-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
+import { ambilNotif, tandaiDibaca, tandaiSemuaDibaca } from "../utils/notif-mock.js";
 
 /* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
 let notifPgData = [];
@@ -15,7 +16,8 @@ async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     return EOfficeAPI.getNotifikasiSaya();
   }
-  return NOTIF_PG_MOCK;
+  /* Mock: notifikasi dinamis (pemicu aksi) + data contoh */
+  return [...ambilNotif("pegawai"), ...NOTIF_PG_MOCK];
 }
 
 const STATE_KEY = "notifikasi-pg";
@@ -118,6 +120,8 @@ document.getElementById("pgn-list").addEventListener("click", (event) => {
   if (notif && notif.unread) {
     if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
       EOfficeAPI.markNotifikasiRead(notif.id).catch(() => showToast("Gagal menyimpan status dibaca"));
+    } else {
+      tandaiDibaca("pegawai", notif.id);
     }
     notif.unread = false;
     refresh();
@@ -128,6 +132,8 @@ document.getElementById("pgn-list").addEventListener("click", (event) => {
 document.getElementById("btn-mark-all").addEventListener("click", () => {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     EOfficeAPI.markAllNotifikasiRead().catch(() => showToast("Gagal menyimpan status dibaca"));
+  } else {
+    tandaiSemuaDibaca("pegawai");
   }
   notifPgData.forEach((n) => (n.unread = false));
   refresh();

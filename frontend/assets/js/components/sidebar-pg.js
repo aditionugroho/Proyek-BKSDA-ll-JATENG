@@ -23,6 +23,7 @@ export const PG_MENU = [
   { label: "Tugas Saya", href: "tugas-saya.html", icon: "clipboard" },
   { label: "Surat", href: "surat.html", icon: "mail" },
   { label: "Disposisi Saya", href: "disposisi-saya.html", icon: "folderCheck" },
+  { label: "Laporan Patroli", href: "laporan-patroli.html", icon: "fileText" },
   { label: "Jadwal", href: "jadwal.html", icon: "calendar" },
   { label: "Dokumen Saya", href: "dokumen-saya.html", icon: "fileText" },
   { label: "Arsip", href: "arsip.html", icon: "archive" }

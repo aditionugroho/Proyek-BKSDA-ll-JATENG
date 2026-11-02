@@ -100,11 +100,17 @@ function renderTargetRealisasi() {
   const foot = document.getElementById("tr-foot");
   const metrik = document.getElementById("tr-metrik").value;
   const resort = document.getElementById("tr-resort").value;
+  const triwulan = document.getElementById("tr-triwulan").value;
 
-  const rows = trData ? trData[metrik] : [];
+  const semua = trData ? trData[metrik] : [];
+  const rows = triwulan === "all" ? semua : semua.filter((r) => r.tw === triwulan);
 
   chart.innerHTML = rows.map((r) => {
+    const tercapai = r.realisasi >= r.target;
     const selisih = r.realisasi - r.target;
+    const chip = tercapai
+      ? `<span class="lp-tr-chip lp-tr-chip--ok">&#10003; Tercapai</span>`
+      : `<span class="lp-tr-chip lp-tr-chip--no">&#10007; Belum (${selisih}%)</span>`;
     return `
       <div class="lp-tr-group">
         <div class="lp-tr-bars">
@@ -116,14 +122,17 @@ function renderTargetRealisasi() {
           </div>
         </div>
         <span class="lp-tr-tw">${r.tw}</span>
-        <span class="lp-tr-selisih">${selisih === 0 ? "—" : selisih > 0 ? "+" : ""}${selisih}% dari target</span>
+        ${chip}
       </div>`;
   }).join("");
 
   const metrikLabel = metrik === "anggaran" ? "realisasi anggaran" : "capaian kinerja";
   const resortLabel = resort === "semua" ? "seluruh resort" : `Resort ${resort}`;
+  const twLabel = triwulan === "all" ? "rata-rata setahun" : triwulan;
   const rata = rows.length ? Math.round(rows.reduce((s, r) => s + r.realisasi, 0) / rows.length) : 0;
-  foot.textContent = `Rata-rata ${metrikLabel} ${resortLabel} tahun ini: ${rata}%. Triwulan berjalan dihitung, triwulan yang belum berjalan tampil 0%.`;
+  foot.textContent = triwulan === "all"
+    ? `Rata-rata ${metrikLabel} ${resortLabel} tahun ini: ${rata}%. Triwulan berjalan dihitung, triwulan yang belum berjalan tampil 0%.`
+    : `${twLabel}: ${metrikLabel} ${resortLabel} sebesar ${rows.length ? rows[0].realisasi : 0}% dari target. Bar biru = realisasi, bar abu = target.`;
 }
 
 async function refreshTargetRealisasi() {
@@ -288,8 +297,65 @@ document.getElementById("btn-tampilkan").addEventListener("click", async () => {
   refreshTargetRealisasi(); // tahun bisa berubah -> muat ulang diagram triwulan
 });
 
+/* ===== UNDUH PDF TRIWULAN (lembar cetak resmi per resort & triwulan) ===== */
+document.getElementById("btn-pdf-tr").addEventListener("click", () => {
+  if (!trData) return showToast("Data belum termuat");
+
+  const resortVal = document.getElementById("tr-resort").value;
+  const resortLabel = resortVal === "semua" ? "Seluruh Resort" : `Resort ${resortVal}`;
+  const twVal = document.getElementById("tr-triwulan").value;
+  const tahun = document.getElementById("lp-tahun").value;
+
+  const buatBagian = (judul, rows) => {
+    const tampil = twVal === "all" ? rows : rows.filter((r) => r.tw === twVal);
+    return `
+      <h2>${judul}</h2>
+      <table class="prt-table">
+        <thead><tr><th>Triwulan</th><th>Target</th><th>Realisasi</th><th>Selisih</th><th>Status</th></tr></thead>
+        <tbody>
+          ${tampil.map((r) => {
+            const s = r.realisasi - r.target;
+            return `<tr><td>${r.tw}</td><td>${r.target}%</td><td><strong>${r.realisasi}%</strong></td><td>${s > 0 ? "+" : ""}${s}%</td><td>${r.realisasi >= r.target ? "Tercapai" : "Belum"}</td></tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+      <div class="prt-chart">
+        ${tampil.map((r) => `
+          <div class="prt-group">
+            <div class="prt-bars">
+              <div class="prt-bar prt-bar--target" style="height:${Math.max(3, r.target * 1.2)}px"><span>${r.target}%</span></div>
+              <div class="prt-bar prt-bar--real" style="height:${Math.max(3, r.realisasi * 1.2)}px"><span>${r.realisasi}%</span></div>
+            </div>
+            <span class="prt-tw">${r.tw}</span>
+          </div>`).join("")}
+      </div>`;
+  };
+
+  const sheet = document.getElementById("tr-print-sheet");
+  sheet.innerHTML = `
+    <div class="prt-head">
+      <h1>LAPORAN TRIWULAN</h1>
+      <p>E-Office SKSDA Jawa Tengah &bull; Seksi Konservasi Sumber Daya Alam</p>
+      <p><strong>${resortLabel}</strong> &bull; ${twVal === "all" ? "Semua Triwulan" : twVal} &bull; Tahun ${tahun}</p>
+      <p>Dicetak: ${new Date().toLocaleString("id-ID")}</p>
+    </div>
+    ${buatBagian("A. Realisasi Anggaran", trData.anggaran)}
+    ${buatBagian("B. Capaian Kinerja", trData.kinerja)}
+    <div class="prt-ttd">
+      <p>Semarang, ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
+      <p>Mengetahui,</p>
+      <p class="prt-ttd-nama">Kepala Seksi Konservasi</p>
+      <p class="prt-ttd-ruang">( ............................................ )</p>
+    </div>`;
+
+  document.body.classList.add("tr-printing");
+  window.print();
+  window.addEventListener("afterprint", () => document.body.classList.remove("tr-printing"), { once: true });
+});
+
 /* ===== EVENT: filter diagram triwulan ===== */
 document.getElementById("tr-metrik").addEventListener("change", renderTargetRealisasi);
+document.getElementById("tr-triwulan").addEventListener("change", renderTargetRealisasi);
 document.getElementById("tr-resort").addEventListener("change", refreshTargetRealisasi);
 
 /* ===== EVENT: Simulasi Kosong (toggle) ===== */
