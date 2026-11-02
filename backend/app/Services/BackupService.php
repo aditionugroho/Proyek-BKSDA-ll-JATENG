@@ -552,51 +552,61 @@ class BackupService
 
     public function cleanupOldBackups(): array
     {
-        $files =
-            glob(
-                $this->backupDirectory
-                . DIRECTORY_SEPARATOR
-                . '*.sql'
-            );
+    $files = glob(
+        $this->backupDirectory
+        . DIRECTORY_SEPARATOR
+        . '*.sql'
+    );
 
-        if ($files === false) {
-            return [];
-        }
-
-        $deleted = [];
-
-        $cutoff =
-            time() -
-            (
-                $this->retentionDays
-                * 86400
-            );
-
-        foreach ($files as $file) {
-
-            if (!is_file($file)) {
-                continue;
-            }
-
-            $modifiedAt =
-                filemtime($file);
-
-            if (
-                $modifiedAt !== false &&
-                $modifiedAt < $cutoff
-            ) {
-                $filename =
-                    basename($file);
-
-                if (@unlink($file)) {
-                    $deleted[] =
-                        $filename;
-                }
-            }
-        }
-
-        return $deleted;
+    if ($files === false) {
+        return [];
     }
+
+    $deleted = [];
+
+    $cutoff = time() - ($this->retentionDays * 86400);
+
+    $databaseName = preg_replace(
+        '/[^a-zA-Z0-9_-]/',
+        '',
+        (string) ($this->dbConfig['database'] ?? '')
+    );
+
+    if ($databaseName === '') {
+        return [];
+    }
+
+    $pattern = '/^'
+        . preg_quote($databaseName, '/')
+        . '_(auto|manual|pre_restore)_[0-9]{8}_[0-9]{6}\.sql$/';
+
+    foreach ($files as $file) {
+        if (!is_file($file)) {
+            continue;
+        }
+
+        $filename = basename($file);
+
+        // Hanya hapus backup yang dibuat aplikasi.
+        if (!preg_match($pattern, $filename)) {
+            continue;
+        }
+
+        $modifiedAt = filemtime($file);
+
+        if (
+            $modifiedAt !== false &&
+            $modifiedAt < $cutoff
+        ) {
+            if (@unlink($file)) {
+                $deleted[] = $filename;
+            }
+        }
+    }
+
+    return $deleted;
+}
+
 
     /*
     |--------------------------------------------------------------------------
