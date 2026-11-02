@@ -378,6 +378,22 @@ const EOfficeAPI = (() => {
   }
 
   /* ============================================
+     TARGET VS REALISASI TRIWULAN
+     KONTRAK (LIVE):
+       GET /api/target-realisasi?tahun=2026&resort=Cilacap  (butuh token)
+       resort opsional ("semua" / kosong = agregat seluruh resort)
+       Balasan: { "anggaran": [ { "tw": "TW I", "target": 100, "realisasi": 91 },
+                                { "tw": "TW II", ... }, { "tw": "TW III", ... }, { "tw": "TW IV", ... } ],
+                  "kinerja":  [ bentuk sama ] }
+       (nilai dalam persen; target umumnya 100; triwulan belum berjalan = 0)
+     ============================================ */
+
+  async function getTargetRealisasi(tahun, resort) {
+    const q = "tahun=" + encodeURIComponent(tahun) + (resort && resort !== "semua" ? "&resort=" + encodeURIComponent(resort) : "");
+    return request("GET", "/target-realisasi?" + q);
+  }
+
+  /* ============================================
      REGISTRASI (publik, tanpa token)
      KONTRAK (LIVE):
        POST /api/register
@@ -741,6 +757,7 @@ const EOfficeAPI = (() => {
     createTugas: createTugas,
     getDashboardKS: getDashboardKS,
     getLaporan: getLaporan,
+    getTargetRealisasi: getTargetRealisasi,
     register: register,
     getProfil: getProfil,
     updateProfil: updateProfil,

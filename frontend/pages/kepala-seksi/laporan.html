@@ -75,6 +75,34 @@
     <!-- ===== 3. STAT CARD (render via JS) ===== -->
     <section class="lp-stats" id="lp-stats" aria-label="Statistik laporan"></section>
 
+    <!-- ===== 3B. TARGET VS REALISASI TRIWULAN (diagram) ===== -->
+    <section class="lp-card lp-tr-card" aria-label="Target vs Realisasi Triwulan">
+      <div class="lp-card-head">
+        <div>
+          <h2 class="lp-card-title">Target vs Realisasi Triwulan</h2>
+          <p class="lp-card-sub">Perbandingan capaian target dan realisasi anggaran &amp; kinerja per triwulan.</p>
+        </div>
+        <div class="lp-tr-filters">
+          <select id="tr-metrik" class="lp-select" aria-label="Metrik">
+            <option value="anggaran" selected>Realisasi Anggaran</option>
+            <option value="kinerja">Capaian Kinerja</option>
+          </select>
+          <select id="tr-resort" class="lp-select" aria-label="Resort">
+            <option value="semua" selected>Semua Resort</option>
+            <option value="Cilacap">Cilacap</option>
+            <option value="Wonosobo">Wonosobo</option>
+            <option value="Pemalang">Pemalang</option>
+          </select>
+        </div>
+      </div>
+      <div class="lp-tr-legend" aria-hidden="true">
+        <span class="lp-tr-leg"><span class="lp-tr-leg-swatch lp-tr-leg-swatch--target"></span>Target</span>
+        <span class="lp-tr-leg"><span class="lp-tr-leg-swatch lp-tr-leg-swatch--real"></span>Realisasi</span>
+      </div>
+      <div class="lp-tr-chart" id="tr-chart"></div>
+      <p class="lp-tr-foot" id="tr-foot"></p>
+    </section>
+
     <!-- ===== 4. GRID DUA KOLOM ===== -->
     <section class="lp-grid">
 

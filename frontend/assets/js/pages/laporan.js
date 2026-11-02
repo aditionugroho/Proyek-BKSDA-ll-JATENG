@@ -17,6 +17,127 @@ async function loadLaporan(periode) {
   return LAPORAN_MOCK[periode] || null;
 }
 
+/* ===== TARGET VS REALISASI TRIWULAN =====
+   Data per resort (dan agregat "semua"): { anggaran: [...], kinerja: [...] }
+   tiap array berisi 4 item { tw, target, realisasi } dalam persen. */
+const TARGET_REALISASI_MOCK = {
+  semua: {
+    anggaran: [
+      { tw: "TW I", target: 100, realisasi: 91 },
+      { tw: "TW II", target: 100, realisasi: 87 },
+      { tw: "TW III", target: 100, realisasi: 58 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ],
+    kinerja: [
+      { tw: "TW I", target: 100, realisasi: 95 },
+      { tw: "TW II", target: 100, realisasi: 90 },
+      { tw: "TW III", target: 100, realisasi: 62 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ]
+  },
+  Cilacap: {
+    anggaran: [
+      { tw: "TW I", target: 100, realisasi: 94 },
+      { tw: "TW II", target: 100, realisasi: 89 },
+      { tw: "TW III", target: 100, realisasi: 61 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ],
+    kinerja: [
+      { tw: "TW I", target: 100, realisasi: 97 },
+      { tw: "TW II", target: 100, realisasi: 92 },
+      { tw: "TW III", target: 100, realisasi: 66 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ]
+  },
+  Wonosobo: {
+    anggaran: [
+      { tw: "TW I", target: 100, realisasi: 88 },
+      { tw: "TW II", target: 100, realisasi: 84 },
+      { tw: "TW III", target: 100, realisasi: 55 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ],
+    kinerja: [
+      { tw: "TW I", target: 100, realisasi: 93 },
+      { tw: "TW II", target: 100, realisasi: 88 },
+      { tw: "TW III", target: 100, realisasi: 59 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ]
+  },
+  Pemalang: {
+    anggaran: [
+      { tw: "TW I", target: 100, realisasi: 92 },
+      { tw: "TW II", target: 100, realisasi: 88 },
+      { tw: "TW III", target: 100, realisasi: 57 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ],
+    kinerja: [
+      { tw: "TW I", target: 100, realisasi: 96 },
+      { tw: "TW II", target: 100, realisasi: 91 },
+      { tw: "TW III", target: 100, realisasi: 60 },
+      { tw: "TW IV", target: 100, realisasi: 0 }
+    ]
+  }
+};
+
+let trData = null; // data triwulan resort aktif
+
+async function loadTargetRealisasi(tahun, resort) {
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    return EOfficeAPI.getTargetRealisasi(tahun, resort);
+  }
+  return TARGET_REALISASI_MOCK[resort] || TARGET_REALISASI_MOCK.semua;
+}
+
+/* Warna bar realisasi: hijau tidak dipakai — biru >=80, amber 60-79, merah <60 */
+function toneRealisasi(nilai) {
+  if (nilai >= 80) return "";
+  if (nilai >= 60) return " is-warning";
+  return " is-danger";
+}
+
+function renderTargetRealisasi() {
+  const chart = document.getElementById("tr-chart");
+  const foot = document.getElementById("tr-foot");
+  const metrik = document.getElementById("tr-metrik").value;
+  const resort = document.getElementById("tr-resort").value;
+
+  const rows = trData ? trData[metrik] : [];
+
+  chart.innerHTML = rows.map((r) => {
+    const selisih = r.realisasi - r.target;
+    return `
+      <div class="lp-tr-group">
+        <div class="lp-tr-bars">
+          <div class="lp-tr-bar-wrap" title="Target ${r.target}%">
+            <div class="lp-tr-bar lp-tr-bar--target" style="height:${Math.max(2, r.target)}%"><span class="lp-tr-bar-val">${r.target}%</span></div>
+          </div>
+          <div class="lp-tr-bar-wrap" title="Realisasi ${r.realisasi}%">
+            <div class="lp-tr-bar lp-tr-bar--real${toneRealisasi(r.realisasi)}" style="height:${Math.max(2, r.realisasi)}%"><span class="lp-tr-bar-val">${r.realisasi}%</span></div>
+          </div>
+        </div>
+        <span class="lp-tr-tw">${r.tw}</span>
+        <span class="lp-tr-selisih">${selisih === 0 ? "—" : selisih > 0 ? "+" : ""}${selisih}% dari target</span>
+      </div>`;
+  }).join("");
+
+  const metrikLabel = metrik === "anggaran" ? "realisasi anggaran" : "capaian kinerja";
+  const resortLabel = resort === "semua" ? "seluruh resort" : `Resort ${resort}`;
+  const rata = rows.length ? Math.round(rows.reduce((s, r) => s + r.realisasi, 0) / rows.length) : 0;
+  foot.textContent = `Rata-rata ${metrikLabel} ${resortLabel} tahun ini: ${rata}%. Triwulan berjalan dihitung, triwulan yang belum berjalan tampil 0%.`;
+}
+
+async function refreshTargetRealisasi() {
+  const tahun = document.getElementById("lp-tahun").value;
+  const resort = document.getElementById("tr-resort").value;
+  try {
+    trData = await loadTargetRealisasi(tahun, resort);
+  } catch (e) {
+    trData = null;
+    showToast("Gagal memuat data target vs realisasi");
+  }
+  renderTargetRealisasi();
+}
+
 /* ===== IKON ===== */
 const ICONS = {
   inbox: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>',
@@ -164,7 +285,12 @@ document.getElementById("btn-tampilkan").addEventListener("click", async () => {
 
   renderLaporan();
   showToast(laporanData ? `Menampilkan data ${laporanData.label}` : "Tidak ada data untuk periode ini");
+  refreshTargetRealisasi(); // tahun bisa berubah -> muat ulang diagram triwulan
 });
+
+/* ===== EVENT: filter diagram triwulan ===== */
+document.getElementById("tr-metrik").addEventListener("change", renderTargetRealisasi);
+document.getElementById("tr-resort").addEventListener("change", refreshTargetRealisasi);
 
 /* ===== EVENT: Simulasi Kosong (toggle) ===== */
 document.getElementById("btn-simulasi").addEventListener("click", (event) => {
@@ -188,6 +314,7 @@ async function init() {
     laporanData = null;
   }
   renderLaporan();
+  refreshTargetRealisasi();
 }
 
 init();
