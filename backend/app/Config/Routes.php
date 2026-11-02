@@ -905,3 +905,23 @@ $routes->group(
         );
     }
 );
+
+// ==========================================
+// E13 - Riwayat Audit Log (Admin Only)
+// ==========================================
+
+$routes->group(
+    'api/activity-logs',
+    ['filter' => 'role:admin'],
+    static function ($routes) {
+        $routes->get(
+            '',
+            'Api\ActivityLogController::index'
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\ActivityLogController::show/$1'
+        );
+    }
+);
