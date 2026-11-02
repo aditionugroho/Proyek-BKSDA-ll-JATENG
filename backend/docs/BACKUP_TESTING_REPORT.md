@@ -75,3 +75,22 @@ Konfigurasi backup otomatis pada server deployment juga perlu diverifikasi secar
 Fitur backup manual, backup otomatis terjadwal, download backup, pembatasan akses, retensi file, dan pemulihan SQL berhasil melewati pengujian yang dilakukan pada lingkungan development lokal.
 
 Pengujian restore melalui endpoint API dan penerapan scheduler pada server deployment masih menjadi tindak lanjut.
+
+### Pengujian Restore melalui API — PASS
+
+**Tanggal:** 3 November 2026  
+**Endpoint:** `POST /api/backup/restore`  
+**Port testing:** `8081`  
+**Database:** `eoffice_bksda_restore_test`
+
+**Hasil:**
+- Restore API mengembalikan `status: true`.
+- Safety backup otomatis berhasil dibuat dengan nama `eoffice_bksda_restore_test_pre_restore_20261103_010449.sql`.
+- Data penanda `restore_api_test` berhasil dihapus setelah restore.
+- Jumlah pengguna setelah restore: 7 record.
+- Jumlah activity log setelah restore: 92 record.
+- Pengujian menggunakan akun MySQL khusus dengan akses terbatas pada database testing.
+
+**Kesimpulan:** Restore database melalui API berhasil diuji pada lingkungan development terisolasi. Database utama tidak dijadikan target restore.
+
+**Catatan:** Pengujian restore pada server deployment belum dilakukan.
