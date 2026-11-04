@@ -849,11 +849,15 @@ class SuratKeluarController extends BaseController
         // E14: File lama tidak dihapus otomatis di sini.
         // Pembersihan file orphan dilakukan terpisah
         // setelah referensi database diverifikasi.
-        $this->logActivity(
-            'upload_file',
-            (int) $id,
-            'Mengunggah lampiran surat keluar.'
-        );
+        try {
+            $this->logActivity(
+                'upload_file',
+                (int) $id,
+                'Mengunggah lampiran surat keluar.'
+            );
+        } catch (\Throwable $e) {
+            log_message('error', 'E14 gagal mencatat aktivitas upload: ' . $e->getMessage());
+        }
 
         return $this->respond([
             'status' => true,
