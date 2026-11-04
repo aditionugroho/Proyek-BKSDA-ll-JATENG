@@ -680,6 +680,13 @@ class SuratKeluarController extends BaseController
             ], 422);
         }
         if ($extension === 'docx') {
+            if (!class_exists(\ZipArchive::class)) {
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Ekstensi PHP ZipArchive belum aktif pada server.',
+                ], 500);
+            }
+
             $zip = new \ZipArchive();
 
             $zipResult = $zip->open(
