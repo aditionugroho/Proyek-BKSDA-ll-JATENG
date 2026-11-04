@@ -8,6 +8,7 @@ use App\Models\AuthTokenModel;
 use App\Models\NotifikasiModel;
 use App\Models\SuratKeluarModel;
 use App\Models\UserModel;
+use App\Services\UploadRetryService;
 use CodeIgniter\API\ResponseTrait;
 
 class SuratKeluarController extends BaseController
@@ -569,6 +570,32 @@ class SuratKeluarController extends BaseController
             ], 404);
         }
 
+        // E14: Setiap percobaan ulang upload menggunakan key yang sama.
+        $idempotencyKey = trim(
+            $this->request->getHeaderLine('Idempotency-Key')
+        );
+
+        if (
+            $idempotencyKey === '' ||
+            strlen($idempotencyKey) > 100 ||
+            !preg_match('/^[A-Za-z0-9_-]+$/D', $idempotencyKey)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Idempotency-Key wajib diisi (maksimal 100 karakter, huruf, angka, _ atau -).',
+            ], 400);
+        }
+
+        $userId = $this->getCurrentUserId();
+
+        if (!$userId) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Pengguna tidak terautentikasi.',
+            ], 401);
+        }
+
         $file = $this->request
             ->getFile('file');
 
@@ -691,55 +718,130 @@ class SuratKeluarController extends BaseController
             }
         }
 
-        $uploadDirectory =
-            WRITEPATH .
-            'uploads/surat_keluar';
+        // E14: Hitung hash file sebelum melakukan reservasi.
+        $fileHash = hash_file('sha256', $file->getTempName());
 
-        if (
-            !is_dir($uploadDirectory)
-        ) {
-            mkdir(
-                $uploadDirectory,
-                0775,
-                true
-            );
+        if ($fileHash === false) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Gagal menghitung hash file upload.',
+            ], 500);
         }
 
-        $newName = $file
-            ->getRandomName();
+        $uploadRetryService = new UploadRetryService();
 
-        $file->move(
-            $uploadDirectory,
-            $newName
+        $retryResult = $uploadRetryService->reserveRequest(
+            $userId,
+            'surat_keluar',
+            (int) $id,
+            $idempotencyKey,
+            $fileHash
         );
 
-        if (
-            !empty($surat['file_path'])
-        ) {
-            $oldFile =
-                WRITEPATH .
-                'uploads/' .
-                $surat['file_path'];
+        // Retry upload yang telah selesai.
+        if ($retryResult['status'] === 'completed') {
+            return $this->respond([
+                'status' => true,
+                'message' => $retryResult['message'],
+                'data' => [
+                    'file_path' => $retryResult['file_path'],
+                ],
+            ], 200);
+        }
+
+        // Cegah upload ganda atau penggunaan key untuk file berbeda.
+        if ($retryResult['status'] !== 'reserved') {
+            return $this->respond([
+                'status' => false,
+                'message' => $retryResult['message'],
+            ], $retryResult['http_code']);
+        }
+
+        $uploadRequestId = (int) $retryResult['request_id'];
+
+
+        // E14: Simpan file fisik dan selesaikan upload
+        // melalui transaksi metadata dan surat keluar.
+        $uploadDirectory = WRITEPATH . 'uploads/surat_keluar';
+        $newFileAbsolutePath = null;
+
+        try {
+            if (
+                !is_dir($uploadDirectory) &&
+                !mkdir($uploadDirectory, 0775, true) &&
+                !is_dir($uploadDirectory)
+            ) {
+                throw new \RuntimeException('Folder upload tidak dapat dibuat.');
+            }
+
+            $newName = $file->getRandomName();
+
+            if (!$file->move($uploadDirectory, $newName)) {
+                throw new \RuntimeException('File gagal dipindahkan.');
+            }
+
+            $newFileAbsolutePath = $uploadDirectory .
+                DIRECTORY_SEPARATOR . $newName;
+
+            $filePath = 'surat_keluar/' . $newName;
+
+            if (!$uploadRetryService->completeUploadTransaction(
+                (int) $uploadRequestId,
+                'surat_keluar',
+                (int) $id,
+                $filePath
+            )) {
+                throw new \RuntimeException(
+                    'Gagal menyelesaikan transaksi upload.'
+                );
+            }
+
+        } catch (\Throwable $e) {
+            // Jangan hapus file ketika status commit tidak dapat dipastikan.
+            $safeToDeleteNewFile = false;
+
+            try {
+                $currentSurat = $this->suratModel->find($id);
+
+                if ($currentSurat && $newFileAbsolutePath !== null) {
+                    $safeToDeleteNewFile =
+                        ($currentSurat['file_path'] ?? null) !==
+                        ('surat_keluar/' . basename($newFileAbsolutePath));
+                }
+            } catch (\Throwable $lookupException) {
+                log_message(
+                    'error',
+                    'E14 gagal memverifikasi lampiran aktif surat keluar: ' .
+                    $lookupException->getMessage()
+                );
+            }
 
             if (
-                is_file($oldFile)
+                $safeToDeleteNewFile &&
+                $newFileAbsolutePath !== null &&
+                is_file($newFileAbsolutePath)
             ) {
-                unlink($oldFile);
+                @unlink($newFileAbsolutePath);
             }
+
+            // Hanya request processing yang dapat ditandai failed.
+            $uploadRetryService->failRequest((int) $uploadRequestId);
+
+            log_message(
+                'error',
+                'E14 surat keluar gagal: ' . $e->getMessage()
+            );
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Upload belum berhasil. Silakan coba lagi.',
+            ], 500);
         }
 
-        $filePath =
-            'surat_keluar/' .
-            $newName;
 
-        $this->suratModel->update(
-            $id,
-            [
-                'file_path' =>
-                    $filePath,
-            ]
-        );
-
+        // E14: File lama tidak dihapus otomatis di sini.
+        // Pembersihan file orphan dilakukan terpisah
+        // setelah referensi database diverifikasi.
         $this->logActivity(
             'upload_file',
             (int) $id,

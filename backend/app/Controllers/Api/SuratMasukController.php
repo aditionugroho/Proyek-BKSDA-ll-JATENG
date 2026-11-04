@@ -9,6 +9,7 @@ use App\Models\DisposisiModel;
 use App\Models\NotifikasiModel;
 use App\Models\SuratMasukModel;
 use App\Models\UserModel;
+use App\Services\UploadRetryService;
 use CodeIgniter\API\ResponseTrait;
 
 
@@ -522,6 +523,32 @@ class SuratMasukController extends BaseController
             ], 409);
         }
 
+
+        // E14: Validasi Idempotency-Key untuk upload retry.
+        $idempotencyKey = trim(
+            $this->request->getHeaderLine('Idempotency-Key')
+        );
+
+        if (
+            $idempotencyKey === '' ||
+            strlen($idempotencyKey) > 100 ||
+            !preg_match('/^[A-Za-z0-9_-]+$/D', $idempotencyKey)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Idempotency-Key wajib diisi (maksimal 100 karakter, huruf, angka, _ atau -).',
+            ], 400);
+        }
+
+        $userId = $this->getCurrentUserId();
+
+        if (!$userId) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Pengguna tidak terautentikasi.',
+            ], 401);
+        }
+
         $file = $this->request->getFile('file');
 
         if (
@@ -623,48 +650,128 @@ class SuratMasukController extends BaseController
             }
         }
 
-        // Siapkan folder penyimpanan.
+        // E14: Catat request upload berdasarkan key dan hash file.
+        $fileHash = hash_file('sha256', $file->getTempName());
+
+        if ($fileHash === false) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Gagal menghitung hash file upload.',
+            ], 500);
+        }
+
+        $uploadRetryService = new UploadRetryService();
+
+        $retryResult = $uploadRetryService->reserveRequest(
+            $userId,
+            'surat_masuk',
+            (int) $id,
+            $idempotencyKey,
+            $fileHash
+        );
+
+        if ($retryResult['status'] === 'completed') {
+            return $this->respond([
+                'status' => true,
+                'message' => $retryResult['message'],
+                'data' => [
+                    'file_path' => $retryResult['file_path'],
+                ],
+            ], 200);
+        }
+
+        if ($retryResult['status'] !== 'reserved') {
+            return $this->respond([
+                'status' => false,
+                'message' => $retryResult['message'],
+            ], $retryResult['http_code']);
+        }
+
+        $uploadRequestId = $retryResult['request_id'];
+
+
+        // E14: Simpan file, lalu selesaikan metadata dan surat
+        // dalam satu transaksi database.
         $uploadDirectory = WRITEPATH . 'uploads/surat_masuk';
+        $newFileAbsolutePath = null;
 
-        if (
-            !is_dir($uploadDirectory) &&
-            !mkdir($uploadDirectory, 0775, true) &&
-            !is_dir($uploadDirectory)
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' => 'Folder upload tidak dapat dibuat.',
-            ], 500);
-        }
-
-        // Simpan file dengan nama acak.
-        $newName = $file->getRandomName();
-
-        $file->move($uploadDirectory, $newName);
-
-        $filePath = 'surat_masuk/' . $newName;
-
-        // Simpan lokasi file di database.
-        if (!$this->suratModel->update($id, [
-            'file_path' => $filePath,
-        ])) {
-            @unlink($uploadDirectory . DIRECTORY_SEPARATOR . $newName);
-
-            return $this->respond([
-                'status' => false,
-                'message' => 'Gagal menyimpan lampiran surat.',
-            ], 500);
-        }
-
-        // Hapus lampiran lama setelah data berhasil diperbarui.
-        if (!empty($surat['file_path'])) {
-            $oldFile = WRITEPATH . 'uploads/' . $surat['file_path'];
-
-            if (is_file($oldFile)) {
-                unlink($oldFile);
+        try {
+            if (
+                !is_dir($uploadDirectory) &&
+                !mkdir($uploadDirectory, 0775, true) &&
+                !is_dir($uploadDirectory)
+            ) {
+                throw new \RuntimeException('Folder upload tidak dapat dibuat.');
             }
+
+            $newName = $file->getRandomName();
+
+            if (!$file->move($uploadDirectory, $newName)) {
+                throw new \RuntimeException('File gagal dipindahkan.');
+            }
+
+            $newFileAbsolutePath = $uploadDirectory .
+                DIRECTORY_SEPARATOR . $newName;
+
+            $filePath = 'surat_masuk/' . $newName;
+
+            if (!$uploadRetryService->completeUploadTransaction(
+                (int) $uploadRequestId,
+                'surat_masuk',
+                (int) $id,
+                $filePath
+            )) {
+                throw new \RuntimeException(
+                    'Gagal menyelesaikan transaksi upload.'
+                );
+            }
+
+        } catch (\Throwable $e) {
+            // Jangan hapus file ketika status commit tidak dapat dipastikan.
+            $safeToDeleteNewFile = false;
+
+            try {
+                $currentSurat = $this->suratModel->find($id);
+
+                if ($currentSurat && $newFileAbsolutePath !== null) {
+                    $safeToDeleteNewFile =
+                        ($currentSurat['file_path'] ?? null) !==
+                        ('surat_masuk/' . basename($newFileAbsolutePath));
+                }
+            } catch (\Throwable $lookupException) {
+                log_message(
+                    'error',
+                    'E14 gagal memverifikasi lampiran aktif surat masuk: ' .
+                    $lookupException->getMessage()
+                );
+            }
+
+            if (
+                $safeToDeleteNewFile &&
+                $newFileAbsolutePath !== null &&
+                is_file($newFileAbsolutePath)
+            ) {
+                @unlink($newFileAbsolutePath);
+            }
+
+            // Hanya request processing yang dapat ditandai failed.
+            $uploadRetryService->failRequest((int) $uploadRequestId);
+
+            log_message(
+                'error',
+                'E14 surat masuk gagal: ' . $e->getMessage()
+            );
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Upload belum berhasil. Silakan coba lagi.',
+            ], 500);
         }
 
+
+        // E14: File lama tidak dihapus otomatis di sini.
+        // Pembersihan file orphan dilakukan terpisah
+        // setelah referensi database diverifikasi.
         $this->logActivity(
             'upload_file',
             (int) $id,
