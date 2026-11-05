@@ -299,6 +299,33 @@ if ($clientUuid !== null) {
                 'message' => 'Anda tidak memiliki akses ke laporan ini.',
             ], 403);
         }
+        // Periksa penempatan resort pengguna saat ini.
+$user = (new UserModel())
+    ->where('id', $userId)
+    ->where('status', 1)
+    ->first();
+
+if (!$user) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Akun pengguna tidak ditemukan atau tidak aktif.',
+    ], 401);
+}
+
+// Staf hanya boleh mengunggah foto ke laporan
+// yang berasal dari resort penempatannya saat ini.
+if ($user['role'] === 'staf') {
+    if (
+        empty($user['resort_id']) ||
+        empty($laporan['resort_id']) ||
+        (int) $laporan['resort_id'] !== (int) $user['resort_id']
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Laporan patroli berada di luar resort penempatan Anda.',
+        ], 403);
+    }
+}
                 // Identitas unik foto untuk sinkronisasi offline Flutter.
         $clientUuid = $this->request->getPost('client_uuid');
 
