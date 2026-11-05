@@ -925,3 +925,11 @@ $routes->group(
         );
     }
 );
+
+// LAPORAN PATROLI
+$routes->group('api/laporan-patroli', [
+    'filter' => 'role:admin,staf',
+], static function ($routes) {
+    $routes->post('', 'Api\LaporanPatroliController::create');
+    $routes->post('(:num)/foto', 'Api\LaporanPatroliController::uploadFoto/$1');
+});
