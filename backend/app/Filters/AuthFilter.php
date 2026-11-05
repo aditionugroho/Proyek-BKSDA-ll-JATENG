@@ -6,6 +6,7 @@ use App\Models\AuthTokenModel;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
+use App\Models\UserModel;
 
 class AuthFilter implements FilterInterface
 {
@@ -138,6 +139,21 @@ class AuthFilter implements FilterInterface
                     ]);
             }
         }
+
+        // Pastikan pengguna masih aktif.
+$user = (new UserModel())
+    ->where('id', $token['user_id'])
+    ->where('status', 1)
+    ->first();
+
+if (!$user) {
+    return service('response')
+        ->setStatusCode(401)
+        ->setJSON([
+            'status' => false,
+            'message' => 'Akun tidak ditemukan atau sudah tidak aktif.',
+        ]);
+}
 
         /*
          * ==============================

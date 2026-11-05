@@ -752,29 +752,16 @@ if (array_key_exists('resort_id', $data)) {
         |--------------------------------------------------------------------------
         */
 
-        if (array_key_exists(
-            'status',
-            $data
-        )) {
-            $status =
-                (int) $data['status'];
+        if (array_key_exists('status', $data)) {
+    if (!in_array($data['status'], [0, 1], true)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Status hanya boleh angka 0 atau 1.',
+        ], 422);
+    }
 
-            if (
-                !in_array(
-                    $status,
-                    [0, 1],
-                    true
-                )
-            ) {
-                return $this->respond([
-                    'status'  => false,
-                    'message' => 'Status hanya boleh 0 atau 1.',
-                ], 422);
-            }
-
-            $updateData['status'] =
-                $status;
-        }
+    $updateData['status'] = $data['status'];
+}
 
         if (empty($updateData)) {
             return $this->respond([
