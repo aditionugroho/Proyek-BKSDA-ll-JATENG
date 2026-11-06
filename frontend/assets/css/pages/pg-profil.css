@@ -1,0 +1,317 @@
+/* ============================================
+   PROFIL PEGAWAI — E-Office SKSDA
+   Card profil kiri, informasi jabatan,
+   kontak (edit), ringkasan aktivitas
+   ============================================ */
+
+/* ===== JUDUL ===== */
+.pgpr-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ===== GRID ===== */
+.pgpr-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+/* ===== KIRI: CARD PROFIL ===== */
+.pgpr-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px;
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.pgpr-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 42px;
+  font-weight: 800;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pgpr-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pgpr-nama {
+  margin: 16px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pgpr-nip {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.pgpr-profile-actions {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* Tombol */
+.pgpr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pgpr-btn svg { width: 15px; height: 15px; }
+
+.pgpr-btn--block {
+  width: 100%;
+}
+
+.pgpr-btn--block + .pgpr-btn--block {
+  margin-top: 10px;
+}
+
+.pgpr-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.pgpr-btn--primary:hover { background: var(--color-primary-hover); }
+
+.pgpr-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: #E5E7EB;
+}
+
+.pgpr-btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* Tombol batal (mode edit) */
+.pgpr-btn--ghost {
+  color: #6B7280;
+  background: var(--color-bg-page);
+  border-color: #E5E7EB;
+}
+
+/* Logout: bg merah muda, teks merah */
+.pgpr-btn--cancel {
+  color: #DC2626;
+  background: #FEE2E2;
+}
+
+.pgpr-btn--cancel:hover { background: #FECACA; }
+
+/* ===== KANAN ===== */
+.pgpr-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.pgpr-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Card umum */
+.pgpr-card {
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.pgpr-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pgpr-card-head-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.pgpr-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #DBEAFE;
+  color: var(--color-primary);
+}
+
+.pgpr-card-icon svg { width: 16px; height: 16px; }
+
+.pgpr-card-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ===== INFORMASI JABATAN ===== */
+.pgpr-jabatan-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.pgpr-label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+
+.pgpr-value-box {
+  padding: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #111827;
+  background: #F8FAFC;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+/* Box status kepegawaian berisi pill */
+.pgpr-value-box--badge {
+  display: flex;
+  align-items: center;
+}
+
+.pgpr-pns-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: #DBEAFE;
+  border-radius: 999px;
+}
+
+/* ===== KONTAK ===== */
+.pgpr-kontak-field { margin-top: 14px; }
+
+.pgpr-kontak-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #F8FAFC;
+  border-radius: 8px;
+}
+
+.pgpr-kontak-row svg {
+  width: 16px;
+  height: 16px;
+  color: #6B7280;
+  flex-shrink: 0;
+}
+
+.pgpr-kontak-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font-size: 13.5px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #111827;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: default;
+}
+
+.pgpr-kontak-row.is-editing {
+  background: #ffffff;
+  border: 1.5px solid var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+.pgpr-kontak-row.is-editing input {
+  cursor: text;
+}
+
+.pgpr-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #DC2626;
+}
+
+/* ===== RINGKASAN AKTIVITAS ===== */
+.pgpr-aktivitas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.pgpr-aktivitas-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px;
+  background: #F8FAFC;
+  border-radius: 8px;
+}
+
+.pgpr-aktivitas-angka {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.1;
+}
+
+.pgpr-aktivitas-label {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .pgpr-grid { grid-template-columns: 1fr; }
+  .pgpr-row-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pgpr-jabatan-grid { grid-template-columns: 1fr; }
+  .pgpr-aktivitas-grid { grid-template-columns: 1fr; }
+}

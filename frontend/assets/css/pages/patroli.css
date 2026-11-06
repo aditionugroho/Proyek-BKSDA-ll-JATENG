@@ -1,0 +1,131 @@
+/* ============================================
+   LAPORAN PATROLI — E-Office SKSDA
+   Dipakai pegawai (form + riwayat) dan
+   kepala seksi (tinjauan + galeri foto)
+   ============================================ */
+
+/* ===== KARTU UTAMA ===== */
+.pt-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+.pt-card-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.pt-card-title { margin: 0; font-size: 16px; font-weight: 800; color: #111827; }
+.pt-card-sub { margin: 4px 0 0; font-size: 12.5px; color: #6B7280; }
+
+/* ===== FORM ===== */
+.pt-field { margin-bottom: 14px; }
+.pt-label { display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+.pt-label .req { color: #DC2626; }
+.pt-input, .pt-select, .pt-textarea {
+  width: 100%; padding: 10px 12px; font: inherit; font-size: 13.5px;
+  border: 1px solid #E5E7EB; border-radius: 10px; outline: none;
+  background: #FFFFFF; color: #111827; box-sizing: border-box;
+}
+.pt-textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
+.pt-input:focus, .pt-select:focus, .pt-textarea:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.pt-field.is-error .pt-input, .pt-field.is-error .pt-select, .pt-field.is-error .pt-textarea { border-color: #DC2626; }
+.pt-error { margin: 5px 0 0; font-size: 12px; color: #DC2626; }
+.pt-hint { margin: 5px 0 0; font-size: 12px; color: #6B7280; }
+
+/* ===== UPLOAD FOTO ===== */
+.pt-dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 22px 12px; border: 1.5px dashed #CBD5E1; border-radius: 12px;
+  background: #F9FAFB; cursor: pointer; text-align: center;
+  color: #6B7280; font-size: 12.5px; transition: border-color .15s, background .15s;
+}
+.pt-dropzone:hover, .pt-dropzone.is-over { border-color: #2563EB; background: #EFF6FF; }
+.pt-dropzone strong { color: #1D4ED8; font-size: 13px; }
+.pt-foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 12px; }
+.pt-foto-item { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #E5E7EB; aspect-ratio: 1; }
+.pt-foto-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pt-foto-remove {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px;
+  border: none; border-radius: 50%; background: rgba(17, 24, 39, .72); color: #fff;
+  font-size: 13px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.pt-foto-count { font-size: 12px; color: #6B7280; margin-top: 8px; }
+
+/* ===== TOMBOL ===== */
+.pt-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 18px; font: inherit; font-size: 13.5px; font-weight: 700;
+  border-radius: 10px; border: none; cursor: pointer; transition: filter .15s;
+}
+.pt-btn--primary { background: #2563EB; color: #FFFFFF; }
+.pt-btn--primary:hover { filter: brightness(1.06); }
+.pt-btn--primary:disabled { background: #93C5FD; cursor: not-allowed; }
+.pt-btn--outline { background: #FFFFFF; color: #374151; border: 1px solid #D1D5DB; }
+.pt-btn--outline:hover { background: #F9FAFB; }
+.pt-btn--block { width: 100%; }
+
+/* ===== DAFTAR / TABEL ===== */
+.pt-table-wrap { overflow-x: auto; }
+.pt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pt-table th {
+  text-align: left; padding: 10px 12px; font-size: 11.5px; letter-spacing: .4px;
+  text-transform: uppercase; color: #6B7280; background: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB; white-space: nowrap;
+}
+.pt-table td { padding: 12px; border-bottom: 1px solid #F3F4F6; color: #374151; vertical-align: top; }
+.pt-empty { text-align: center; color: #6B7280; font-size: 13px; padding: 26px 12px !important; }
+
+.pt-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.pt-badge--blue { background: #DBEAFE; color: #1D4ED8; }
+.pt-badge--amber { background: #FEF3C7; color: #B45309; }
+.pt-badge--green { background: #D1FAE5; color: #047857; }
+
+.pt-judul { font-weight: 700; color: #111827; }
+.pt-sub { display: block; font-size: 12px; color: #6B7280; margin-top: 2px; }
+.pt-foto-mini { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #2563EB; font-weight: 600; }
+
+/* ===== FILTER BAR (KS) ===== */
+.pt-filter { display: flex; gap: 8px; flex-wrap: wrap; }
+.pt-filter .pt-select { width: auto; min-width: 130px; }
+
+/* ===== GALERI + LIGHTBOX ===== */
+.pt-galeri { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 12px; }
+.pt-galeri-item {
+  border: 1px solid #E5E7EB; border-radius: 10px; overflow: hidden;
+  aspect-ratio: 1; cursor: zoom-in; padding: 0; background: none;
+}
+.pt-galeri-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pt-lightbox {
+  position: fixed; inset: 0; z-index: 999; background: rgba(17, 24, 39, .92);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pt-lightbox[hidden] { display: none; } /* wajib: hidden harus menang atas display:flex */
+.pt-lightbox img { max-width: 100%; max-height: 92vh; border-radius: 8px; }
+.pt-lightbox-close {
+  position: absolute; top: 16px; right: 16px; width: 38px; height: 38px;
+  border: none; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff;
+  font-size: 18px; cursor: pointer;
+}
+
+/* ===== DETAIL MODAL ===== */
+.pt-detail-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; }
+.pt-detail-row {
+  display: flex; justify-content: space-between; gap: 14px; font-size: 13px;
+  padding: 9px 12px; background: #F9FAFB; border-radius: 8px;
+}
+.pt-detail-label { color: #6B7280; font-weight: 600; white-space: nowrap; }
+.pt-detail-value { color: #111827; text-align: right; font-weight: 600; word-break: break-word; }
+
+@media (max-width: 640px) {
+  .pt-card { padding: 14px; }
+  .pt-filter { width: 100%; }
+  .pt-filter .pt-select { flex: 1; }
+}
+
+/* ===== HEADER HALAMAN (kedua role) ===== */
+.pgs-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.pgs-title { margin: 0; font-size: 20px; font-weight: 800; color: #111827; letter-spacing: -0.2px; }
+.pgs-desc { margin: 4px 0 0; font-size: 13px; color: #6B7280; }

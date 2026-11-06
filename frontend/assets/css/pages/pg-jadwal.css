@@ -1,0 +1,527 @@
+/* ============================================
+   JADWAL (PEGAWAI) — E-Office SKSDA
+   Pola sama dengan ks-jadwal (prefix pgj-) +
+   chip sumber & menu agenda pribadi
+   ============================================ */
+
+/* ===== HEADER ===== */
+.pgj-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pgj-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.pgj-desc {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: #6B7280;
+}
+
+.pgj-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tombol */
+.pgj-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pgj-btn svg { width: 15px; height: 15px; }
+
+.pgj-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: #E5E7EB;
+}
+
+.pgj-btn--outline:hover,
+.pgj-btn--outline.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pgj-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.pgj-btn--primary:hover { background: var(--color-primary-hover); }
+
+/* ===== STAT CARD ===== */
+.pgj-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.pgj-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.pgj-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.pgj-stat-icon svg { width: 21px; height: 21px; }
+
+.pgj-stat-icon--blue { background: #DBEAFE; color: #2563EB; }
+.pgj-stat-icon--green { background: #D1FAE5; color: #059669; }
+.pgj-stat-icon--orange { background: #FFEDD5; color: #EA580C; }
+
+.pgj-stat-label {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+
+.pgj-stat-value {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.pgj-stat-sub {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #6B7280;
+}
+
+/* ===== GRID ===== */
+.pgj-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.pgj-card {
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.pgj-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 14px;
+}
+
+.pgj-card-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Tab pill tampilan */
+.pgj-view-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #F1F5F9;
+  border-radius: 8px;
+}
+
+.pgj-view-pill {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6B7280;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pgj-view-pill.is-active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+/* Navigasi bulan */
+.pgj-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pgj-month-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #374151;
+  background: var(--color-surface);
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pgj-month-btn svg { width: 15px; height: 15px; }
+
+.pgj-month-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+.pgj-month-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Header hari */
+.pgj-daynames {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.pgj-daynames span {
+  padding: 6px 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #9CA3AF;
+  text-align: center;
+}
+
+/* Grid tanggal */
+.pgj-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.pgj-day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pgj-day:hover { background: #F1F5F9; }
+
+.pgj-day.is-muted { color: #D1D5DB; font-weight: 500; }
+
+.pgj-day.is-today {
+  background: #2563EB;
+  color: #ffffff;
+}
+
+.pgj-day.is-selected { border-color: var(--color-primary); }
+
+.pgj-day.has-agenda::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2563EB;
+}
+
+.pgj-day.is-today.has-agenda::after { background: #ffffff; }
+
+/* Legend */
+.pgj-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.pgj-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #6B7280;
+}
+
+.pgj-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.pgj-legend-dot--green { background: #10B981; }
+.pgj-legend-dot--blue { background: #2563EB; }
+.pgj-legend-dot--orange { background: #F59E0B; }
+.pgj-legend-dot--gray { background: #9CA3AF; }
+
+/* ===== AGENDA ===== */
+.pgj-agenda-date {
+  font-size: 12.5px;
+  color: #6B7280;
+}
+
+.pgj-agenda-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.pgj-agenda-item:last-of-type { border-bottom: none; }
+
+.pgj-agenda-time {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  white-space: nowrap;
+  min-width: 48px;
+  text-align: right;
+}
+
+.pgj-agenda-line {
+  width: 2px;
+  border-radius: 2px;
+  background: #E5E7EB;
+  flex-shrink: 0;
+}
+
+.pgj-agenda-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pgj-agenda-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pgj-agenda-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.pgj-agenda-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.pgj-agenda-place svg { width: 12px; height: 12px; }
+
+.pgj-agenda-desc {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #6B7280;
+}
+
+/* Chip sumber */
+.pgj-chip {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #4B5563;
+  background: #F1F5F9;
+  border-radius: 999px;
+}
+
+.pgj-chip--personal {
+  color: var(--color-primary);
+  background: #DBEAFE;
+}
+
+/* Badge status */
+.pgj-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pgj-badge--blue { color: #2563EB; background: #DBEAFE; }
+.pgj-badge--green { color: #059669; background: #D1FAE5; }
+.pgj-badge--orange { color: #EA580C; background: #FFEDD5; }
+.pgj-badge--gray { color: #4B5563; background: #F1F5F9; }
+
+/* Tombol ⋮ + dropdown */
+.pgj-menu-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.pgj-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #9CA3AF;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pgj-menu-btn:hover { background: #F1F5F9; color: #374151; }
+
+.pgj-menu-btn svg { width: 15px; height: 15px; }
+
+.pgj-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  min-width: 150px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.pgj-dropdown.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.pgj-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pgj-dropdown button:hover { background: #F1F5F9; color: var(--color-primary); }
+
+.pgj-dropdown svg { width: 14px; height: 14px; }
+
+.pgj-dropdown .pgj-dd--danger:hover { background: #FEE2E2; color: #DC2626; }
+
+/* Kosong */
+.pgj-agenda-empty {
+  margin: 0;
+  padding: 28px 0;
+  font-size: 13px;
+  color: #6B7280;
+  text-align: center;
+}
+
+/* Link semua jadwal */
+.pgj-all-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #E5E7EB;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.pgj-all-link svg { width: 14px; height: 14px; }
+
+.pgj-all-link:hover { text-decoration: underline; }
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .pgj-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pgj-stats { grid-template-columns: 1fr; }
+  .pgj-head { flex-direction: column; }
+  .pgj-head-actions { width: 100%; }
+  .pgj-head-actions .pgj-btn { flex: 1; }
+  .pgj-day { height: 38px; }
+}

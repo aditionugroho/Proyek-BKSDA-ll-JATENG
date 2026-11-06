@@ -1,0 +1,232 @@
+/* ============================================
+   LOGIN PAGE — E-Office SKSDA
+   Layout: background biru full layar,
+   branding di kiri, kartu login di kanan.
+   Tema biru konsisten dengan halaman aplikasi.
+   ============================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  color: #111827; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button, input, select { font-family: inherit; }
+
+/* ===== HALAMAN ===== */
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+
+  /* Biru navy full layar + pola halus */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23BFDBFE' stroke-opacity='0.06' stroke-width='1.5'%3E%3Ccircle cx='40' cy='40' r='24'/%3E%3Ccircle cx='120' cy='120' r='24'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(1100px 700px at 88% 8%, rgba(255, 255, 255, 0.07), transparent 60%),
+    radial-gradient(900px 600px at 8% 92%, rgba(191, 219, 254, 0.08), transparent 55%),
+    linear-gradient(135deg, #172554 0%, #1E3A8A 45%, #2563EB 100%);
+}
+
+/* Dekorasi lingkaran halus */
+.login-page::before,
+.login-page::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+}
+.login-page::before {
+  width: 520px; height: 520px;
+  top: -180px; left: -160px;
+}
+.login-page::after {
+  width: 420px; height: 420px;
+  bottom: -160px; right: -120px;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== PANEL KIRI : BRANDING ===== */
+.panel-left {
+  flex: 1 1 55%;
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: 32px;
+  padding: 40px 56px;
+  position: relative; z-index: 1;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-logo {
+  width: 52px; height: 52px; border-radius: 50%;
+  object-fit: cover; border: 2px solid rgba(219, 234, 254, 0.6);
+  background: #fff;
+}
+.brand-name { display: block; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; color: #fff; }
+.brand-sub { display: block; margin-top: 2px; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #BFDBFE; }
+
+.hero { max-width: 480px; }
+.hero-title { font-size: clamp(30px, 4vw, 44px); font-weight: 800; line-height: 1.15; color: #fff; }
+.hero-desc { margin-top: 16px; font-size: 15px; line-height: 1.7; color: rgba(219, 234, 254, 0.85); }
+
+.hero-list { margin-top: 32px; list-style: none; display: grid; gap: 14px; }
+.hero-list li { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: #EFF6FF; }
+.hero-check {
+  flex: 0 0 auto;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(219, 234, 254, 0.15);
+  border: 1px solid rgba(219, 234, 254, 0.35);
+  color: #BFDBFE;
+}
+.hero-check svg { width: 12px; height: 12px; }
+
+.panel-left-copy { font-size: 12px; color: rgba(219, 234, 254, 0.55); }
+
+/* ===== PANEL KANAN : KARTU ===== */
+.panel-right {
+  flex: 0 1 480px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 48px;
+  position: relative; z-index: 1;
+}
+
+.login-card {
+  position: relative;
+  width: 100%; max-width: 420px;
+  padding: 40px 36px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(23, 37, 84, 0.45);
+  overflow: hidden;
+}
+.login-card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 5px;
+  background: linear-gradient(90deg, #1E3A8A, #2563EB, #BFDBFE);
+}
+
+.card-logo {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%; object-fit: cover;
+  border: 3px solid #DBEAFE;
+}
+
+.login-title { font-size: 24px; font-weight: 800; color: #1E3A8A; text-align: center; }
+.login-subtitle { margin-top: 8px; font-size: 14px; color: #6B7280; text-align: center; }
+
+/* ===== FORM ===== */
+.login-form { margin-top: 28px; text-align: left; }
+.form-field { margin-bottom: 18px; }
+.form-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #374151; }
+.req { color: #DC2626; }
+
+.input-wrap { position: relative; }
+.input-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: #2563EB; pointer-events: none;
+}
+.input-icon svg { width: 18px; height: 18px; display: block; }
+
+/* Toggle lihat sandi */
+.pw-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  padding: 4px; background: none; border: none; color: #9CA3AF; cursor: pointer;
+}
+.pw-toggle:hover { color: #374151; }
+.pw-toggle svg { width: 18px; height: 18px; display: block; }
+.form-field .input-wrap input#password { padding-right: 48px; }
+
+/* Alert akun (kuning = pending, merah = ditolak/sandi salah) */
+.form-alert {
+  display: none; align-items: flex-start; gap: 10px;
+  margin-top: 14px; padding: 12px 14px;
+  font-size: 13px; font-weight: 600; color: #92400E;
+  background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px;
+}
+.form-alert.show { display: flex; }
+.form-alert.danger { color: #991B1B; background: #FEE2E2; border-color: #FECACA; }
+.form-alert svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+
+/* Banner sudah login */
+.session-banner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 18px; padding: 10px 14px;
+  font-size: 13px; font-weight: 600; color: #1E40AF;
+  background: #DBEAFE; border: 1px solid #BFDBFE; border-radius: 10px;
+}
+.session-banner a { font-weight: 800; text-decoration: underline; }
+
+.form-field input,
+.form-field select {
+  width: 100%; padding: 12px 16px; font-size: 14px;
+  color: #111827; background: #fff;
+  border: 1px solid #E5E7EB; border-radius: 10px;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.form-field .input-wrap input { padding: 12px 16px 12px 44px; }
+.form-field input::placeholder { color: #9CA3AF; }
+.form-field input:focus,
+.form-field select:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-field select {
+  cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232563EB' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+/* Error */
+.form-error { margin: 4px 0 0; font-size: 12px; color: #DC2626; display: none; }
+.form-error.show { display: block; }
+.input-error { border-color: #DC2626 !important; }
+
+/* Submit */
+.submit-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px; margin-top: 8px; font-size: 14px; font-weight: 700; color: #fff;
+  background: #2563EB; border: none; border-radius: 10px;
+  transition: background .15s;
+}
+.submit-btn:hover { background: #1D4ED8; }
+.submit-btn:disabled { background: #9CA3AF; cursor: not-allowed; }
+.submit-btn svg { width: 18px; height: 18px; }
+
+/* Help */
+.help-text { margin-top: 20px; font-size: 13px; color: #6B7280; text-align: center; }
+.help-link { font-weight: 600; color: #2563EB; }
+.help-link:hover { text-decoration: underline; }
+
+/* Note di bawah kartu */
+.panel-right-note {
+  margin-top: 20px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: rgba(219, 234, 254, 0.75);
+}
+.panel-right-note svg { width: 13px; height: 13px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .login-page { flex-direction: column; }
+  .panel-left { flex: none; padding: 28px 24px; gap: 20px; }
+  .hero { max-width: none; }
+  .hero-title { font-size: 26px; }
+  .hero-desc { font-size: 14px; }
+  .hero-list { margin-top: 20px; gap: 10px; }
+  .panel-left-copy { display: none; }
+  .panel-right { flex: 1; padding: 16px 24px 40px; }
+  .login-card { padding: 32px 24px; max-width: 440px; }
+}
+@media (max-width: 480px) {
+  .hero-list { display: none; }
+  .brand-name { font-size: 13px; }
+}

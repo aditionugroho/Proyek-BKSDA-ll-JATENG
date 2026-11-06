@@ -1,0 +1,583 @@
+/* ============================================
+   DASHBOARD KEPALA SEKSI — E-Office SKSDA
+   Stat card, perlu tindakan, surat terbaru,
+   jadwal, progress seksi
+   ============================================ */
+
+/* ===== 1. HEADER ===== */
+.ksd-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ksd-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.ksd-desc {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+.ksd-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tombol */
+.ksd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ksd-btn svg { width: 15px; height: 15px; }
+
+.ksd-btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.ksd-btn--primary:hover { background: var(--color-primary-hover); }
+
+.ksd-btn--outline {
+  color: #374151;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.ksd-btn--outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.ksd-btn--muted {
+  color: #475569;
+  background: var(--color-bg-hover);
+}
+
+.ksd-btn--muted:hover { background: #E2E8F0; }
+
+.ksd-btn--block {
+  display: flex;
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* ===== 2. STAT CARD ===== */
+.ksd-stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.ksd-stat {
+  position: relative;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.ksd-stat-icon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: #F1F5F9;
+  color: #64748B;
+}
+
+.ksd-stat-icon svg { width: 16px; height: 16px; }
+
+.ksd-stat-label {
+  margin: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  padding-right: 38px;
+}
+
+.ksd-stat-value {
+  margin: 8px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.ksd-stat-value--red { color: #DC2626; }
+
+.ksd-stat-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #6B7280;
+}
+
+.ksd-stat-note svg { width: 12px; height: 12px; }
+
+.ksd-stat-note--blue { color: #2563EB; font-weight: 600; }
+.ksd-stat-note--amber { color: #D97706; font-weight: 600; }
+.ksd-stat-note--red { color: #DC2626; font-weight: 600; }
+
+/* Mini progress bar di stat card */
+.ksd-stat-progress {
+  margin-top: 10px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.ksd-stat-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+/* ===== 3. GRID DUA KOLOM ===== */
+.ksd-columns {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.ksd-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Panel umum */
+.ksd-panel {
+  padding: 20px 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.ksd-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ksd-panel-head-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.ksd-panel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.ksd-panel-icon svg { width: 17px; height: 17px; }
+.ksd-panel-icon--blue { background: var(--color-primary-light); color: var(--color-primary); }
+.ksd-panel-icon--orange { background: #FFEDD5; color: #EA580C; }
+
+.ksd-panel-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Badge jumlah item (merah muda) */
+.ksd-count-badge {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #DC2626;
+  background: #FEE2E2;
+  border-radius: 999px;
+}
+
+.ksd-link {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.ksd-link:hover { text-decoration: underline; }
+
+/* --- Item perlu tindakan --- */
+.ksd-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.ksd-action:last-child { border-bottom: none; padding-bottom: 4px; }
+.ksd-action:first-child { padding-top: 16px; }
+
+.ksd-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-hover);
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.ksd-action-icon svg { width: 18px; height: 18px; }
+
+.ksd-action-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ksd-action-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ksd-action-desc {
+  margin: 3px 0 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.ksd-action-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ksd-tag {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ksd-tag--gray {
+  color: #475569;
+  background: var(--color-bg-hover);
+}
+
+.ksd-tag--red {
+  color: var(--color-error);
+  background: #FEE2E2;
+}
+
+/* Tombol aksi: outline biru (Review) & abu muda (Buka) */
+.ksd-action-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ksd-action-btn:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.ksd-action-btn--muted {
+  color: #475569;
+  border-color: transparent;
+  background: #F1F5F9;
+}
+
+.ksd-action-btn--muted:hover {
+  background: #E2E8F0;
+  color: #475569;
+}
+
+/* --- Surat terbaru (border-left berwarna) --- */
+.ksd-letter {
+  padding: 11px 14px;
+  border-left: 3px solid #CBD5E1;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-top: 10px;
+}
+
+.ksd-letter:first-child { margin-top: 14px; }
+
+.ksd-letter--blue { border-left-color: var(--color-primary); }
+
+.ksd-letter-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.ksd-letter-meta {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* --- Jadwal hari ini --- */
+.ksd-schedule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ksd-schedule-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 15px;
+  flex-shrink: 0;
+  background: #CBD5E1;
+}
+
+.ksd-schedule-dot--blue {
+  background: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+.ksd-schedule-body { flex: 1; min-width: 0; }
+
+.ksd-schedule-time {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.ksd-schedule-time--blue { color: var(--color-primary); }
+
+.ksd-schedule-box {
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-sm);
+}
+
+.ksd-schedule-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ksd-schedule-place {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.ksd-schedule-place svg { width: 12px; height: 12px; }
+
+/* Tombol + kanan header */
+.ksd-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ksd-add-btn svg { width: 15px; height: 15px; }
+
+.ksd-add-btn:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+/* ===== 4. PROGRESS PEKERJAAN ===== */
+.ksd-progress-item {
+  margin-top: 16px;
+}
+
+.ksd-progress-item:first-of-type { margin-top: 18px; }
+
+.ksd-progress-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.ksd-progress-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ksd-progress-percent {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ksd-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.ksd-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .ksd-stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .ksd-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .ksd-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .ksd-head { flex-direction: column; }
+  .ksd-head-actions { width: 100%; }
+  .ksd-head-actions .ksd-btn { flex: 1; }
+}
+
+/* ============================================
+   TAMBAHAN: RUNNING TEXT (PENGUMUMAN)
+   (class sama dengan pg-dashboard — aman
+   lintas halaman karena file CSS terpisah)
+   ============================================ */
+
+.running-text-bar {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin: 0 0 24px 0;
+  overflow: hidden;
+  gap: 20px;
+}
+
+.running-text-label {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #2563EB;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+
+.running-text-label svg { width: 14px; height: 14px; }
+
+.running-text-viewport {
+  overflow: hidden;
+  flex: 1;
+}
+
+.running-text-track {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  animation: marquee var(--marquee-speed, 30s) linear infinite;
+  will-change: transform;
+}
+
+.running-text-track:hover { animation-play-state: paused; }
+
+.running-text-track.is-static {
+  display: block;
+  width: 100%;
+  text-align: center;
+  animation: none;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@media (max-width: 640px) {
+  .running-text-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .running-text-label { justify-content: center; }
+}
