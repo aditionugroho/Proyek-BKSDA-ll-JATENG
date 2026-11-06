@@ -13,6 +13,7 @@ class SuratKeluarModel extends Model
 
     protected $allowedFields = [
         'created_by',
+        'resort_id',
         'no_agenda',
         'no_surat',
         'tanggal',

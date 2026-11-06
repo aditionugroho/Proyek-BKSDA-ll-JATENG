@@ -3,6 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
+use App\Libraries\ResortAccessPolicy;
+use App\Models\ResortModel;
 use App\Models\ActivityLogModel;
 use App\Models\AuthTokenModel;
 use App\Models\NotifikasiModel;
@@ -63,6 +65,29 @@ class SuratKeluarController extends BaseController
         return (int) $token['user_id'];
     }
 
+    private function currentAccessUser(): ?array
+    {
+        $id = $this->getCurrentUserId();
+        return $id ? $this->userModel->where('id', $id)->where('status', 1)->first() : null;
+    }
+
+    // Fail closed before any detail, write, preview, or file access.
+    private function guardDocumentAccess($id)
+    {
+        $user = $this->currentAccessUser();
+        if (!$user) {
+            return $this->respond(['status' => false, 'message' => 'Akun tidak aktif atau tidak terautentikasi.'], 401);
+        }
+        $surat = $this->suratModel->find((int) $id);
+        if ($surat && !ResortAccessPolicy::canAccess(
+            $user,
+            isset($surat['resort_id']) ? (int) $surat['resort_id'] : null
+        )) {
+            return $this->respond(['status' => false, 'message' => 'Dokumen tidak ditemukan atau tidak dapat diakses.'], 404);
+        }
+        return null;
+    }
+
     private function logActivity(
         string $aktivitas,
         ?int $referensiId = null,
@@ -112,6 +137,12 @@ class SuratKeluarController extends BaseController
 
     public function index()
     {
+        $user = $this->currentAccessUser();
+        if (!$user) {
+            return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
+        }
+        ResortAccessPolicy::scopeQuery($this->suratModel, 'surat_keluar', $user);
+
         $search = trim(
             (string) $this->request->getGet('search')
         );
@@ -209,6 +240,13 @@ class SuratKeluarController extends BaseController
 
     public function show($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -335,8 +373,37 @@ class SuratKeluarController extends BaseController
             ], 409);
         }
 
+        // Resort is assigned by the server, never trusted from the client for staff.
+        $actor = $this->currentAccessUser();
+        if (!$actor) {
+            return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
+        }
+        $requestedResortId = $data['resort_id'] ?? null;
+        if ($actor['role'] === 'staf') {
+            $chosenResortId = (int) ($actor['resort_id'] ?? 0);
+            if ($chosenResortId < 1) {
+                return $this->respond(['status' => false, 'message' => 'Staf belum ditempatkan pada resort.'], 403);
+            }
+            if ($requestedResortId !== null &&
+                (!ctype_digit((string) $requestedResortId) || (int) $requestedResortId !== $chosenResortId)) {
+                return $this->respond(['status' => false, 'message' => 'Tidak dapat membuat surat untuk resort lain.'], 403);
+            }
+        } elseif (in_array($actor['role'], ['admin', 'kepala_seksi'], true)) {
+            if (!ctype_digit((string) $requestedResortId) || (int) $requestedResortId < 1) {
+                return $this->respond(['status' => false, 'message' => 'resort_id wajib diisi untuk admin dan kepala seksi.'], 422);
+            }
+            $chosenResortId = (int) $requestedResortId;
+        } else {
+            return $this->respond(['status' => false, 'message' => 'Role tidak diizinkan.'], 403);
+        }
+        $resort = (new ResortModel())->where('id', $chosenResortId)->where('status', 1)->first();
+        if (!$resort) {
+            return $this->respond(['status' => false, 'message' => 'Resort tidak aktif atau tidak ditemukan.'], 422);
+        }
+
         $id = $this->suratModel->insert([
             'created_by' => $userId,
+            'resort_id' => $chosenResortId,
             'no_agenda' => $noAgenda,
             'no_surat' => $noSurat,
             'tanggal' => $tanggal,
@@ -385,6 +452,13 @@ class SuratKeluarController extends BaseController
 
     public function update($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -548,6 +622,13 @@ class SuratKeluarController extends BaseController
 
     public function uploadFile($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -872,6 +953,13 @@ class SuratKeluarController extends BaseController
 
     public function downloadFile($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -932,6 +1020,13 @@ class SuratKeluarController extends BaseController
 
 public function previewFile($id = null)
 {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
     if (!$id || !ctype_digit((string) $id)) {
         return $this->respond([
             'status' => false,
@@ -1042,6 +1137,13 @@ public function previewFile($id = null)
 
     public function delete($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
