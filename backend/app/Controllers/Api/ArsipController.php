@@ -3,6 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
+use App\Libraries\ResortAccessPolicy;
+use App\Models\UserModel;
 use App\Models\ActivityLogModel;
 use App\Models\ArsipModel;
 use App\Models\AuthTokenModel;
@@ -73,6 +75,38 @@ class ArsipController extends BaseController
     | ACTIVITY LOG
     |--------------------------------------------------------------------------
     */
+
+    private function currentAccessUser(): ?array
+    {
+        $id = $this->getCurrentUserId();
+        return $id ? (new UserModel())->where('id', $id)->where('status', 1)->first() : null;
+    }
+
+    private function guardArchiveAccess($id)
+    {
+        $actor = $this->currentAccessUser();
+        if (!$actor) {
+            return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
+        }
+        $arsip = $this->arsipModel->find((int) $id);
+        if (!$arsip) {
+            return null; // The existing method returns 404.
+        }
+        if ($arsip['jenis'] === 'surat_masuk') {
+            $surat = $this->suratMasukModel->find((int) $arsip['referensi_id']);
+        } elseif ($arsip['jenis'] === 'surat_keluar') {
+            $surat = $this->suratKeluarModel->find((int) $arsip['referensi_id']);
+        } else {
+            $surat = null;
+        }
+        if (!$surat || !ResortAccessPolicy::canAccess(
+            $actor,
+            isset($surat['resort_id']) ? (int) $surat['resort_id'] : null
+        )) {
+            return $this->respond(['status' => false, 'message' => 'Arsip tidak ditemukan atau tidak dapat diakses.'], 404);
+        }
+        return null;
+    }
 
     private function logActivity(
         string $aktivitas,
@@ -153,6 +187,11 @@ class ArsipController extends BaseController
 
     public function index()
     {
+        $actor = $this->currentAccessUser();
+        if (!$actor) {
+            return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
+        }
+
         $tahun = trim(
             (string) $this->request->getGet('tahun')
         );
@@ -221,6 +260,27 @@ class ArsipController extends BaseController
         }
 
         $this->baseQuery();
+        // Archive access follows the referenced letter's ORIGINAL resort.
+        if ($actor['role'] === 'staf') {
+            $resortId = (int) ($actor['resort_id'] ?? 0);
+            if ($resortId < 1) {
+                $this->arsipModel->where('1 = 0', null, false);
+            } else {
+                $this->arsipModel->groupStart()
+                    ->groupStart()
+                        ->where('arsip.jenis', 'surat_masuk')
+                        ->where('surat_masuk.resort_id', $resortId)
+                    ->groupEnd()
+                    ->orGroupStart()
+                        ->where('arsip.jenis', 'surat_keluar')
+                        ->where('surat_keluar.resort_id', $resortId)
+                    ->groupEnd()
+                ->groupEnd();
+            }
+        } elseif (!in_array($actor['role'], ['admin', 'kepala_seksi'], true)) {
+            $this->arsipModel->where('1 = 0', null, false);
+        }
+
 
         // FILTER TAHUN ARSIP
         if ($tahun !== '') {
@@ -357,6 +417,13 @@ class ArsipController extends BaseController
 
     public function show($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardArchiveAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -494,6 +561,18 @@ class ArsipController extends BaseController
                     'Surat yang akan diarsipkan tidak ditemukan.',
             ], 404);
         }
+
+        $actor = $this->currentAccessUser();
+        if (!$actor) {
+            return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
+        }
+        if (!ResortAccessPolicy::canAccess(
+            $actor,
+            isset($surat['resort_id']) ? (int) $surat['resort_id'] : null
+        )) {
+            return $this->respond(['status' => false, 'message' => 'Surat tidak ditemukan atau tidak dapat diakses.'], 404);
+        }
+
 
         /*
         |--------------------------------------------------------------------------
@@ -645,6 +724,13 @@ class ArsipController extends BaseController
 
     public function downloadFile($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardArchiveAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -755,6 +841,13 @@ class ArsipController extends BaseController
 
     public function update($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardArchiveAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
@@ -838,6 +931,13 @@ class ArsipController extends BaseController
 
     public function delete($id = null)
     {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardArchiveAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
         if (
             !$id ||
             !ctype_digit((string) $id)
