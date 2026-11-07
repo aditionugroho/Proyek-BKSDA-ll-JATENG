@@ -1,191 +1,519 @@
-/* ============================================
-   DETAIL SURAT MASUK (KEPALA SEKSI) — E-Office
-   Baca ?id= dari data bersama, render info +
-   dokumen mock, zoom, fullscreen, aksi modal
-   ============================================ */
+/*
+ * DETAIL SURAT MASUK — KEPALA SEKSI
+ * E-Office BKSDA
+ *
+ * Integrasi CodeIgniter 4:
+ * GET /api/surat-masuk/{id}
+ * GET /api/surat-masuk/{id}/preview
+ * GET /api/surat-masuk/{id}/file
+ *
+ * Tidak memakai mock document.
+ * Akses dokumen diperiksa oleh backend.
+ */
 
-import { SURAT_MASUK as SURAT_MASUK_MOCK } from "../data/surat-masuk.js";
-import { showToast } from "../components/toast.js";
-import { openModal } from "../components/modal.js";
+"use strict";
 
-/* ===== DATA: diisi loadDetail() — API saat LIVE, mock saat belum ===== */
-let data = null;
+const $ = (id) => document.getElementById(id);
 
-async function loadDetail(id) {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getSuratMasukDetail(id);
+const API_BASE = EOfficeAPI.config.BASE_URL;
+
+let surat = null;
+let suratId = null;
+let previewURL = null;
+let zoom = 1;
+
+/* ========== HELPERS ========== */
+
+function setText(id, value) {
+  const element = $(id);
+
+  if (element) {
+    element.textContent = String(value ?? "-");
   }
-  /* Mock: fallback S.892 bila ?id= tidak ditemukan */
-  const FALLBACK = SURAT_MASUK_MOCK.find((s) => s.nomor.startsWith("S.892"));
-  const surat = SURAT_MASUK_MOCK.find((s) => s.id === id) || FALLBACK;
-  return {
-    nomor: surat.nomor,
-    status: surat.status?.text || "Menunggu Disposisi",
-    prioritas: surat.prioritas?.text || "Segera",
-    sifat: surat.sifat || "Biasa",
-    tanggalDiterima: surat.tanggalDiterima || `${surat.tanggal}, 09:15 WIB`,
-    pengirimFull: surat.pengirimFull || `${surat.pengirim}, ${surat.pengirimSub}`,
-    nomorAsli: surat.nomorAsli || surat.nomor,
-    tanggalSurat: surat.tanggalSurat || surat.tanggal,
-    perihal: surat.perihal,
-    klasifikasi: surat.klasifikasi || ["000 - Umum"],
-    fileName: surat.fileName || "Dokumen_Surat.pdf",
-    fileSize: surat.fileSize || "1.2 MB"
-  };
 }
 
-/* ===== RENDER: header & kartu kiri ===== */
-function renderInfo() {
-  document.getElementById("dsm-nomor").textContent = data.nomor;
-  document.querySelector("#dsm-status").lastChild.textContent = ` ${data.status}`;
-  document.querySelector("#dsm-prioritas").lastChild.textContent = ` ${data.prioritas}`;
-  document.getElementById("dsm-sifat").textContent = data.sifat;
-  document.getElementById("dsm-terima").textContent = data.tanggalDiterima;
-
-  document.getElementById("dsm-pengirim").textContent = data.pengirimFull;
-  document.getElementById("dsm-nomor-asli").textContent = data.nomorAsli;
-  document.getElementById("dsm-tanggal-surat").textContent = data.tanggalSurat;
-  document.getElementById("dsm-perihal").textContent = data.perihal;
-
-  document.getElementById("dsm-klasifikasi").innerHTML = data.klasifikasi
-    .map((k) => `<span class="kss-badge kss-badge--gray">${k}</span>`)
-    .join("");
-
-  document.getElementById("dsm-file-name").textContent = data.fileName;
-  document.getElementById("dsm-file-size").textContent = `(${data.fileSize})`;
+function getToken() {
+  return localStorage.getItem("eoffice_token");
 }
 
-/* ===== RENDER: dokumen mock di kertas ===== */
-function renderMockDocument(d) {
-  document.getElementById("dsm-paper").innerHTML = `
-    <!-- Watermark -->
-    <span class="dsm-watermark">SALINAN</span>
-
-    <!-- KOP surat -->
-    <header class="doc-kop">
-      <p class="doc-kop-1">KEMENTERIAN LINGKUNGAN HIDUP DAN KEHUTANAN</p>
-      <p class="doc-kop-2">Direktorat Jenderal Konservasi Sumber Daya Alam dan Ekosistem</p>
-      <p class="doc-kop-3">Gedung Manggala Wanabakti Blok I Lt. 8, Jl. Gatot Subroto, Jakarta 10270</p>
-    </header>
-
-    <!-- BODY -->
-    <div class="doc-body">
-      <div class="doc-meta-row">
-        <span>Nomor : ${d.nomorAsli}</span>
-        <span>${d.tanggalSurat}</span>
-      </div>
-      <div>Sifat : ${d.prioritas}</div>
-      <div>Lampiran : 1 (satu) berkas</div>
-      <div>Hal : <span class="doc-bold">${d.perihal}</span></div>
-
-      <p class="doc-justify" style="margin-top:22px">Yth.</p>
-      <div class="doc-indent">
-        Kepala Balai Besar KSDA Jawa Barat<br />
-        Kepala Balai KSDA Jawa Tengah<br />
-        Kepala Balai Besar KSDA Jawa Timur
-      </div>
-      <p style="margin:6px 0 0">di tempat</p>
-
-      <p class="doc-justify">Sehubungan dengan meningkatnya intensitas interaksi negatif antara manusia dan satwa liar, khususnya di wilayah regional Jawa pada triwulan ketiga tahun 2023, Direktorat Jenderal KSDAE memandang perlu untuk segera merumuskan langkah-langkah strategis dan taktis tingkat tapak.</p>
-
-      <p class="doc-justify">Berkenaan dengan hal tersebut, kami mengundang Saudara beserta 1 (satu) orang staf teknis terkait untuk hadir pada Rapat Koordinasi yang akan diselenggarakan pada:</p>
-    </div>`;
-}
-
-/* ===== ZOOM (ubah --doc-scale 0.8–1.4, step 0.1) ===== */
-let scale = 1;
-const paper = document.getElementById("dsm-paper");
-const zoomLabel = document.getElementById("zoom-level");
-
-function applyZoom() {
-  paper.style.setProperty("--doc-scale", scale);
-  zoomLabel.textContent = `${Math.round(scale * 100)}%`;
-}
-
-document.getElementById("zoom-in").addEventListener("click", () => {
-  scale = Math.min(1.4, Math.round((scale + 0.1) * 10) / 10);
-  applyZoom();
-});
-
-document.getElementById("zoom-out").addEventListener("click", () => {
-  scale = Math.max(0.8, Math.round((scale - 0.1) * 10) / 10);
-  applyZoom();
-});
-
-/* ===== FULLSCREEN ===== */
-const viewer = document.getElementById("dsm-viewer");
-
-document.getElementById("btn-fullscreen").addEventListener("click", () => {
-  viewer.classList.toggle("fullscreen");
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") viewer.classList.remove("fullscreen");
-});
-
-/* ===== TOOLBAR & AKSI ===== */
-
-/* Cetak resi */
-document.getElementById("btn-print").addEventListener("click", () => window.print());
-
-/* Unduh berkas (demo) */
-document.getElementById("btn-download").addEventListener("click", () => {
-  showToast(`Mengunduh ${data.fileName}`);
-});
-
-/* Teruskan: modal daftar staf (mock) → kirim → toast */
-const STAF_LIST = `
-  <div class="app-modal-list">
-    <label class="app-modal-option">
-      <input type="radio" name="forward-to" value="Budi Santoso" checked />
-      <span><strong>Budi Santoso</strong><span>Staf Polhut - Resort Baturaden</span></span>
-    </label>
-    <label class="app-modal-option">
-      <input type="radio" name="forward-to" value="Siti Aminah" />
-      <span><strong>Siti Aminah</strong><span>Staf PEH - Seksi Wilayah II</span></span>
-    </label>
-    <label class="app-modal-option">
-      <input type="radio" name="forward-to" value="Joko Susilo" />
-      <span><strong>Joko Susilo</strong><span>Staf - Resort Nusakambangan</span></span>
-    </label>
-  </div>`;
-
-document.getElementById("btn-forward").addEventListener("click", () => {
-  openModal({
-    title: "Teruskan Surat",
-    desc: "Pilih staf penerima penerusan surat:",
-    html: STAF_LIST,
-    confirmLabel: "Kirim",
-    onConfirm: () => {
-      const checked = document.querySelector('input[name="forward-to"]:checked');
-      const nama = checked ? checked.value : "staf terpilih";
-      showToast(`Surat diteruskan kepada ${nama}`);
-    }
-  });
-});
-
-/* Arsipkan sementara: modal konfirmasi → toast */
-document.getElementById("btn-archive").addEventListener("click", () => {
-  openModal({
-    title: "Arsipkan Sementara",
-    desc: `Surat "${data.nomor}" akan dipindahkan ke arsip sementara dan dapat dibuka kembali kapan saja.`,
-    confirmLabel: "Ya, Arsipkan",
-    danger: true,
-    onConfirm: () => showToast("Surat diarsipkan sementara")
-  });
-});
-
-/* ===== Inisialisasi: muat data dulu, baru render ===== */
-async function init() {
-  const params = new URLSearchParams(window.location.search);
+function getSession() {
   try {
-    data = await loadDetail(Number(params.get("id")));
-  } catch (e) {
-    showToast("Gagal memuat detail surat. Periksa koneksi lalu muat ulang halaman.");
+    const raw =
+      sessionStorage.getItem("eoffice_session") ||
+      localStorage.getItem("eoffice_session");
+
+    return JSON.parse(raw || "null");
+  } catch {
+    return null;
+  }
+}
+
+function notify(message, isError = false) {
+  let banner = $("dsm-api-message");
+
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "dsm-api-message";
+    banner.setAttribute("role", "status");
+
+    banner.style.padding = "12px 16px";
+    banner.style.margin = "12px 0";
+    banner.style.borderRadius = "8px";
+
+    document.querySelector(".dsm-head")?.after(banner);
+  }
+
+  banner.textContent = message;
+
+  banner.style.background = isError ? "#fee2e2" : "#dbeafe";
+
+  banner.style.color = isError ? "#991b1b" : "#1d4ed8";
+}
+
+function clearNotice() {
+  $("dsm-api-message")?.remove();
+}
+
+function getFilename(path) {
+  const raw = String(path || "");
+
+  if (!raw) return "Tidak ada lampiran";
+
+  return raw.replace(/\\/g, "/").split("/").pop();
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+
+  const raw = String(value);
+
+  const date = new Date(raw.includes("T") ? raw : raw.replace(" ", "T"));
+
+  if (Number.isNaN(date.getTime())) {
+    return raw;
+  }
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function checkAccess() {
+  const session = getSession();
+
+  if (!getToken() || session?.role !== "kepala-seksi") {
+    location.replace("../../login.html");
+    return false;
+  }
+
+  return true;
+}
+
+function readSuratId() {
+  const id = new URLSearchParams(location.search).get("id");
+
+  if (!id || !/^[1-9]\d*$/.test(id)) {
+    throw new Error(
+      "ID Surat Masuk tidak valid. Buka surat dari halaman daftar.",
+    );
+  }
+
+  return Number(id);
+}
+
+/* ========== API JSON ========== */
+
+async function getDetail(id) {
+  if (
+    typeof EOfficeAPI === "undefined" ||
+    !EOfficeAPI.config?.LIVE ||
+    typeof EOfficeAPI.request !== "function"
+  ) {
+    throw new Error("Koneksi API backend belum aktif.");
+  }
+
+  const response = await EOfficeAPI.request("GET", `/surat-masuk/${id}`);
+
+  if (
+    response?.status !== true ||
+    !response.data ||
+    typeof response.data !== "object"
+  ) {
+    throw new Error("Format detail surat tidak sesuai.");
+  }
+
+  return response.data;
+}
+
+/* ========== API FILE ========== */
+
+async function fetchFile(path) {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error("Sesi telah berakhir. Login ulang.");
+  }
+
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/pdf,image/png,image/jpeg,application/octet-stream",
+      },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      let message = `Gagal mengambil lampiran (HTTP ${response.status}).`;
+
+      const type = response.headers.get("content-type") || "";
+
+      if (type.includes("application/json")) {
+        const json = await response.json();
+
+        message = json?.message || message;
+      }
+
+      throw new Error(message);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (
+      contentType.includes("application/json") ||
+      contentType.includes("text/html")
+    ) {
+      throw new Error("Server tidak mengembalikan file yang valid.");
+    }
+
+    const blob = await response.blob();
+
+    if (!blob.size) {
+      throw new Error("Lampiran kosong.");
+    }
+
+    return blob;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Waktu pengambilan file habis.");
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ========== RENDER INFORMASI ========== */
+
+function renderDetail(data) {
+  setText("dsm-nomor", data.no_surat || data.no_agenda || "-");
+
+  const status = $("dsm-status");
+
+  if (status) {
+    status.textContent = String(data.status || "Tidak diketahui").replace(
+      /_/g,
+      " ",
+    );
+  }
+
+  // Backend belum menyediakan prioritas
+  // dalam kontrak detail yang kita gunakan.
+  const prioritas = $("dsm-prioritas");
+
+  if (prioritas) {
+    prioritas.textContent = "Tidak tersedia";
+    prioritas.classList.remove("dsm-row-value--red");
+  }
+
+  setText("dsm-sifat", data.sifat || "Tidak tersedia");
+
+  setText(
+    "dsm-terima",
+    formatDate(data.tanggal_diterima || data.created_at || data.tanggal),
+  );
+
+  setText("dsm-pengirim", data.asal || "-");
+
+  setText("dsm-nomor-asli", data.no_surat || "-");
+
+  setText("dsm-tanggal-surat", formatDate(data.tanggal));
+
+  setText("dsm-perihal", data.perihal || "-");
+
+  const classification = $("dsm-klasifikasi");
+
+  if (classification) {
+    classification.replaceChildren();
+
+    const badge = document.createElement("span");
+
+    badge.className = "kss-badge kss-badge--gray";
+
+    badge.textContent = data.klasifikasi || "Belum diklasifikasikan";
+
+    classification.appendChild(badge);
+  }
+
+  setText("dsm-file-name", getFilename(data.file_path));
+
+  setText("dsm-file-size", data.file_path ? "" : "Tidak ada file");
+}
+
+/* ========== PREVIEW LAMPIRAN ========== */
+
+function clearPreview() {
+  const paper = $("dsm-paper");
+
+  if (paper) {
+    paper.replaceChildren();
+  }
+
+  if (previewURL) {
+    URL.revokeObjectURL(previewURL);
+    previewURL = null;
+  }
+}
+
+function displayPreview(blob) {
+  clearPreview();
+
+  const paper = $("dsm-paper");
+
+  if (!paper) return;
+
+  const type = blob.type.toLowerCase();
+
+  previewURL = URL.createObjectURL(blob);
+
+  if (type.includes("application/pdf")) {
+    const frame = document.createElement("iframe");
+
+    frame.src = previewURL;
+    frame.title = "Preview lampiran Surat Masuk";
+    frame.style.width = "100%";
+    frame.style.height = "650px";
+    frame.style.border = "0";
+    frame.style.background = "#fff";
+
+    paper.appendChild(frame);
+  } else if (type.startsWith("image/")) {
+    const image = document.createElement("img");
+
+    image.src = previewURL;
+    image.alt = "Lampiran Surat Masuk";
+    image.style.width = "100%";
+    image.style.height = "auto";
+    image.style.display = "block";
+
+    paper.appendChild(image);
+  } else {
+    clearPreview();
+
+    paper.textContent =
+      "Format ini tidak mendukung preview. " + "Gunakan tombol Unduh Berkas.";
+  }
+}
+
+async function loadPreview() {
+  const paper = $("dsm-paper");
+
+  if (!surat?.file_path) {
+    if (paper) {
+      paper.textContent = "Surat ini belum memiliki lampiran.";
+    }
+
     return;
   }
-  renderInfo();
-  renderMockDocument(data);
-  applyZoom();
+
+  if (paper) {
+    paper.textContent = "Memuat lampiran...";
+  }
+
+  try {
+    const blob = await fetchFile(`/surat-masuk/${suratId}/preview`);
+
+    displayPreview(blob);
+  } catch (error) {
+    console.warn("Preview lampiran:", error.message);
+
+    if (paper) {
+      paper.textContent = "Preview tidak tersedia: " + error.message;
+    }
+  }
 }
-init();
+
+/* ========== DOWNLOAD ========== */
+
+async function downloadAttachment() {
+  if (!surat?.file_path) {
+    notify("Surat belum memiliki lampiran.", true);
+    return;
+  }
+
+  const button = $("btn-download");
+
+  if (button) button.disabled = true;
+
+  try {
+    const blob = await fetchFile(`/surat-masuk/${suratId}/file`);
+
+    const url = URL.createObjectURL(blob);
+
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = getFilename(surat.file_path);
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 30000);
+
+    notify("Lampiran berhasil diminta untuk diunduh.");
+  } catch (error) {
+    notify(error.message, true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+/* ========== ZOOM & FULLSCREEN ========== */
+
+function applyZoom() {
+  const paper = $("dsm-paper");
+
+  if (!paper) return;
+
+  paper.style.transformOrigin = "top center";
+  paper.style.transform = `scale(${zoom})`;
+
+  setText("zoom-level", `${Math.round(zoom * 100)}%`);
+}
+
+function setupViewer() {
+  $("zoom-in")?.addEventListener("click", () => {
+    zoom = Math.min(1.5, zoom + 0.1);
+    applyZoom();
+  });
+
+  $("zoom-out")?.addEventListener("click", () => {
+    zoom = Math.max(0.7, zoom - 0.1);
+    applyZoom();
+  });
+
+  $("btn-fullscreen")?.addEventListener("click", () => {
+    $("dsm-viewer")?.classList.toggle("fullscreen");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      $("dsm-viewer")?.classList.remove("fullscreen");
+    }
+  });
+
+  $("btn-download")?.addEventListener("click", downloadAttachment);
+}
+
+/* ========== NONAKTIFKAN AKSI MOCK ========== */
+
+function disableMockActions() {
+  // Kedua aksi ini sebelumnya hanya
+  // menampilkan toast tanpa menyimpan data.
+  for (const id of ["btn-forward", "btn-archive", "btn-print"]) {
+    const button = $(id);
+
+    if (button) {
+      button.disabled = true;
+      button.title = "Fitur sedang dalam tahap integrasi";
+    }
+  }
+
+  // Navigasi disposisi dari detail surat
+  // belum meneruskan ID surat secara benar.
+  const links = document.querySelectorAll('a[href="disposisi.html"]');
+
+  links.forEach((link) => {
+    link.setAttribute("aria-disabled", "true");
+
+    link.style.pointerEvents = "none";
+    link.style.opacity = "0.5";
+
+    link.title = "Integrasi disposisi akan dilakukan berikutnya";
+  });
+}
+
+/* ========== ERROR ========== */
+
+function showError(error) {
+  console.error("Detail Surat Masuk gagal:", error.message);
+
+  notify(error.message, true);
+
+  setText("dsm-nomor", "Tidak tersedia");
+  setText("dsm-file-name", "-");
+
+  const paper = $("dsm-paper");
+
+  if (paper) {
+    paper.textContent = "Detail surat tidak dapat dimuat.";
+  }
+
+  if ($("btn-download")) {
+    $("btn-download").disabled = true;
+  }
+}
+
+/* ========== INIT ========== */
+
+async function init() {
+  if (!checkAccess()) return;
+
+  setupViewer();
+  disableMockActions();
+
+  setText("dsm-nomor", "Memuat...");
+  setText("dsm-file-name", "Memuat...");
+
+  try {
+    suratId = readSuratId();
+
+    const data = await getDetail(suratId);
+
+    surat = data;
+
+    renderDetail(data);
+
+    if (!data.file_path && $("btn-download")) {
+      $("btn-download").disabled = true;
+    }
+
+    clearNotice();
+
+    await loadPreview();
+
+    console.info("Detail Surat Masuk berhasil dimuat.", { id: suratId });
+  } catch (error) {
+    showError(error);
+  }
+}
+
+window.addEventListener("pagehide", clearPreview);
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init, { once: true });
+} else {
+  init();
+}

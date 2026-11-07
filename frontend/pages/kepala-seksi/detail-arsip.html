@@ -1,109 +1,647 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="theme-color" content="#2563EB" />
-  <link rel="apple-touch-icon" href="/assets/js/images/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="E-Office SKSDA" />
-  <title>Detail Arsip - E-Office SKSDA</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ===== Stylesheet ===== -->
-  <link rel="stylesheet" href="../../assets/css/variables.css" />
-  <link rel="stylesheet" href="../../assets/css/base.css" />
-  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
-  <link rel="stylesheet" href="../../assets/css/pages/detail-generic.css" />
-</head>
-<body>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#2563EB" />
 
-  <!-- ===== Layout bersama ===== -->
-  <aside id="ks-sidebar"></aside>
-  <header id="ks-navbar"></header>
+    <title>Detail Arsip - E-Office SKSDA</title>
 
-  <!-- ===== Konten ===== -->
-  <main class="main-content">
+    <link rel="stylesheet" href="../../assets/css/variables.css" />
+    <link rel="stylesheet" href="../../assets/css/base.css" />
+    <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+    <link rel="stylesheet" href="../../assets/css/pages/detail-generic.css" />
 
-    <nav class="dg-breadcrumb" aria-label="Breadcrumb">
-      <a href="dashboard.html">Dashboard</a>
-      <span class="dg-breadcrumb-sep">&gt;</span>
-      <a href="arsip.html">Arsip</a>
-      <span class="dg-breadcrumb-sep">&gt;</span>
-      <span class="dg-breadcrumb-current" id="dg-crumb">Detail Arsip</span>
-    </nav>
+    <style>
+      .da-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 24px;
+        margin-top: 20px;
+      }
 
-    <a href="arsip.html" class="dg-back">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-      Kembali ke Arsip Dokumen
-    </a>
+      .da-heading {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
 
-    <section class="dg-card">
-      <div class="dg-title-row">
-        <div>
-          <h1 class="dg-title" id="dg-title">Memuat...</h1>
-          <p class="dg-sub" id="dg-sub"></p>
+      .da-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .da-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .da-btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        background: #2563eb;
+        color: #fff;
+        border: 1px solid #2563eb;
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .da-btn--outline {
+        background: #fff;
+        color: #2563eb;
+      }
+
+      .da-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .da-file-info {
+        padding: 12px 16px;
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        overflow-wrap: anywhere;
+        font-size: 13px;
+      }
+
+      .da-preview {
+        min-height: 180px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #f8fafc;
+        text-align: center;
+        color: #64748b;
+      }
+
+      .da-preview iframe {
+        display: block;
+        width: 100%;
+        height: 680px;
+        border: 0;
+        background: #fff;
+      }
+
+      .da-preview img {
+        display: block;
+        max-width: 100%;
+        max-height: 780px;
+        object-fit: contain;
+        margin: auto;
+      }
+
+      .da-placeholder {
+        padding: 48px 20px;
+        line-height: 1.6;
+      }
+
+      .da-notice {
+        padding: 12px 16px;
+        margin-top: 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .da-notice--error {
+        background: #fef2f2;
+        color: #991b1b;
+      }
+    </style>
+  </head>
+
+  <body>
+    <aside id="ks-sidebar"></aside>
+    <header id="ks-navbar"></header>
+
+    <main class="main-content">
+      <nav class="dg-breadcrumb" aria-label="Breadcrumb">
+        <a href="dashboard.html">Dashboard</a>
+        <span class="dg-breadcrumb-sep">&gt;</span>
+        <a href="arsip.html">Arsip</a>
+        <span class="dg-breadcrumb-sep">&gt;</span>
+        <span id="dg-crumb">Detail Arsip</span>
+      </nav>
+
+      <a href="arsip.html" class="dg-back"> Kembali ke Daftar Arsip </a>
+
+      <section class="dg-card">
+        <div class="dg-title-row">
+          <div>
+            <h1 class="dg-title" id="dg-title">Memuat detail arsip...</h1>
+
+            <p class="dg-sub" id="dg-sub">Mengambil informasi dari backend</p>
+          </div>
+
+          <span class="dg-badge" id="dg-badge"> Memuat... </span>
         </div>
-        <span class="dg-badge dg-badge--green">Diarsipkan</span>
-      </div>
-      <div class="dg-grid" id="dg-info"></div>
-    </section>
 
-  </main>
+        <div class="dg-grid" id="dg-info"></div>
 
-  <footer class="ks-footer">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
+        <div
+          id="dg-message"
+          class="da-notice"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></div>
+      </section>
 
-  <!-- ===== Skrip ===== -->
-  <script src="../../assets/js/api.js"></script>
-  <script type="module" src="../../assets/js/auth.js"></script>
-  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
-  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
-  <script type="module">
-    import { arsipData as MOCK } from "../../assets/js/data/arsip.js";
+      <section class="da-card">
+        <div class="da-toolbar">
+          <h2 class="da-heading">Dokumen Arsip</h2>
 
-    async function loadDetail(id) {
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        return EOfficeAPI.getArsipDetail(id);
+          <div class="da-actions">
+            <button
+              type="button"
+              class="da-btn da-btn--outline"
+              id="btn-preview"
+              disabled
+            >
+              Muat Ulang Preview
+            </button>
+
+            <button type="button" class="da-btn" id="btn-download" disabled>
+              Unduh Arsip
+            </button>
+          </div>
+        </div>
+
+        <div class="da-file-info" id="da-file-info">Memeriksa lampiran...</div>
+
+        <div class="da-preview" id="da-preview">
+          <div class="da-placeholder">Memuat...</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ks-footer">&copy; 2026 E-Office SKSDA Jawa Tengah.</footer>
+
+    <script src="../../assets/js/api.js"></script>
+    <script type="module" src="../../assets/js/auth.js"></script>
+    <script
+      type="module"
+      src="../../assets/js/components/sidebar-ks.js"
+    ></script>
+    <script
+      type="module"
+      src="../../assets/js/components/navbar-ks.js"
+    ></script>
+
+    <script type="module">
+      const $ = (id) => document.getElementById(id);
+
+      const API_BASE =
+        EOfficeAPI.config.BASE_URL || "http://127.0.0.1:8080/api";
+
+      let arsipId = null;
+      let arsip = null;
+      let suratAsal = null;
+      let previewURL = null;
+      let busyPreview = false;
+      let busyDownload = false;
+
+      function setText(id, value) {
+        const element = $(id);
+
+        if (element) {
+          element.textContent = String(value ?? "-");
+        }
       }
-      return MOCK.find((x) => x.id === id) || MOCK[0];
-    }
 
-    async function init() {
-      const id = Number(new URLSearchParams(location.search).get("id"));
-      let d;
-      try {
-        d = await loadDetail(id);
-      } catch (e) {
-        document.getElementById("dg-title").textContent = "Gagal memuat detail arsip";
-        return;
+      function getToken() {
+        return localStorage.getItem("eoffice_token");
       }
 
-      document.getElementById("dg-crumb").textContent = d.nomor;
-      document.getElementById("dg-title").textContent = d.perihal;
-      document.getElementById("dg-sub").textContent = `${d.jenis} \u2022 ${d.tanggal}`;
+      function getId() {
+        const raw = new URLSearchParams(location.search).get("id");
 
-      const rows = [
-        ["Nomor Dokumen", d.nomor, true],
-        ["Jenis", d.jenis],
-        ["Tanggal Dokumen", `${d.tanggal} (${d.tahun})`],
-        ["Asal / Tujuan", d.asal],
-        ["Status", d.status]
-      ];
+        if (!raw || !/^[1-9]\d*$/.test(raw)) {
+          throw new Error("ID arsip tidak valid.");
+        }
 
-      document.getElementById("dg-info").innerHTML = rows
-        .map(([l, v, mono]) => `
-          <div class="dg-field">
-            <p class="dg-label">${l}</p>
-            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-          </div>`)
-        .join("");
+        return Number(raw);
+      }
 
-      document.title = `${d.perihal} - E-Office SKSDA`;
-    }
+      function formatDate(value) {
+        if (!value) return "-";
 
-    init();
-  </script>
-  <script src="/sw-register.js"></script>
-</body>
+        const raw = String(value);
+        const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+        if (!match) return raw;
+
+        const date = new Date(
+          Number(match[1]),
+          Number(match[2]) - 1,
+          Number(match[3]),
+        );
+
+        if (Number.isNaN(date.getTime())) {
+          return raw;
+        }
+
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      }
+
+      function firstValue(...values) {
+        return (
+          values.find(
+            (value) =>
+              value !== undefined &&
+              value !== null &&
+              String(value).trim() !== "",
+          ) ?? "-"
+        );
+      }
+
+      function fileName(path) {
+        if (!path) return "-";
+
+        return String(path).replace(/\\/g, "/").split("/").pop();
+      }
+
+      function showNotice(message, error = false) {
+        const element = $("dg-message");
+
+        element.hidden = false;
+        element.className = error ? "da-notice da-notice--error" : "da-notice";
+
+        element.textContent = message;
+      }
+
+      function addField(label, value, mono = false) {
+        const field = document.createElement("div");
+        field.className = "dg-field";
+
+        const caption = document.createElement("p");
+        caption.className = "dg-label";
+        caption.textContent = label;
+
+        const text = document.createElement("p");
+        text.className = mono ? "dg-value dg-value--mono" : "dg-value";
+
+        text.textContent = String(value ?? "-");
+
+        field.append(caption, text);
+        $("dg-info").appendChild(field);
+      }
+
+      function showPlaceholder(message) {
+        const container = $("da-preview");
+        container.replaceChildren();
+
+        const div = document.createElement("div");
+        div.className = "da-placeholder";
+        div.textContent = message;
+
+        container.appendChild(div);
+      }
+
+      function releasePreview() {
+        if (previewURL) {
+          URL.revokeObjectURL(previewURL);
+          previewURL = null;
+        }
+      }
+
+      async function getJSON(endpoint) {
+        if (
+          !EOfficeAPI.config?.LIVE ||
+          typeof EOfficeAPI.request !== "function"
+        ) {
+          throw new Error("API backend belum aktif.");
+        }
+
+        const result = await EOfficeAPI.request("GET", endpoint);
+
+        if (result?.status !== true || !result.data) {
+          throw new Error(result?.message || "Data tidak valid.");
+        }
+
+        return result.data;
+      }
+
+      async function fetchBinary(endpoint) {
+        const token = getToken();
+
+        if (!token) {
+          throw new Error("Token tidak ditemukan. Login ulang.");
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const response = await fetch(API_BASE + endpoint, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            let message = `Gagal mengambil file (HTTP ${response.status}).`;
+
+            const type = response.headers.get("content-type") || "";
+
+            if (type.includes("application/json")) {
+              const result = await response.json();
+              message = result.message || message;
+            }
+
+            throw new Error(message);
+          }
+
+          const type = response.headers.get("content-type") || "";
+
+          if (type.includes("application/json") || type.includes("text/html")) {
+            throw new Error("Respons server bukan dokumen.");
+          }
+
+          const blob = await response.blob();
+
+          if (!blob.size) {
+            throw new Error("Dokumen kosong.");
+          }
+
+          return blob;
+        } catch (error) {
+          if (error.name === "AbortError") {
+            throw new Error("Pengambilan dokumen melewati batas waktu.");
+          }
+
+          throw error;
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+
+      function jenisLabel(jenis) {
+        if (jenis === "surat_masuk") {
+          return "Surat Masuk";
+        }
+
+        if (jenis === "surat_keluar") {
+          return "Surat Keluar";
+        }
+
+        return "Tidak diketahui";
+      }
+
+      function suratEndpoint() {
+        if (!arsip || !/^[1-9]\d*$/.test(String(arsip.referensi_id))) {
+          return null;
+        }
+
+        const type =
+          arsip.jenis === "surat_masuk"
+            ? "surat-masuk"
+            : arsip.jenis === "surat_keluar"
+              ? "surat-keluar"
+              : null;
+
+        if (!type) return null;
+
+        return `/${type}/${arsip.referensi_id}`;
+      }
+
+      function renderDetail() {
+        const nomor = firstValue(
+          suratAsal?.no_surat,
+          arsip.no_surat,
+          arsip.nomor_surat,
+          arsip.no_agenda,
+        );
+
+        const perihal = firstValue(suratAsal?.perihal, arsip.perihal);
+
+        const pihak = firstValue(
+          suratAsal?.asal,
+          suratAsal?.tujuan,
+          arsip.asal,
+          arsip.tujuan,
+        );
+
+        setText("dg-crumb", nomor);
+        setText("dg-title", perihal);
+        setText("dg-sub", `${jenisLabel(arsip.jenis)} • Arsip #${arsip.id}`);
+
+        const badge = $("dg-badge");
+        badge.textContent = "Diarsipkan";
+        badge.className = "dg-badge dg-badge--green";
+
+        $("dg-info").replaceChildren();
+
+        addField("ID Arsip", arsip.id, true);
+        addField("Jenis Dokumen", jenisLabel(arsip.jenis));
+        addField("Nomor Surat", nomor, true);
+        addField(
+          "Nomor Agenda",
+          firstValue(suratAsal?.no_agenda, arsip.no_agenda),
+        );
+        addField("Perihal", perihal);
+        addField("Asal / Tujuan", pihak);
+        addField(
+          "Tanggal Surat",
+          formatDate(firstValue(suratAsal?.tanggal, arsip.tanggal)),
+        );
+        addField("Tanggal Diarsipkan", formatDate(arsip.tanggal_arsip));
+        addField("Kategori Arsip", arsip.kategori || "-");
+        addField("ID Surat Asal", arsip.referensi_id, true);
+
+        const path = suratAsal?.file_path;
+
+        setText(
+          "da-file-info",
+          path
+            ? `Lampiran: ${fileName(path)}`
+            : "Belum ada lampiran atau informasi file.",
+        );
+
+        const available = Boolean(path);
+        $("btn-preview").disabled = !available;
+        $("btn-download").disabled = !available;
+
+        if (!available) {
+          showPlaceholder("Dokumen belum memiliki lampiran.");
+        }
+
+        document.title = `${perihal} - Detail Arsip BKSDA`;
+      }
+
+      async function loadPreview() {
+        const endpoint = suratEndpoint();
+
+        if (!endpoint || !suratAsal?.file_path || busyPreview) {
+          return;
+        }
+
+        busyPreview = true;
+        $("btn-preview").disabled = true;
+
+        releasePreview();
+        showPlaceholder("Memuat preview dokumen...");
+
+        try {
+          const blob = await fetchBinary(endpoint + "/preview");
+
+          const type = blob.type.toLowerCase();
+
+          const container = $("da-preview");
+          container.replaceChildren();
+
+          if (!type.includes("application/pdf") && !type.startsWith("image/")) {
+            showPlaceholder(
+              "Format file tidak mendukung preview. Gunakan tombol Unduh Arsip.",
+            );
+            return;
+          }
+
+          previewURL = URL.createObjectURL(blob);
+
+          if (type.includes("application/pdf")) {
+            const frame = document.createElement("iframe");
+
+            frame.src = previewURL;
+            frame.title = "Preview Dokumen Arsip";
+
+            container.appendChild(frame);
+          } else {
+            const image = document.createElement("img");
+
+            image.src = previewURL;
+            image.alt = "Lampiran Arsip";
+
+            container.appendChild(image);
+          }
+        } catch (error) {
+          console.warn("Preview arsip:", error.message);
+
+          showPlaceholder(
+            error.message.includes("415")
+              ? "Dokumen ini tidak mendukung preview. Gunakan tombol Unduh Arsip."
+              : "Preview gagal dimuat: " + error.message,
+          );
+        } finally {
+          busyPreview = false;
+          $("btn-preview").disabled = !suratAsal?.file_path;
+        }
+      }
+
+      async function downloadArsip() {
+        if (!arsipId || !suratAsal?.file_path || busyDownload) {
+          return;
+        }
+
+        busyDownload = true;
+        $("btn-download").disabled = true;
+
+        try {
+          const blob = await fetchBinary(`/arsip/${arsipId}/file`);
+
+          const url = URL.createObjectURL(blob);
+
+          const link = document.createElement("a");
+          link.href = url;
+
+          link.download = fileName(suratAsal.file_path);
+
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+          showNotice("Permintaan unduh dokumen berhasil.");
+        } catch (error) {
+          console.error("Download arsip gagal:", error.message);
+
+          showNotice(error.message, true);
+        } finally {
+          busyDownload = false;
+          $("btn-download").disabled = !suratAsal?.file_path;
+        }
+      }
+
+      async function init() {
+        $("btn-preview").addEventListener("click", loadPreview);
+
+        $("btn-download").addEventListener("click", downloadArsip);
+
+        try {
+          arsipId = getId();
+
+          // Detail arsip menggunakan ID rekaman arsip,
+          // BUKAN ID surat asal.
+          arsip = await getJSON(`/arsip/${arsipId}`);
+
+          // Detail surat asal diambil terpisah agar
+          // nomor, perihal, dan file_path akurat.
+          const endpoint = suratEndpoint();
+
+          if (endpoint) {
+            try {
+              suratAsal = await getJSON(endpoint);
+            } catch (error) {
+              console.warn(
+                "Data surat asal belum dapat dimuat:",
+                error.message,
+              );
+            }
+          }
+
+          renderDetail();
+
+          if (suratAsal?.file_path) {
+            await loadPreview();
+          }
+
+          console.info("Detail arsip berhasil dimuat:", {
+            id: arsip.id,
+            jenis: arsip.jenis,
+            referensi: arsip.referensi_id,
+            adaLampiran: Boolean(suratAsal?.file_path),
+          });
+        } catch (error) {
+          console.error("Gagal memuat detail arsip:", error);
+
+          setText("dg-title", "Gagal memuat detail arsip");
+
+          setText("dg-sub", error.message);
+          setText("dg-badge", "Gagal");
+
+          showNotice(error.message, true);
+
+          showPlaceholder("Detail arsip tidak dapat ditampilkan.");
+        }
+      }
+
+      window.addEventListener("pagehide", releasePreview);
+
+      init();
+    </script>
+
+    <script src="/sw-register.js"></script>
+  </body>
 </html>

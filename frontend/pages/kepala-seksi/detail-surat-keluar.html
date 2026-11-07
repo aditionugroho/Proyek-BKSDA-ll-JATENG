@@ -1,114 +1,743 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="theme-color" content="#2563EB" />
-  <link rel="apple-touch-icon" href="/assets/js/images/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="E-Office SKSDA" />
-  <title>Detail Surat Keluar - E-Office SKSDA</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ===== Stylesheet ===== -->
-  <link rel="stylesheet" href="../../assets/css/variables.css" />
-  <link rel="stylesheet" href="../../assets/css/base.css" />
-  <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
-  <link rel="stylesheet" href="../../assets/css/pages/detail-generic.css" />
-</head>
-<body>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#2563EB" />
 
-  <!-- ===== Layout bersama ===== -->
-  <aside id="ks-sidebar"></aside>
-  <header id="ks-navbar"></header>
+    <link
+      rel="apple-touch-icon"
+      href="/assets/js/images/apple-touch-icon.png"
+    />
 
-  <!-- ===== Konten ===== -->
-  <main class="main-content">
+    <title>Detail Surat Keluar - E-Office SKSDA</title>
 
-    <nav class="dg-breadcrumb" aria-label="Breadcrumb">
-      <a href="dashboard.html">Dashboard</a>
-      <span class="dg-breadcrumb-sep">&gt;</span>
-      <a href="surat-keluar.html">Surat Keluar</a>
-      <span class="dg-breadcrumb-sep">&gt;</span>
-      <span class="dg-breadcrumb-current" id="dg-crumb">Detail Surat Keluar</span>
-    </nav>
+    <link rel="stylesheet" href="../../assets/css/variables.css" />
+    <link rel="stylesheet" href="../../assets/css/base.css" />
+    <link rel="stylesheet" href="../../assets/css/layout-ks.css" />
+    <link rel="stylesheet" href="../../assets/css/pages/detail-generic.css" />
 
-    <a href="surat-keluar.html" class="dg-back">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-      Kembali ke Daftar Surat Keluar
-    </a>
+    <style>
+      .sk-file-section {
+        margin-top: 24px;
+      }
 
-    <section class="dg-card">
-      <div class="dg-title-row">
-        <div>
-          <h1 class="dg-title" id="dg-title">Memuat...</h1>
-          <p class="dg-sub" id="dg-sub"></p>
+      .sk-file-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+
+      .sk-file-heading {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .sk-file-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .sk-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid #2563eb;
+        background: #2563eb;
+        color: #fff;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .sk-btn:hover:not(:disabled) {
+        background: #1d4ed8;
+      }
+
+      .sk-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .sk-btn--outline {
+        background: #fff;
+        color: #2563eb;
+      }
+
+      .sk-btn--outline:hover:not(:disabled) {
+        background: #eff6ff;
+      }
+
+      .sk-file-info {
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #475569;
+        margin-bottom: 16px;
+        overflow-wrap: anywhere;
+      }
+
+      .sk-preview {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+        width: 100%;
+        min-height: 180px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        color: #64748b;
+        text-align: center;
+      }
+
+      .sk-preview iframe {
+        width: 100%;
+        height: 680px;
+        border: none;
+        background: white;
+      }
+
+      .sk-preview img {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 780px;
+        margin: 0 auto;
+        object-fit: contain;
+      }
+
+      .sk-placeholder {
+        padding: 48px 20px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .sk-message {
+        margin: 16px 0;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .sk-message--error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .sk-message--success {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Layout Kepala Seksi -->
+    <aside id="ks-sidebar"></aside>
+    <header id="ks-navbar"></header>
+
+    <main class="main-content">
+      <!-- Breadcrumb -->
+      <nav class="dg-breadcrumb" aria-label="Breadcrumb">
+        <a href="dashboard.html">Dashboard</a>
+
+        <span class="dg-breadcrumb-sep">&gt;</span>
+
+        <a href="surat-keluar.html">Surat Keluar</a>
+
+        <span class="dg-breadcrumb-sep">&gt;</span>
+
+        <span class="dg-breadcrumb-current" id="dg-crumb">
+          Detail Surat Keluar
+        </span>
+      </nav>
+
+      <!-- Tombol kembali -->
+      <a href="surat-keluar.html" class="dg-back">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+
+        Kembali ke Daftar Surat Keluar
+      </a>
+
+      <!-- Informasi Surat -->
+      <section class="dg-card">
+        <div class="dg-title-row">
+          <div>
+            <h1 class="dg-title" id="dg-title">Memuat detail surat...</h1>
+
+            <p class="dg-sub" id="dg-sub">Mengambil data dari backend</p>
+          </div>
+
+          <span class="dg-badge" id="dg-badge"> Memuat... </span>
         </div>
-        <span class="dg-badge" id="dg-badge"></span>
-      </div>
-      <div class="dg-grid" id="dg-info"></div>
-    </section>
 
-  </main>
+        <div class="dg-grid" id="dg-info"></div>
 
-  <footer class="ks-footer">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
+        <div id="dg-message" role="status" aria-live="polite" hidden></div>
+      </section>
 
-  <!-- ===== Skrip ===== -->
-  <script src="../../assets/js/api.js"></script>
-  <script type="module" src="../../assets/js/auth.js"></script>
-  <script type="module" src="../../assets/js/components/sidebar-ks.js"></script>
-  <script type="module" src="../../assets/js/components/navbar-ks.js"></script>
-  <script type="module">
-    import { SURAT_KELUAR as MOCK } from "../../assets/js/data/surat-keluar.js";
+      <!-- Lampiran Surat -->
+      <section class="dg-card sk-file-section">
+        <div class="sk-file-header">
+          <h2 class="sk-file-heading">Lampiran Surat Keluar</h2>
 
-    async function loadDetail(id) {
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        return EOfficeAPI.getSuratKeluarDetail(id);
+          <div class="sk-file-actions">
+            <button
+              type="button"
+              class="sk-btn sk-btn--outline"
+              id="btn-reload-preview"
+              disabled
+            >
+              Muat Ulang Preview
+            </button>
+
+            <button type="button" class="sk-btn" id="btn-download" disabled>
+              Unduh Lampiran
+            </button>
+          </div>
+        </div>
+
+        <div class="sk-file-info" id="dg-file-info">
+          Memeriksa lampiran surat...
+        </div>
+
+        <div class="sk-preview" id="dg-preview">
+          <div class="sk-placeholder">Memuat preview dokumen...</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ks-footer">
+      &copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.
+    </footer>
+
+    <!-- Script proyek -->
+    <script src="../../assets/js/api.js"></script>
+
+    <script type="module" src="../../assets/js/auth.js"></script>
+
+    <script
+      type="module"
+      src="../../assets/js/components/sidebar-ks.js"
+    ></script>
+
+    <script
+      type="module"
+      src="../../assets/js/components/navbar-ks.js"
+    ></script>
+
+    <!-- Integrasi detail Surat Keluar -->
+    <script type="module">
+      const API_BASE = "http://127.0.0.1:8080/api";
+
+      const $ = (id) => document.getElementById(id);
+
+      let suratId = null;
+      let suratData = null;
+      let previewObjectURL = null;
+
+      let previewLoading = false;
+      let downloadLoading = false;
+
+      /* ================================
+       HELPERS
+    ================================= */
+
+      function setText(id, value) {
+        const el = $(id);
+
+        if (el) {
+          el.textContent = String(value ?? "-");
+        }
       }
-      return MOCK.find((x) => x.id === id) || MOCK[0];
-    }
 
-    async function init() {
-      const id = Number(new URLSearchParams(location.search).get("id"));
-      let d;
-      try {
-        d = await loadDetail(id);
-      } catch (e) {
-        document.getElementById("dg-title").textContent = "Gagal memuat detail surat keluar";
-        return;
+      function getToken() {
+        return localStorage.getItem("eoffice_token");
       }
 
-      document.getElementById("dg-crumb").textContent = d.nomor;
-      document.getElementById("dg-title").textContent = d.perihal;
-      document.getElementById("dg-sub").textContent = `${d.pengirim} (${d.pengirimSub}) \u2022 ${d.tanggal}`;
+      function getIdFromURL() {
+        const raw = new URLSearchParams(location.search).get("id");
 
-      const TONE = { red: "red", blue: "blue", amber: "amber", gray: "gray", solid: "blue", "outline-green": "green" };
-      const badge = document.getElementById("dg-badge");
-      badge.textContent = d.status.text;
-      badge.className = `dg-badge dg-badge--${TONE[d.status.tone] || "gray"}`;
+        if (!raw || !/^[1-9]\d*$/.test(raw)) {
+          throw new Error("ID Surat Keluar tidak valid.");
+        }
 
-      const rows = [
-        ["Nomor Surat", d.nomor, true],
-        ["Penerima / Tujuan", `${d.pengirim} (${d.pengirimSub})`],
-        ["Tanggal", d.tanggal],
-        ["Prioritas", d.prioritas.text],
-        ["Status", d.status.text]
-      ];
+        return Number(raw);
+      }
 
-      document.getElementById("dg-info").innerHTML = rows
-        .map(([l, v, mono]) => `
-          <div class="dg-field">
-            <p class="dg-label">${l}</p>
-            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-          </div>`)
-        .join("");
+      function formatDate(value) {
+        if (!value) return "-";
 
-      document.title = `${d.perihal} - E-Office SKSDA`;
-    }
+        const raw = String(value);
 
-    init();
-  </script>
-  <script src="/sw-register.js"></script>
-</body>
+        const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+        if (!match) return raw;
+
+        const date = new Date(
+          Number(match[1]),
+          Number(match[2]) - 1,
+          Number(match[3]),
+        );
+
+        if (
+          date.getFullYear() !== Number(match[1]) ||
+          date.getMonth() !== Number(match[2]) - 1 ||
+          date.getDate() !== Number(match[3])
+        ) {
+          return raw;
+        }
+
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      }
+
+      function getFilename(path) {
+        if (!path) return "-";
+
+        return String(path).replace(/\\/g, "/").split("/").pop();
+      }
+
+      function hasAttachment() {
+        return Boolean(String(suratData?.file_path || "").trim());
+      }
+
+      function showMessage(message, isError = false) {
+        const element = $("dg-message");
+
+        if (!element) return;
+
+        element.hidden = false;
+
+        element.className = isError
+          ? "sk-message sk-message--error"
+          : "sk-message sk-message--success";
+
+        element.textContent = message;
+      }
+
+      function clearMessage() {
+        const element = $("dg-message");
+
+        if (!element) return;
+
+        element.hidden = true;
+        element.textContent = "";
+      }
+
+      function showPlaceholder(message) {
+        const container = $("dg-preview");
+
+        container.replaceChildren();
+
+        const div = document.createElement("div");
+
+        div.className = "sk-placeholder";
+        div.textContent = message;
+
+        container.appendChild(div);
+      }
+
+      function revokePreviewURL() {
+        if (previewObjectURL) {
+          URL.revokeObjectURL(previewObjectURL);
+
+          previewObjectURL = null;
+        }
+      }
+
+      /* ================================
+       DETAIL API
+    ================================= */
+
+      async function getDetail(id) {
+        if (
+          typeof EOfficeAPI === "undefined" ||
+          !EOfficeAPI.config?.LIVE ||
+          typeof EOfficeAPI.request !== "function"
+        ) {
+          throw new Error("API backend belum aktif.");
+        }
+
+        const result = await EOfficeAPI.request("GET", `/surat-keluar/${id}`);
+
+        if (
+          result?.status !== true ||
+          !result.data ||
+          typeof result.data !== "object"
+        ) {
+          throw new Error(
+            result?.message || "Data detail Surat Keluar tidak valid.",
+          );
+        }
+
+        return result.data;
+      }
+
+      /* ================================
+       FETCH FILE DENGAN TOKEN
+    ================================= */
+
+      async function fetchFile(endpoint) {
+        const token = getToken();
+
+        if (!token) {
+          throw new Error("Token login tidak ditemukan.");
+        }
+
+        const controller = new AbortController();
+
+        const timeout = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const response = await fetch(API_BASE + endpoint, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept:
+                "application/pdf,image/png,image/jpeg,application/octet-stream",
+            },
+            cache: "no-store",
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            let message = `HTTP ${response.status}: Gagal mengambil berkas.`;
+
+            const contentType = response.headers.get("content-type") || "";
+
+            if (contentType.includes("application/json")) {
+              const json = await response.json();
+
+              message = json?.message || message;
+            }
+
+            throw new Error(message);
+          }
+
+          const contentType = response.headers.get("content-type") || "";
+
+          if (
+            contentType.includes("application/json") ||
+            contentType.includes("text/html")
+          ) {
+            throw new Error("Respons server bukan berkas.");
+          }
+
+          const blob = await response.blob();
+
+          if (!blob.size) {
+            throw new Error("Berkas dari server kosong.");
+          }
+
+          return blob;
+        } catch (error) {
+          if (error.name === "AbortError") {
+            throw new Error("Request file melewati batas waktu.");
+          }
+
+          throw error;
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+
+      /* ================================
+       RENDER DETAIL
+    ================================= */
+
+      function addField(label, value, mono = false) {
+        const field = document.createElement("div");
+
+        field.className = "dg-field";
+
+        const name = document.createElement("p");
+
+        name.className = "dg-label";
+        name.textContent = label;
+
+        const content = document.createElement("p");
+
+        content.className = mono ? "dg-value dg-value--mono" : "dg-value";
+
+        content.textContent = String(value ?? "-");
+
+        field.appendChild(name);
+        field.appendChild(content);
+
+        $("dg-info").appendChild(field);
+      }
+
+      function renderDetail(data) {
+        const nomor = data.no_surat || "-";
+
+        const agenda = data.no_agenda || "-";
+
+        const tujuan = data.tujuan || "-";
+
+        const perihal = data.perihal || "-";
+
+        const tanggal = formatDate(data.tanggal);
+
+        const klasifikasi = data.klasifikasi || "Belum diklasifikasikan";
+
+        setText("dg-crumb", nomor);
+
+        setText("dg-title", perihal);
+
+        setText("dg-sub", `${nomor} • ${tanggal}`);
+
+        const badge = $("dg-badge");
+
+        badge.textContent = hasAttachment() ? "Ada Lampiran" : "Tanpa Lampiran";
+
+        badge.className = hasAttachment()
+          ? "dg-badge dg-badge--green"
+          : "dg-badge dg-badge--gray";
+
+        $("dg-info").replaceChildren();
+
+        addField("Nomor Surat", nomor, true);
+
+        addField("Nomor Agenda", agenda, true);
+
+        addField("Tanggal Surat", tanggal);
+
+        addField("Tujuan / Penerima", tujuan);
+
+        addField("Perihal", perihal);
+
+        addField("Klasifikasi", klasifikasi);
+
+        if (data.created_by_name) {
+          addField("Dibuat Oleh", data.created_by_name);
+        }
+
+        if (data.resort_id) {
+          addField("ID Resort", data.resort_id);
+        }
+
+        if (hasAttachment()) {
+          setText("dg-file-info", `Berkas: ${getFilename(data.file_path)}`);
+
+          $("btn-download").disabled = false;
+
+          $("btn-reload-preview").disabled = false;
+        } else {
+          setText("dg-file-info", "Surat ini belum memiliki lampiran.");
+
+          $("btn-download").disabled = true;
+
+          $("btn-reload-preview").disabled = true;
+
+          showPlaceholder("Belum ada berkas yang dapat ditampilkan.");
+        }
+
+        document.title = `${perihal} - E-Office SKSDA`;
+      }
+
+      /* ================================
+       PREVIEW PDF / GAMBAR
+    ================================= */
+
+      async function loadPreview() {
+        if (!suratId || !hasAttachment() || previewLoading) {
+          return;
+        }
+
+        previewLoading = true;
+
+        const button = $("btn-reload-preview");
+
+        button.disabled = true;
+
+        revokePreviewURL();
+
+        showPlaceholder("Memuat preview lampiran...");
+
+        try {
+          const blob = await fetchFile(`/surat-keluar/${suratId}/preview`);
+
+          const type = blob.type.toLowerCase();
+
+          const container = $("dg-preview");
+
+          container.replaceChildren();
+
+          previewObjectURL = URL.createObjectURL(blob);
+
+          if (type.includes("application/pdf")) {
+            const iframe = document.createElement("iframe");
+
+            iframe.src = previewObjectURL;
+
+            iframe.title = "Preview Surat Keluar";
+
+            container.appendChild(iframe);
+          } else if (type.startsWith("image/")) {
+            const image = document.createElement("img");
+
+            image.src = previewObjectURL;
+
+            image.alt = "Lampiran Surat Keluar";
+
+            container.appendChild(image);
+          } else {
+            revokePreviewURL();
+
+            showPlaceholder(
+              "Format dokumen tidak mendukung preview. " +
+                "Silakan gunakan tombol Unduh Lampiran.",
+            );
+          }
+        } catch (error) {
+          console.warn("Preview Surat Keluar:", error.message);
+
+          if (error.message.includes("415")) {
+            showPlaceholder(
+              "Format lampiran tidak mendukung preview. " +
+                "Silakan unduh berkas.",
+            );
+          } else {
+            showPlaceholder("Preview gagal dimuat: " + error.message);
+          }
+        } finally {
+          previewLoading = false;
+
+          button.disabled = !hasAttachment();
+        }
+      }
+
+      /* ================================
+       DOWNLOAD FILE
+    ================================= */
+
+      async function downloadFile() {
+        if (!suratId || !hasAttachment() || downloadLoading) {
+          return;
+        }
+
+        downloadLoading = true;
+
+        const button = $("btn-download");
+
+        button.disabled = true;
+
+        clearMessage();
+
+        try {
+          const blob = await fetchFile(`/surat-keluar/${suratId}/file`);
+
+          const url = URL.createObjectURL(blob);
+
+          const anchor = document.createElement("a");
+
+          anchor.href = url;
+
+          anchor.download = getFilename(suratData.file_path);
+
+          document.body.appendChild(anchor);
+
+          anchor.click();
+          anchor.remove();
+
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+          showMessage("Permintaan download berhasil diproses.");
+        } catch (error) {
+          console.error("Download Surat Keluar:", error.message);
+
+          showMessage(error.message, true);
+        } finally {
+          downloadLoading = false;
+
+          button.disabled = !hasAttachment();
+        }
+      }
+
+      /* ================================
+       INIT
+    ================================= */
+
+      async function init() {
+        $("btn-reload-preview").addEventListener("click", loadPreview);
+
+        $("btn-download").addEventListener("click", downloadFile);
+
+        try {
+          suratId = getIdFromURL();
+
+          suratData = await getDetail(suratId);
+
+          renderDetail(suratData);
+
+          clearMessage();
+
+          await loadPreview();
+
+          console.info("Detail Surat Keluar berhasil dimuat.", {
+            id: suratId,
+            nomor: suratData.no_surat,
+            adaLampiran: hasAttachment(),
+          });
+        } catch (error) {
+          console.error("Gagal membuka detail:", error.message);
+
+          setText("dg-title", "Gagal memuat Detail Surat Keluar");
+
+          setText("dg-sub", error.message);
+
+          setText("dg-badge", "Gagal");
+
+          setText("dg-file-info", "Lampiran tidak tersedia.");
+
+          showPlaceholder("Data surat tidak dapat ditampilkan.");
+
+          showMessage(error.message, true);
+
+          $("btn-download").disabled = true;
+
+          $("btn-reload-preview").disabled = true;
+        }
+      }
+
+      window.addEventListener("pagehide", revokePreviewURL);
+
+      init();
+    </script>
+
+    <script src="/sw-register.js"></script>
+  </body>
 </html>

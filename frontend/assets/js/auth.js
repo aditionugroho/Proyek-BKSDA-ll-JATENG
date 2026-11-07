@@ -1,17 +1,28 @@
 /* ============================================
-   AUTH — E-Office SKSDA
-   checkAuth(role?): dipanggil di setiap halaman.
-   Tanpa sesi, atau role tidak sesuai →
-   redirect ke halaman login.
+   AUTH — E-Office BKSDA
+
+   Menjaga akses halaman berdasarkan:
+   - Session
+   - Token login
+   - Role pengguna
+
+   Catatan:
+   Backend tetap menjadi penentu izin akses.
    ============================================ */
 
 const SESSION_KEY = "eoffice_session";
-const LOGIN_URL = "../../login.html"; // relatif dari pages/<role>/
+
+const LOGIN_URL = "../../login.html";
 
 function readSession() {
-  // "Tetap masuk" menyimpan sesi di localStorage, selain itu sessionStorage
-  const raw = window.sessionStorage.getItem(SESSION_KEY) || window.localStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
+  const raw =
+    window.sessionStorage.getItem(SESSION_KEY) ||
+    window.localStorage.getItem(SESSION_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
   try {
     return JSON.parse(raw);
   } catch {
@@ -20,16 +31,35 @@ function readSession() {
 }
 
 /**
- * Cek autentikasi.
- * @param {string} [requiredRole] opsional — bila diisi, sesi harus
- *        memiliki role yang sama (mis. "kepala-seksi")
+ * Memeriksa sesi dan role pengguna.
+ *
+ * @param {string} [requiredRole]
+ * Contoh:
+ * - "admin"
+ * - "kepala-seksi"
+ * - "pegawai"
  */
 export function checkAuth(requiredRole) {
   const session = readSession();
-  if (!session || (requiredRole && session.role !== requiredRole)) {
+
+  const isLive =
+  typeof EOfficeAPI !== "undefined"
+    ? EOfficeAPI.config.LIVE
+    : true;
+
+  const hasToken = Boolean(
+    window.localStorage.getItem("eoffice_token")
+  );
+
+  if (
+    !session ||
+    (isLive && !hasToken) ||
+    (requiredRole && session.role !== requiredRole)
+  ) {
     window.location.replace(LOGIN_URL);
     return null;
   }
+
   return session;
 }
 

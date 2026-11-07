@@ -8,6 +8,19 @@ use CodeIgniter\Router\RouteCollection;
 
 /*
 |--------------------------------------------------------------------------
+| CORS PREFLIGHT
+|--------------------------------------------------------------------------
+| Menangani OPTIONS untuk endpoint API.
+| Header CORS tetap diatur oleh Cors.php dan Filters.php.
+*/
+
+$routes->options(
+    'api/(:any)',
+    static fn () => service('response')->setStatusCode(204)
+);
+
+/*
+|--------------------------------------------------------------------------
 | DEFAULT
 |--------------------------------------------------------------------------
 */

@@ -15,8 +15,8 @@
    ============================================ */
 
 const API_CONFIG = {
-  LIVE: false, // <- ganti ke true saat backend Laravel siap
-  BASE_URL: "http://localhost:8000/api", // Laragon / php artisan serve
+  LIVE: true,
+  BASE_URL: "http://127.0.0.1:8080/api",
   TIMEOUT_MS: 10000
 };
 
@@ -88,22 +88,66 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function login(idPengguna, kataSandi) {
-    if (!API_CONFIG.LIVE) return mockLogin(idPengguna, kataSandi);
-    try {
-      const res = await request("POST", "/login", {
-        id_pengguna: idPengguna,
-        kata_sandi: kataSandi
-      });
-      setToken(res.token);
-      return { status: "ok", token: res.token, user: res.user };
-    } catch (err) {
-      const code = err.data && err.data.code;
-      if (code === "pending") return { status: "pending" };
-      if (code === "rejected") return { status: "rejected" };
-      if (err.status === 401) return { status: "invalid" };
-      throw err; // error server/jaringan lain -> ditangkap .catch() halaman
-    }
+  if (!API_CONFIG.LIVE) {
+    return mockLogin(idPengguna, kataSandi);
   }
+
+  try {
+    const res = await request("POST", "/auth/login", {
+      username: idPengguna,
+      password: kataSandi
+    });
+
+    const result = res && res.data;
+
+    if (!result || !result.token || !result.user) {
+      throw new Error(
+        "Format respons login backend tidak sesuai."
+      );
+    }
+
+    // Role asli dari CodeIgniter
+    // disesuaikan dengan nama folder frontend.
+    const allowedRoles = {
+      admin: "admin",
+      kepala_seksi: "kepala-seksi",
+      staf: "pegawai"
+    };
+
+    const uiRole = allowedRoles[result.user.role];
+
+    if (!uiRole) {
+      throw new Error("Role akun tidak dikenali.");
+    }
+
+    setToken(result.token);
+
+    return {
+      status: "ok",
+      token: result.token,
+      user: Object.assign({}, result.user, {
+        role: uiRole
+      })
+    };
+
+  } catch (err) {
+    const code = err.data && err.data.code;
+
+    if (code === "pending") {
+      return { status: "pending" };
+    }
+
+    if (code === "rejected") {
+      return { status: "rejected" };
+    }
+
+    if (err.status === 401) {
+      return { status: "invalid" };
+    }
+
+    throw err;
+  }
+}
 
   /* ---------- MOCK LOGIN: replika logika localStorage lama ---------- */
 
@@ -145,16 +189,21 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function logout() {
+  try {
+    if (API_CONFIG.LIVE && getToken()) {
+      await request("POST", "/auth/logout");
+    }
+  } catch (error) {
+    console.warn(
+      "Logout backend gagal. Sesi lokal tetap diakhiri."
+    );
+  } finally {
     setToken(null);
+
     window.localStorage.removeItem("eoffice_session");
     window.sessionStorage.removeItem("eoffice_session");
-    if (!API_CONFIG.LIVE) return;
-    try {
-      await request("POST", "/logout");
-    } catch (e) {
-      // token lokal sudah dibersihkan; kegagalan jaringan diabaikan
-    }
   }
+}
 
   /* ============================================
      DAFTAR SURAT MASUK

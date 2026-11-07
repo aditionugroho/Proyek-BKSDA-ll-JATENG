@@ -207,12 +207,69 @@
           }
           hideAlert();
 
-          // Role final: dari server bila ada (mode live), kalau tidak dari dropdown
-          const role = (res.user && res.user.role) || document.getElementById("role").value;
-          const session = { userId: uid.value.trim(), role, loginAt: new Date().toISOString() };
-          localStorage.setItem("eoffice_session", JSON.stringify(session));
+          // Mode LIVE:
+// Role harus berasal dari backend.
+// Pengguna tidak boleh menentukan role sendiri.
 
-          location.href = ROLE_DEST[role] || ROLE_DEST.admin;
+const role = res.user && res.user.role;
+
+if (
+  EOfficeAPI.config.LIVE &&
+  !ROLE_DEST[role]
+) {
+  showAlert(
+    "danger",
+    "login.errorServer",
+    "Role akun tidak dikenali oleh aplikasi."
+  );
+
+  alertBox.classList.add("show");
+  resetBtn();
+  return;
+}
+
+const finalRole =
+  role ||
+  document.getElementById("role").value;
+
+// Data pengguna dari API backend
+const session = {
+  userId: res.user?.username || uid.value.trim(),
+
+  id: res.user?.id || null,
+
+  name:
+    res.user?.name ||
+    res.user?.nama ||
+    uid.value.trim(),
+
+  resortId: res.user?.resort_id ?? null,
+
+  role: finalRole,
+
+  loginAt: new Date().toISOString()
+};
+
+// Bersihkan sesi sebelumnya
+sessionStorage.removeItem("eoffice_session");
+localStorage.removeItem("eoffice_session");
+
+// Tentukan lokasi penyimpanan sesi
+const remember = document.getElementById("remember");
+
+const targetStorage =
+  remember && remember.checked
+    ? localStorage
+    : sessionStorage;
+
+// Simpan sesi pengguna
+targetStorage.setItem(
+  "eoffice_session",
+  JSON.stringify(session)
+);
+
+// Masuk ke dashboard sesuai role
+location.href = ROLE_DEST[finalRole];
         })
         .catch(function () {
           showAlert("danger", "login.errorServer", "Tidak dapat menghubungi server. Coba beberapa saat lagi.");

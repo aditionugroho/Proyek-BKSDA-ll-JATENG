@@ -239,7 +239,7 @@
               <h2 class="tp-card-title">Keamanan Akun &amp; Kredensial Awal</h2>
               <p class="tp-card-sub">Metode pembuatan kata sandi sementara dan kebijakan otorisasi aktivasi</p>
             </div>
-            <span class="tp-req-pill tp-req-pill--green">Enkripsi SHA-256</span>
+            <span class="tp-req-pill tp-req-pill--green">Password Hash Bcrypt</span>
           </header>
 
           <div class="tp-pw-mode">
@@ -487,11 +487,22 @@
     });
 
     function generatePw() {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-      let out = "";
-      for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
-      return out;
-    }
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZ" +
+    "abcdefghijkmnopqrstuvwxyz" +
+    "23456789!@#$%";
+
+  const random = new Uint32Array(16);
+  crypto.getRandomValues(random);
+
+  return Array.from(
+    random,
+    (value) => chars[value % chars.length]
+  ).join("");
+}
+
+// Password acak saat halaman dibuka
+$("tp-pw-value").textContent = generatePw();
     $("tp-pw-regen").addEventListener("click", () => { $("tp-pw-value").textContent = generatePw(); });
     $("tp-pw-copy").addEventListener("click", function() {
       const v = $("tp-pw-value").textContent;
@@ -544,48 +555,96 @@
       return ok;
     }
 
-    function simpan(d, status, lalu) {
-      const sukses = () => { if (lalu) lalu(); };
+async function simpan(d, status, lalu) {
+  if (
+    typeof EOfficeAPI === "undefined" ||
+    !EOfficeAPI.config.LIVE
+  ) {
+    showToast("Backend belum terhubung.");
+    return;
+  }
 
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        // LIVE: akun dibuat langsung di server
-        EOfficeAPI.createUser({
-          nama: d.nama,
-          nip: d.nip,
-          username: d.username,
-          email: d.email,
-          role: d.role,
-          unit: d.resort,
-          jabatan: d.jabatan,
-          kata_sandi: d.kataSandi,
-          langsung_aktif: status === "aktif"
-        })
-          .then(sukses)
-          .catch(() => showToast("Gagal menyimpan. Periksa koneksi lalu coba lagi."));
-        return;
-      }
+  const resort = window.DAFTAR_RESORT_AKTIF?.find(
+    (item) =>
+      item.nama.toLowerCase() === d.resort.toLowerCase()
+  );
 
-      // MOCK: simpan ke localStorage (perilaku lama)
-      const daftar = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
-      daftar.push({
-        nama: d.nama,
-        idAtauEmail: d.email,
-        nip: d.nip,
-        jabatan: d.jabatan,
-        unit: d.unit,
-        resort: d.resort,
-        username: d.username,
-        role: d.role,
-        subRole: d.subRole,
-        perms: d.perms,
-        kataSandi: d.kataSandi,
-        sumber: "admin-tambah",
-        status: status === "aktif" ? "aktif" : "menunggu-verifikasi",
-        daftarPada: new Date().toISOString()
-      });
-      localStorage.setItem("eoffice_registrations", JSON.stringify(daftar));
-      sukses();
+  if (!resort) {
+    showToast("Pilih resort resmi dari daftar.");
+    return;
+  }
+
+  const roleMap = {
+    "kepala-seksi": "kepala_seksi",
+    "pegawai": "staf",
+    "admin": "admin"
+  };
+
+  const role = roleMap[d.role];
+
+  if (!role) {
+    showToast("Role pengguna tidak dikenali.");
+    return;
+  }
+
+  const payload = {
+    name: d.nama,
+    username: d.username,
+    email: d.email,
+    no_whatsapp: d.telepon,
+    password: d.kataSandi,
+    role: role,
+    jabatan: d.jabatan,
+    resort_id: Number(resort.id)
+  };
+
+  const buttons = [
+    $("btn-create"),
+    $("btn-create-top")
+  ].filter(Boolean);
+
+  buttons.forEach((button) => {
+    button.disabled = true;
+  });
+
+  try {
+    const response = await EOfficeAPI.request(
+      "POST",
+      "/users",
+      payload
+    );
+
+    if (response.status !== true) {
+      throw new Error(
+        response.message || "Gagal membuat pengguna."
+      );
     }
+
+    showToast("Akun berhasil dibuat di database testing.");
+
+    if (typeof lalu === "function") {
+      lalu();
+    }
+
+  } catch (error) {
+    console.error(
+      "Gagal membuat pengguna:",
+      error.message
+    );
+
+    showToast(
+      error.data?.message ||
+      error.message ||
+      "Gagal membuat pengguna."
+    );
+
+  } finally {
+    buttons.forEach((button) => {
+      button.disabled = false;
+    });
+  }
+}
+
 
     /* ===== Simpan Draf ===== */
     $("btn-draft").addEventListener("click", () => {
@@ -602,7 +661,7 @@
       const langsungAktif = $("opt-2").checked;
       simpan(d, langsungAktif ? "aktif" : "menunggu-verifikasi", () => {
         $("tp-toast-text").textContent = langsungAktif
-          ? "Akun " + d.username + " dibuat & aktif. Sandi: " + d.kataSandi
+          ? "Akun " + d.username + " berhasil dibuat dan aktif."
           : "Akun " + d.username + " tersimpan (menunggu aktivasi).";
         $("tp-toast").classList.add("show");
 
@@ -611,6 +670,76 @@
     }
     $("btn-create").addEventListener("click", buatAkun);
     $("btn-create-top").addEventListener("click", buatAkun);
+
+    window.DAFTAR_RESORT_AKTIF = [];
+
+async function loadResortsAPI() {
+  try {
+    const result = await EOfficeAPI.request(
+      "GET",
+      "/resorts?status=1"
+    );
+
+    if (
+      result.status !== true ||
+      !Array.isArray(result.data)
+    ) {
+      throw new Error("Data resort tidak valid.");
+    }
+
+    window.DAFTAR_RESORT_AKTIF = result.data;
+
+    $("tp-resort-list").innerHTML =
+      result.data.map((resort) => `
+        <option value="${esc(resort.nama)}"></option>
+      `).join("");
+
+    console.log(
+      "Resort aktif berhasil dimuat:",
+      result.data.length
+    );
+
+  } catch (error) {
+    console.error(
+      "Gagal memuat resort:",
+      error.message
+    );
+
+    showToast("Daftar resort gagal dimuat.");
+  }
+}
+
+loadResortsAPI();
+
+// Backend saat ini langsung mengaktifkan akun baru.
+// Fitur draf belum tersedia.
+$("btn-draft").disabled = true;
+$("btn-draft").title = "Simpan draf belum tersedia";
+
+// Belum ada mekanisme wajib ganti password pertama.
+$("opt-1").checked = false;
+$("opt-1").disabled = true;
+
+// Backend create selalu menghasilkan status aktif.
+$("opt-2").checked = true;
+$("opt-2").disabled = true;
+
+// Pengiriman password otomatis belum didukung.
+$("opt-3").checked = false;
+$("opt-3").disabled = true;
+
+// Permission ditentukan oleh RBAC backend,
+// bukan checkbox individual.
+["perm-1", "perm-2", "perm-3", "perm-4"].forEach(
+  (id) => {
+    const checkbox = $(id);
+
+    if (checkbox) {
+      checkbox.checked = false;
+      checkbox.disabled = true;
+    }
+  }
+);
   </script>
   <script src="/sw-register.js"></script>
 </body>
