@@ -954,3 +954,11 @@ $routes->group('api/laporan-patroli', [
     $routes->post('', 'Api\LaporanPatroliController::create');
     $routes->post('(:num)/foto', 'Api\LaporanPatroliController::uploadFoto/$1');
 });
+
+
+// Direktori Staf untuk Kepala Seksi
+$routes->get(
+    'api/staf',
+    'Api\\UserController::direktoriStaf',
+    ['filter' => 'role:kepala_seksi']
+);
