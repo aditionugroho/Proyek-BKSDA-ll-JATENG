@@ -60,3 +60,22 @@ if (adminSearch) {
     }
   });
 }
+// Identitas Admin dari sesi login backend
+try {
+  const raw =
+    sessionStorage.getItem("eoffice_session") ||
+    localStorage.getItem("eoffice_session");
+
+  const session = JSON.parse(raw || "null");
+
+  const nameElement = document.querySelector(
+    "#admin-navbar .user-name"
+  );
+
+  if (nameElement) {
+    nameElement.textContent =
+      session?.name || session?.userId || "Administrator";
+  }
+} catch (error) {
+  console.warn("Gagal membaca identitas Admin.");
+}

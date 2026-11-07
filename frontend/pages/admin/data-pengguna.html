@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -14,7 +14,6 @@
   <!-- ===== Stylesheet (path relatif dari pages/admin/) ===== -->
   <link rel="stylesheet" href="../../assets/css/variables.css" />
   <link rel="stylesheet" href="../../assets/css/base.css" />
-  <link rel="stylesheet" href="../../assets/css/layout.css" />
   <link rel="stylesheet" href="../../assets/css/layout-admin.css" />
   <link rel="stylesheet" href="../../assets/css/pages/admin-users.css" />
 </head>
@@ -40,6 +39,20 @@
         <p class="page-desc">Kelola akun pegawai, hak akses, peran sistem, dan status verifikasi akun e-Office BKSDA Jawa Tengah.</p>
       </div>
       <div class="page-header-actions">
+        <button
+  type="button"
+  id="btn-import-csv"
+  class="btn btn--outline"
+>
+  Impor Pegawai CSV
+</button>
+
+<input
+  type="file"
+  id="input-import-csv"
+  accept=".csv,text/csv"
+  hidden
+/>
         <button type="button" class="btn btn--outline">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Unduh Rekap
@@ -135,6 +148,21 @@
 
     <!-- ===== 6. TIGA PANEL BAWAH ===== -->
     <section class="panels-grid" id="panels-grid"></section>
+    <section
+  id="import-result-panel"
+  class="table-card"
+  style="display:none; padding:20px; margin-top:20px;"
+  aria-live="polite"
+>
+  <h2>Hasil Impor Pegawai</h2>
+
+  <p id="import-result-summary"></p>
+
+  <div
+    id="import-result-errors"
+    style="margin-top:12px;"
+  ></div>
+</section>
 
   </main>
 
@@ -162,6 +190,7 @@
   <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
   <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
   <script type="module" src="../../assets/js/pages/admin-users.js"></script>
+  <script defer src="../../assets/js/pages/admin-import-csv.js"></script>
   <script src="/sw-register.js"></script>
 </body>
 </html>

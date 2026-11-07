@@ -1,675 +1,932 @@
-/* ============================================
-   DATA PENGGUNA (ADMIN) — E-Office SKSDA
-   Mock data + render tabel + search/filter/
-   pagination fungsional + modal konfirmasi
-   ============================================ */
 
-/* ===== MOCK DATA ===== */
+/*
+ * MANAJEMEN PENGGUNA — E-OFFICE BKSDA
+ * Backend CodeIgniter 4
+ *
+ * GET    /api/users
+ * PATCH  /api/users/{id}
+ * DELETE /api/users/{id} (nonaktifkan akun)
+ *
+ * Tidak menggunakan mock data.
+ */
 
-/* Kartu statistik */
-const USER_STATS = [
-  {
-    label: "Total Pengguna Terdaftar",
-    value: 148,
-    badge: { text: "+4 bln ini", tone: "green" },
-    sub: "100% pegawai terdata NIP",
-    icon: "users",
-    tone: "blue"
-  },
-  {
-    label: "Pengguna Aktif Hari Ini",
-    value: 132,
-    badge: { text: "89.2%", tone: "blue" },
-    sub: "16 akun tidak aktif / cuti",
-    icon: "shield",
-    tone: "green"
-  },
-  {
-    label: "Unit & Seksi Terhubung",
-    value: 18,
-    sub: "Resort / Subbag",
-    sub2: "Wilayah I & II Jateng",
-    icon: "layers",
-    tone: "gray"
-  },
-  {
-    label: "Perlu Tinjauan Hak Akses",
-    value: 3,
-    valueRed: true,
-    badge: { text: "PERHATIAN", tone: "red" },
-    sub: "Mutasi internal belum update",
-    icon: "alert",
-    tone: "red"
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+
+const escapeHTML = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+
+const ROLE_LABELS = {
+  admin: "Admin Sistem",
+  kepala_seksi: "Kepala Seksi",
+  staf: "Staf"
+};
+
+const state = {
+  users: [],
+  search: "",
+  role: "all",
+  status: "all",
+  unit: "all",
+  page: 1,
+  perPage: 5,
+  loading: false
+};
+
+/* ========== API ========== */
+
+function api(method, path, body) {
+  if (
+    typeof EOfficeAPI === "undefined" ||
+    !EOfficeAPI.config?.LIVE ||
+    typeof EOfficeAPI.request !== "function"
+  ) {
+    throw new Error("API backend belum tersedia.");
   }
-];
 
-/* Pengguna utama (5 baris spesifik) */
-const USERS = [
-  {
-    id: 1,
-    nama: "Alex Rivera, S.Hut., M.Sc.",
-    nip: "NIP. 19840312 200801 1 005",
-    avatar: "AR",
-    avatarTone: "blue",
-    username: "alex.rivera",
-    email: "alex.rivera@SKSDA.go.id",
-    roleLabel: "KEPALA SEKSI",
-    roleType: "blue",
-    roleGroup: "Kepala Seksi",
-    unit: "Seksi Konservasi Wil. II",
-    unitSub: "Wilayah Pemalang - Surakarta",
-    unitGroup: "Seksi Konservasi Wilayah II",
-    status: "AKTIF",
-    lastLogin: "10 menit lalu",
-    online: false
-  },
-  {
-    id: 2,
-    nama: "Budi Santoso, S.Hut",
-    nip: "NIP. 19870420 201001 2 011",
-    avatar: "BS",
-    avatarTone: "green",
-    username: "budi.santoso",
-    email: "budi.santoso@SKSDA.go.id",
-    roleLabel: "STAF (POLHUT)",
-    roleType: "outline",
-    roleGroup: "Staf",
-    unit: "Resort Baturaden",
-    unitSub: "Seksi Konservasi Wilayah II",
-    unitGroup: "Resort",
-    status: "AKTIF",
-    lastLogin: "1 jam lalu",
-    online: false
-  },
-  {
-    id: 3,
-    nama: "Siti Aminah, S.Hut",
-    nip: "NIP. 19900515 201403 2 003",
-    avatar: "SA",
-    avatarTone: "blue",
-    username: "siti.aminah",
-    email: "siti.aminah@SKSDA.go.id",
-    roleLabel: "STAF (PEH)",
-    roleType: "outline",
-    roleGroup: "Staf",
-    unit: "Seksi Wilayah II",
-    unitSub: "Pengendali Ekosistem Hutan",
-    unitGroup: "Seksi Konservasi Wilayah II",
-    status: "AKTIF",
-    lastLogin: "Hari ini, 08:15 WIB",
-    online: false
-  },
-  {
-    id: 4,
-    nama: "Rian Prasetyo, S.Kom",
-    nip: "NIP. 19921110 201504 1 002",
-    avatar: "RP",
-    avatarTone: "gray",
-    username: "rian.prasetyo",
-    email: "rian.prasetyo@SKSDA.go.id",
-    roleLabel: "ADMIN SISTEM",
-    roleType: "solid",
-    roleGroup: "Admin Sistem",
-    unit: "Subbag TU & Data",
-    unitSub: "Balai Pusat Semarang",
-    unitGroup: "Subbag TU & Data",
-    status: "AKTIF",
-    lastLogin: "Sedang Online",
-    online: true,
-    saya: true
-  },
-  {
-    id: 5,
-    nama: "Bambang Wijaya",
-    nip: "NIP. 19820207 200812 1 007",
-    avatar: "BW",
-    avatarTone: "gray",
-    username: "bambang.w",
-    email: "bambang.w@SKSDA.go.id",
-    roleLabel: "STAF",
-    roleType: "outline",
-    roleGroup: "Staf",
-    unit: "Resort Nusakambangan",
-    unitSub: "Seksi Konservasi Wilayah II",
-    unitGroup: "Resort",
-    status: "NONAKTIF",
-    lastLogin: "14 hari lalu",
-    online: false
-  }
-];
-
-/* Pengguna pengisi (agar total 148 & pagination/search nyata) */
-const FILLER_NAMES = [
-  "Dwi Lestari, S.Ev", "Eko Purnomo, S.Hut", "Fitri Handayani, A.Md", "Gunawan Setiadi",
-  "Hesti Nuraini, S.Si", "Irfan Maulana, S.Kom", "Joko Susilo, S.Hut", "Kartika Dewi, A.Md",
-  "Lukman Hakim", "Maya Rahmawati, S.Hut"
-];
-
-const FILLER_UNITS = [
-  { unit: "Resort Gunung Slamet", sub: "Seksi Konservasi Wilayah II", group: "Resort" },
-  { unit: "Resort Karangkobar", sub: "Seksi Konservasi Wilayah II", group: "Resort" },
-  { unit: "Seksi Konservasi Wilayah I", sub: "Wilayah Surakarta", group: "Seksi Konservasi Wilayah I" },
-  { unit: "Subbag Kepegawaian", sub: "Balai Pusat Semarang", group: "Subbag TU & Data" }
-];
-
-for (let i = USERS.length; i < 148; i++) {
-  const nama = FILLER_NAMES[(i - USERS.length) % FILLER_NAMES.length];
-  const unit = FILLER_UNITS[i % FILLER_UNITS.length];
-  USERS.push({
-    id: i + 1,
-    nama,
-    nip: `NIP. 19${83000000 + i * 137} 2010${String(i % 12 + 1).padStart(2, "0")} 1 ${String((i % 8) + 1).padStart(3, "0")}`,
-    avatar: nama.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
-    avatarTone: i % 3 === 0 ? "green" : "blue",
-    username: `pegawai.${String(i).padStart(3, "0")}`,
-    email: `pegawai.${String(i).padStart(3, "0")}@SKSDA.go.id`,
-    roleLabel: "STAF",
-    roleType: "outline",
-    roleGroup: "Staf",
-    unit: unit.unit,
-    unitSub: unit.sub,
-    unitGroup: unit.group,
-    status: i % 9 === 0 ? "NONAKTIF" : "AKTIF",
-    lastLogin: `${(i % 14) + 1} hari lalu`,
-    online: false
-  });
+  return EOfficeAPI.request(method, path, body);
 }
-
-/* ===== DATA: diisi loadUsers() — API saat LIVE, mock saat belum ===== */
-let users = [];
 
 async function loadUsers() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getUsers();
-  }
-  return USERS;
+  const all = [];
+  let currentPage = 1;
+  let lastPage = 1;
+
+  do {
+    const result = await api(
+      "GET",
+      `/users?per_page=100&page=${currentPage}`
+    );
+
+    if (
+      result?.status !== true ||
+      !Array.isArray(result.data)
+    ) {
+      throw new Error("Format daftar pengguna tidak valid.");
+    }
+
+    all.push(...result.data);
+
+    lastPage = Number(
+      result.pagination?.last_page ?? 1
+    );
+
+    currentPage++;
+
+    if (currentPage > 100) {
+      throw new Error(
+        "Jumlah halaman pengguna melebihi batas pemuatan."
+      );
+    }
+  } while (currentPage <= lastPage);
+
+  state.users = all.map(normalizeUser);
 }
 
-/* Panel bawah */
-const PANEL_RULES = {
-  title: "Aturan Hak Akses & Keamanan",
-  icon: "shield",
-  text: "Setiap mutasi, promosi, atau pergantian kepala resort wajib diperbarui dalam sistem e-Office maksimal 2\u00d724 jam untuk mencegah disposisi surat terhambat.",
-  footLeft: "VERSI SKEMA: RBAC-2024.4",
-  footRight: "Terverifikasi"
-};
+function normalizeUser(user) {
+  return {
+    id: Number(user.id),
+    nama: user.name || "-",
+    username: user.username || "-",
+    email: user.email || "-",
+    role: user.role,
+    roleLabel: ROLE_LABELS[user.role] || user.role,
+    status: Number(user.status),
+    jabatan: user.jabatan || "-",
+    resortId: user.resort_id,
+    resortNama: user.resort_nama || "",
+    resortKode: user.resort_kode || "",
+    unit: user.resort_nama || "Tidak ditetapkan",
+    createdAt: user.created_at || null
+  };
+}
 
-const SESSIONS = {
-  title: "Sesi Aktif Saat Ini",
-  badge: "24 SESI",
-  items: [
-    { label: "Browser Desktop (Chrome/Edge)", count: "19 user", percent: 79 },
-    { label: "Perangkat Mobile (PWA Android/iOS)", count: "5 user", percent: 21 }
-  ]
-};
+/* ========== SESSION ========== */
 
-const ACTIVITY = {
-  title: "Aktivitas Akun Terakhir",
-  link: "Lihat Log",
-  items: [
-    { tone: "green", text: "Rian Prasetyo mereset kata sandi akun siti.aminah (14:10 WIB)" },
-    { tone: "red", text: "Akun bambang.w dinonaktifkan sementara oleh Admin (Kemarin)" }
-  ]
-};
+function getSession() {
+  try {
+    return JSON.parse(
+      sessionStorage.getItem("eoffice_session") ||
+      localStorage.getItem("eoffice_session") ||
+      "null"
+    );
+  } catch {
+    return null;
+  }
+}
 
-/* ===== IKON SVG INLINE ===== */
-const ICONS = {
-  users: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
-  shield: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
-  layers: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>',
-  alert: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
-  edit: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>',
-  trash: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
-  check: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
-  chevLeft: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>',
-  chevRight: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
-  chevLeftDouble: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>',
-  chevRightDouble: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>'
-};
+function checkAdmin() {
+  const session = getSession();
+  const token = localStorage.getItem("eoffice_token");
 
-/* ===== STATE FILTER ===== */
-const state = { search: "", role: "all", status: "all", unit: "all", page: 1, perPage: 5 };
+  if (!token || session?.role !== "admin") {
+    location.replace("../../login.html");
+    return false;
+  }
 
-/* ===== RENDER: stat card (dihitung dari data) ===== */
+  return true;
+}
+
+/* ========== STATUS ========== */
+
+function showMessage(message, isError = false) {
+  let banner = $("users-api-message");
+
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "users-api-message";
+    banner.setAttribute("role", "status");
+    banner.style.padding = "12px 16px";
+    banner.style.margin = "12px 0";
+    banner.style.borderRadius = "8px";
+
+    $("users-stats")?.before(banner);
+  }
+
+  banner.textContent = message;
+  banner.style.display = "block";
+
+  banner.style.background = isError
+    ? "#fee2e2"
+    : "#dcfce7";
+
+  banner.style.color = isError
+    ? "#991b1b"
+    : "#166534";
+}
+
+/* ========== STATISTIK ========== */
+
 function renderStats() {
+  const users = state.users;
   const total = users.length;
-  const aktif = users.filter((u) => u.status === "AKTIF").length;
-  const unitCount = new Set(users.map((u) => u.unitGroup)).size;
-  const perluTinjauan = users.filter((u) => u.status === "MENUNGGU").length;
+
+  const aktif = users.filter(
+    (user) => user.status === 1
+  ).length;
+
+  const nonaktif = total - aktif;
+
+  const resorts = new Set(
+    users
+      .filter((user) => user.resortId)
+      .map((user) => String(user.resortId))
+  ).size;
 
   const stats = [
-    { label: "Total Pengguna Terdaftar", value: total, badge: { text: "terdata", tone: "green" }, sub: "Pegawai terdata NIP", icon: "users", tone: "blue" },
-    { label: "Pengguna Aktif", value: aktif, badge: { text: `${total ? Math.round((aktif / total) * 100) : 0}%`, tone: "blue" }, sub: `${total - aktif} akun tidak aktif`, icon: "shield", tone: "green" },
-    { label: "Unit & Seksi Terhubung", value: unitCount, sub: "Resort / Subbag", icon: "layers", tone: "gray" },
-    { label: "Perlu Tinjauan Hak Akses", value: perluTinjauan, valueRed: perluTinjauan > 0, badge: perluTinjauan > 0 ? { text: "PERHATIAN", tone: "red" } : null, sub: "Belum diverifikasi", icon: "alert", tone: "red" }
+    ["Total Pengguna", total, "Akun terdaftar"],
+    ["Pengguna Aktif", aktif, "Akun aktif"],
+    ["Pengguna Nonaktif", nonaktif, "Akun nonaktif"],
+    ["Resort Terhubung", resorts, "Resort dengan pengguna"]
   ];
 
-  const grid = document.getElementById("users-stats");
-  grid.innerHTML = stats.map((s) => {
-    const badge = s.badge ? `<span class="stat-badge stat-badge--${s.badge.tone}">${s.badge.text}</span>` : "";
-    const sub2 = s.sub2 ? `<p class="stat-sub">${s.sub2}</p>` : "";
-    return `
-      <article class="stat-card">
-        <div>
-          <p class="stat-label">${s.label}</p>
-          <div class="stat-value-row">
-            <span class="stat-value${s.valueRed ? " stat-value--red" : ""}">${s.value.toLocaleString("id-ID")}</span>
-            ${badge}
-          </div>
-          <p class="stat-sub">${s.sub}</p>
-          ${sub2}
+  const grid = $("users-stats");
+  if (!grid) return;
+
+  grid.innerHTML = stats.map(([label, value, sub]) => `
+    <article class="stat-card">
+      <div>
+        <p class="stat-label">${label}</p>
+
+        <div class="stat-value-row">
+          <span class="stat-value">
+            ${Number(value).toLocaleString("id-ID")}
+          </span>
         </div>
-        <span class="stat-icon stat-icon--${s.tone}">${ICONS[s.icon]}</span>
-      </article>`;
-  }).join("");
+
+        <p class="stat-sub">${sub}</p>
+      </div>
+    </article>
+  `).join("");
 }
 
-/* ===== FILTER DATA ===== */
-function getFilteredUsers() {
-  const q = state.search.trim().toLowerCase();
-  return users.filter((u) => {
-    const matchSearch =
-      !q ||
-      [u.nama, u.nip, u.username, u.email, u.unit, u.unitSub].some((f) => f.toLowerCase().includes(q));
-    const matchRole = state.role === "all" || u.roleGroup === state.role;
-    const matchStatus = state.status === "all" || u.status === state.status;
-    const matchUnit = state.unit === "all" || u.unitGroup === state.unit;
-    return matchSearch && matchRole && matchStatus && matchUnit;
+/* ========== FILTER ========== */
+
+function setupFilters() {
+  const roleSelect = $("filter-role");
+
+  if (roleSelect) {
+    roleSelect.innerHTML = `
+      <option value="all">Semua Peran</option>
+      <option value="admin">Admin Sistem</option>
+      <option value="kepala_seksi">Kepala Seksi</option>
+      <option value="staf">Staf</option>
+    `;
+  }
+
+  const statusSelect = $("filter-status");
+
+  if (statusSelect) {
+    statusSelect.innerHTML = `
+      <option value="all">Semua Status</option>
+      <option value="1">Aktif</option>
+      <option value="0">Nonaktif</option>
+    `;
+  }
+
+  updateUnitFilter();
+
+  $("filter-search")?.addEventListener("input", (event) => {
+    state.search = event.target.value.trim().toLowerCase();
+    state.page = 1;
+    refresh();
+  });
+
+  roleSelect?.addEventListener("change", (event) => {
+    state.role = event.target.value;
+    state.page = 1;
+    refresh();
+  });
+
+  statusSelect?.addEventListener("change", (event) => {
+    state.status = event.target.value;
+    state.page = 1;
+    refresh();
+  });
+
+  $("filter-unit")?.addEventListener("change", (event) => {
+    state.unit = event.target.value;
+    state.page = 1;
+    refresh();
+  });
+
+  $("filter-reset")?.addEventListener("click", () => {
+    state.search = "";
+    state.role = "all";
+    state.status = "all";
+    state.unit = "all";
+    state.page = 1;
+
+    for (const id of [
+      "filter-search",
+      "filter-role",
+      "filter-status",
+      "filter-unit"
+    ]) {
+      const el = $(id);
+      if (el) {
+        el.value = id === "filter-search" ? "" : "all";
+      }
+    }
+
+    refresh();
+  });
+
+  $("per-page")?.addEventListener("change", (event) => {
+    state.perPage = Number(event.target.value) || 5;
+    state.page = 1;
+    refresh();
   });
 }
 
-/* ===== RENDER: baris tabel ===== */
+function updateUnitFilter() {
+  const select = $("filter-unit");
+  if (!select) return;
+
+  const current = state.unit;
+
+  const units = [...new Set(
+    state.users.map((user) => user.unit)
+  )].sort();
+
+  select.innerHTML = `
+    <option value="all">Semua Unit Kerja</option>
+    ${units.map((unit) => `
+      <option value="${escapeHTML(unit)}">
+        ${escapeHTML(unit)}
+      </option>
+    `).join("")}
+  `;
+
+  if (units.includes(current)) {
+    select.value = current;
+  } else {
+    state.unit = "all";
+  }
+}
+
+function getFilteredUsers() {
+  return state.users.filter((user) => {
+    const text = [
+      user.nama,
+      user.username,
+      user.email,
+      user.jabatan,
+      user.unit,
+      user.resortKode
+    ].join(" ").toLowerCase();
+
+    return (
+      (!state.search || text.includes(state.search)) &&
+      (state.role === "all" || user.role === state.role) &&
+      (
+        state.status === "all" ||
+        String(user.status) === state.status
+      ) &&
+      (
+        state.unit === "all" ||
+        user.unit === state.unit
+      )
+    );
+  });
+}
+
+/* ========== TABEL ========== */
+
 function renderTable(filtered) {
-  const tbody = document.getElementById("users-tbody");
+  const tbody = $("users-tbody");
+  if (!tbody) return;
+
   const start = (state.page - 1) * state.perPage;
   const rows = filtered.slice(start, start + state.perPage);
 
-  if (rows.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Tidak ada pengguna yang cocok dengan filter.</td></tr>`;
+  if (!rows.length) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="7">
+          Tidak ada pengguna yang cocok.
+        </td>
+      </tr>
+    `;
     return;
   }
 
-  tbody.innerHTML = rows
-    .map((u) => {
-      const meTag = u.saya ? '<span class="tag-me">SAYA</span>' : "";
-      const login = u.online
-        ? `<span class="cell-login--online"><span class="online-dot"></span>Sedang Online</span>`
-        : `<span class="cell-login">${u.lastLogin}</span>`;
-      return `
-        <tr>
-          <td>
-            <div class="cell-user">
-              <span class="avatar avatar--${u.avatarTone}">${u.avatar}</span>
-              <div>
-                <span class="cell-user-name">${u.nama}${meTag}</span>
-                <span class="cell-user-nip">${u.nip}</span>
-              </div>
+  const session = getSession();
+
+  tbody.innerHTML = rows.map((user) => {
+    const isSelf =
+      Number(session?.id) === user.id;
+
+    const statusLabel =
+      user.status === 1 ? "AKTIF" : "NONAKTIF";
+
+    const initials = user.nama
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase();
+
+    return `
+      <tr>
+        <td>
+          <div class="cell-user">
+            <span class="avatar avatar--blue">
+              ${escapeHTML(initials)}
+            </span>
+
+            <div>
+              <span class="cell-user-name">
+                ${escapeHTML(user.nama)}
+                ${isSelf ? '<span class="tag-me">SAYA</span>' : ""}
+              </span>
+
+              <span class="cell-user-nip">
+                ${escapeHTML(user.jabatan)}
+              </span>
             </div>
-          </td>
-          <td class="mono">
-            <span class="cell-username">${u.username}</span>
-            <span class="cell-email">${u.email}</span>
-          </td>
-          <td><span class="badge badge-role--${u.roleType}">${u.roleLabel}</span></td>
-          <td>
-            <span class="cell-unit">${u.unit}</span>
-            <span class="cell-unit-sub">${u.unitSub}</span>
-          </td>
-          <td><span class="badge badge-status--${u.status}">${u.status}</span></td>
-          <td>${login}</td>
-          <td>
-            <div class="cell-actions">
-              <button type="button" class="action-btn" data-action="edit" data-id="${u.id}" title="Edit pengguna" aria-label="Edit ${u.nama}">${ICONS.edit}</button>
-              <button type="button" class="action-btn" data-action="delete" data-id="${u.id}" title="Hapus pengguna" aria-label="Hapus ${u.nama}">${ICONS.trash}</button>
-            </div>
-          </td>
-        </tr>`;
-    })
-    .join("");
+          </div>
+        </td>
+
+        <td class="mono">
+          <span class="cell-username">
+            ${escapeHTML(user.username)}
+          </span>
+
+          <span class="cell-email">
+            ${escapeHTML(user.email)}
+          </span>
+        </td>
+
+        <td>
+          <span class="badge badge-role--staf">
+            ${escapeHTML(user.roleLabel)}
+          </span>
+        </td>
+
+        <td>
+          <span class="cell-unit">
+            ${escapeHTML(user.unit)}
+          </span>
+
+          <span class="cell-unit-sub">
+            ${escapeHTML(user.resortKode)}
+          </span>
+        </td>
+
+        <td>
+          <span class="badge badge-status--${statusLabel}">
+            ${statusLabel}
+          </span>
+        </td>
+
+        <td>
+          <span class="cell-login">
+            Belum tersedia
+          </span>
+        </td>
+
+        <td>
+          <div class="cell-actions">
+            <button
+              type="button"
+              class="action-btn"
+              data-action="edit"
+              data-id="${user.id}"
+              title="Edit Pengguna"
+            >
+              Edit
+            </button>
+
+            <button
+              type="button"
+              class="action-btn"
+              data-action="password"
+              data-id="${user.id}"
+              title="Reset Password"
+            >
+              Sandi
+            </button>
+
+            <button
+              type="button"
+              class="action-btn"
+              data-action="toggle"
+              data-id="${user.id}"
+              ${isSelf ? "disabled" : ""}
+              title="${user.status === 1 ? "Nonaktifkan" : "Aktifkan"}"
+            >
+              ${user.status === 1 ? "Nonaktifkan" : "Aktifkan"}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
 }
 
-/* ===== DAFTAR HALAMAN (dengan elipsis) ===== */
-function pageItems(current, total) {
-  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-  if (current <= 3) return [1, 2, 3, 4, "...", total];
-  if (current >= total - 2) return [1, "...", total - 3, total - 2, total - 1, total];
-  return [1, "...", current - 1, current, current + 1, "...", total];
-}
+/* ========== PAGINATION ========== */
 
-/* ===== RENDER: footer tabel + pagination ===== */
 function renderFooter(filtered) {
   const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / state.perPage));
-  if (state.page > totalPages) state.page = totalPages;
 
-  const start = total === 0 ? 0 : (state.page - 1) * state.perPage + 1;
-  const end = Math.min(state.page * state.perPage, total);
+  const pages = Math.max(
+    1,
+    Math.ceil(total / state.perPage)
+  );
 
-  document.getElementById("showing-text").textContent =
-    `Menampilkan ${start}-${end} dari ${total} pengguna`;
+  state.page = Math.min(state.page, pages);
 
-  const pag = document.getElementById("pagination");
-  const btn = (label, page, svg, disabled, active) => `
-    <button type="button" class="page-btn${active ? " is-active" : ""}" data-page="${page}" ${disabled ? "disabled" : ""} aria-label="Halaman ${page}">
-      ${svg ? ICONS[svg] : label}
-    </button>`;
+  const start =
+    total === 0 ? 0 :
+    (state.page - 1) * state.perPage + 1;
 
-  pag.innerHTML =
-    btn("", 1, "chevLeftDouble", state.page === 1, false) +
-    btn("", state.page - 1, "chevLeft", state.page === 1, false) +
-    pageItems(state.page, totalPages)
-      .map((p) => (p === "..." ? `<span class="page-ellipsis">...</span>` : btn(p, p, null, false, p === state.page)))
-      .join("") +
-    btn("", state.page + 1, "chevRight", state.page === totalPages, false) +
-    btn("", totalPages, "chevRightDouble", state.page === totalPages, false);
+  const end = Math.min(
+    state.page * state.perPage,
+    total
+  );
+
+  const showing = $("showing-text");
+
+  if (showing) {
+    showing.textContent =
+      `Menampilkan ${start}-${end} dari ${total} pengguna`;
+  }
+
+  const pagination = $("pagination");
+  if (!pagination) return;
+
+  const buttons = [];
+
+  for (let page = 1; page <= pages; page++) {
+    buttons.push(`
+      <button
+        type="button"
+        class="page-btn ${
+          page === state.page ? "is-active" : ""
+        }"
+        data-page="${page}"
+      >
+        ${page}
+      </button>
+    `);
+  }
+
+  pagination.innerHTML = buttons.join("");
 }
 
-/* ===== RENDER: panel bawah ===== */
-function renderPanels() {
-  const grid = document.getElementById("panels-grid");
-
-  const sessionsHtml = SESSIONS.items
-    .map(
-      (s) => `
-        <div class="session-item">
-          <div class="session-top"><span>${s.label}</span><span class="session-count">${s.count}</span></div>
-          <div class="session-bar"><span style="width:${s.percent}%"></span></div>
-        </div>`
-    )
-    .join("");
-
-  const activityHtml = ACTIVITY.items
-    .map(
-      (a) => `
-        <div class="activity-item">
-          <span class="activity-dot activity-dot--${a.tone}"></span>
-          <p class="activity-text">${a.text}</p>
-        </div>`
-    )
-    .join("");
-
-  grid.innerHTML = `
-    <!-- Panel 1: aturan hak akses -->
-    <article class="panel">
-      <div class="panel-head">
-        <div class="panel-head-left">
-          <span class="panel-head-icon">${ICONS.shield}</span>
-          <h3 class="panel-title">${PANEL_RULES.title}</h3>
-        </div>
-      </div>
-      <div class="panel-body"><p class="panel-text">${PANEL_RULES.text}</p></div>
-      <div class="panel-foot">
-        <span>${PANEL_RULES.footLeft}</span>
-        <span class="panel-foot-verified">${ICONS.check}${PANEL_RULES.footRight}</span>
-      </div>
-    </article>
-
-    <!-- Panel 2: sesi aktif -->
-    <article class="panel">
-      <div class="panel-head">
-        <div class="panel-head-left">
-          <h3 class="panel-title">${SESSIONS.title}</h3>
-        </div>
-        <span class="panel-badge">${SESSIONS.badge}</span>
-      </div>
-      <div class="panel-body">${sessionsHtml}</div>
-    </article>
-
-    <!-- Panel 3: aktivitas akun -->
-    <article class="panel">
-      <div class="panel-head">
-        <div class="panel-head-left">
-          <h3 class="panel-title">${ACTIVITY.title}</h3>
-        </div>
-        <a href="#" class="panel-link">${ACTIVITY.link}</a>
-      </div>
-      <div class="panel-body">${activityHtml}</div>
-    </article>`;
-}
-
-/* ===== MODAL KONFIRMASI ===== */
-const backdrop = document.getElementById("modal-backdrop");
-const modalIcon = document.getElementById("modal-icon");
-const modalTitle = document.getElementById("modal-title");
-const modalDesc = document.getElementById("modal-desc");
-const modalConfirm = document.getElementById("modal-confirm");
-
-let confirmAction = null;
-
-function openModal({ icon, title, desc, confirmLabel, danger, onConfirm }) {
-  modalIcon.className = `modal-icon modal-icon--${danger ? "red" : "blue"}`;
-  modalIcon.innerHTML = ICONS[icon];
-  modalTitle.textContent = title;
-  modalDesc.textContent = desc;
-  modalConfirm.textContent = confirmLabel;
-  modalConfirm.className = `btn ${danger ? "btn--danger" : "btn--primary"}`;
-  confirmAction = onConfirm;
-  backdrop.classList.add("is-open");
-}
-
-function closeModal() {
-  backdrop.classList.remove("is-open");
-  confirmAction = null;
-}
-
-document.getElementById("modal-cancel").addEventListener("click", closeModal);
-backdrop.addEventListener("click", (event) => {
-  if (event.target === backdrop) closeModal();
-});
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && backdrop.classList.contains("is-open")) closeModal();
-});
-
-modalConfirm.addEventListener("click", () => {
-  if (typeof confirmAction === "function") confirmAction();
-  closeModal();
-  refresh();
-});
-
-/* ===== REFRESH TABEL + FOOTER ===== */
 function refresh() {
   const filtered = getFilteredUsers();
+
+  const maxPage = Math.max(
+    1,
+    Math.ceil(filtered.length / state.perPage)
+  );
+
+  state.page = Math.min(state.page, maxPage);
+
+  renderStats();
   renderTable(filtered);
   renderFooter(filtered);
 }
 
-/* ===== EVENT: aksi tabel (edit / hapus) ===== */
-document.getElementById("users-tbody").addEventListener("click", (event) => {
-  const btn = event.target.closest("[data-action]");
-  if (!btn) return;
-  const user = users.find((u) => String(u.id) === btn.dataset.id);
-  if (!user) return;
+/* ========== MODAL ========== */
 
-  if (btn.dataset.action === "edit") {
-    openModal({
-      icon: "edit",
-      title: "Edit Pengguna",
-      desc: `Buka form perubahan data untuk akun "${user.nama}" (${user.username})?`,
-      confirmLabel: "Buka Form Edit",
-      danger: false,
-      onConfirm: () => console.log("[demo] edit pengguna:", user.username)
-    });
+function closeModal() {
+  $("modal-backdrop")?.classList.remove("is-open");
+}
+
+function openModal(title, description, confirmText, action) {
+  const backdrop = $("modal-backdrop");
+
+  $("modal-title").textContent = title;
+  $("modal-desc").textContent = description;
+
+  const button = $("modal-confirm");
+  button.textContent = confirmText;
+  button.disabled = false;
+
+  button.onclick = async () => {
+    button.disabled = true;
+
+    try {
+      await action();
+      closeModal();
+    } catch (error) {
+      console.error("Operasi pengguna gagal:", error.message);
+      showMessage(error.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  backdrop.classList.add("is-open");
+}
+
+/* ========== CRUD ========== */
+
+async function reloadUsers() {
+  await loadUsers();
+  updateUnitFilter();
+  refresh();
+}
+
+async function toggleStatus(user) {
+  const nextStatus = user.status === 1 ? 0 : 1;
+
+  if (nextStatus === 0) {
+    // DELETE pada backend adalah soft deactivate,
+    // bukan penghapusan permanen.
+    await api("DELETE", `/users/${user.id}`);
   } else {
-    openModal({
-      icon: "trash",
-      title: "Hapus Akun Pengguna",
-      desc: `Akun "${user.nama}" (${user.username}) akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`,
-      confirmLabel: "Ya, Hapus Akun",
-      danger: true,
-      onConfirm: () => {
-        if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-          EOfficeAPI.deleteUser(user.id)
-            .then(() => {
-              const idx = users.indexOf(user);
-              if (idx !== -1) users.splice(idx, 1);
-              refresh();
-            })
-            .catch(() => console.error("Gagal menghapus pengguna:", user.username));
-          return;
-        }
-        const idx = users.indexOf(user);
-        if (idx !== -1) users.splice(idx, 1);
-        console.log("[demo] akun dihapus:", user.username);
-      }
+    await api("PATCH", `/users/${user.id}`, {
+      status: 1
     });
   }
-});
 
-/* ===== EVENT: filter & pagination ===== */
-document.getElementById("filter-search").addEventListener("input", (event) => {
-  state.search = event.target.value;
-  state.page = 1;
-  refresh();
-});
+  await reloadUsers();
 
-document.getElementById("filter-role").addEventListener("change", (event) => {
-  state.role = event.target.value;
-  state.page = 1;
-  refresh();
-});
+  showMessage(
+    `Akun ${user.username} berhasil ${
+      nextStatus === 1 ? "diaktifkan" : "dinonaktifkan"
+    }.`
+  );
+}
 
-document.getElementById("filter-status").addEventListener("change", (event) => {
-  state.status = event.target.value;
-  state.page = 1;
-  refresh();
-});
+function openEditForm(user) {
+  const title = $("modal-title");
+  const desc = $("modal-desc");
+  const backdrop = $("modal-backdrop");
+  const confirm = $("modal-confirm");
 
-document.getElementById("filter-unit").addEventListener("change", (event) => {
-  state.unit = event.target.value;
-  state.page = 1;
-  refresh();
-});
+  title.textContent = "Edit Pengguna";
 
-document.getElementById("filter-reset").addEventListener("click", () => {
-  state.search = "";
-  state.role = "all";
-  state.status = "all";
-  state.unit = "all";
-  state.page = 1;
-  document.getElementById("filter-search").value = "";
-  document.getElementById("filter-role").value = "all";
-  document.getElementById("filter-status").value = "all";
-  document.getElementById("filter-unit").value = "all";
-  refresh();
-});
+  // Form lokal; tidak menyimpan sampai tombol
+  // Simpan ditekan dan API memberi respons sukses.
+  desc.innerHTML = `
+    <form id="edit-user-form" style="text-align:left">
+      <label for="edit-name">Nama</label>
+      <input
+        id="edit-name"
+        name="name"
+        required
+        class="form-input"
+        value="${escapeHTML(user.nama)}"
+      />
 
-document.getElementById("per-page").addEventListener("change", (event) => {
-  state.perPage = Number(event.target.value);
-  state.page = 1;
-  refresh();
-});
+      <label for="edit-email">Email</label>
+      <input
+        id="edit-email"
+        name="email"
+        type="email"
+        class="form-input"
+        value="${escapeHTML(
+          user.email === "-" ? "" : user.email
+        )}"
+      />
 
-document.getElementById("pagination").addEventListener("click", (event) => {
-  const btn = event.target.closest(".page-btn");
-  if (!btn || btn.disabled) return;
-  state.page = Number(btn.dataset.page);
-  refresh();
-});
+      <label for="edit-jabatan">Jabatan</label>
+      <input
+        id="edit-jabatan"
+        name="jabatan"
+        class="form-input"
+        value="${escapeHTML(
+          user.jabatan === "-" ? "" : user.jabatan
+        )}"
+      />
 
-/* ===== Inisialisasi ===== */
-/* ===== Inisialisasi: muat data dulu, baru render ===== */
-async function init() {
-  const tbody = document.getElementById("users-tbody");
-  tbody.innerHTML = `<tr><td colspan="8">Memuat data pengguna...</td></tr>`;
+      <label for="edit-role">Role</label>
+      <select
+        id="edit-role"
+        name="role"
+        class="form-input"
+      >
+        ${Object.entries(ROLE_LABELS).map(
+          ([value, label]) => `
+            <option
+              value="${value}"
+              ${user.role === value ? "selected" : ""}
+            >
+              ${label}
+            </option>
+          `
+        ).join("")}
+      </select>
+    </form>
+  `;
+
+  confirm.textContent = "Simpan Perubahan";
+  confirm.disabled = false;
+
+  confirm.onclick = async () => {
+    const form = $("edit-user-form");
+
+    if (!form.reportValidity()) return;
+
+    const payload = {
+      name: form.elements.name.value.trim(),
+      email: form.elements.email.value.trim(),
+      jabatan: form.elements.jabatan.value.trim(),
+      role: form.elements.role.value
+    };
+
+    confirm.disabled = true;
+
+    try {
+      await api(
+        "PATCH",
+        `/users/${user.id}`,
+        payload
+      );
+
+      closeModal();
+      await reloadUsers();
+
+      showMessage("Data pengguna berhasil diperbarui.");
+    } catch (error) {
+      showMessage(error.message, true);
+    } finally {
+      confirm.disabled = false;
+    }
+  };
+
+  backdrop.classList.add("is-open");
+}
+
+function openPasswordForm(user) {
+  const backdrop = $("modal-backdrop");
+  const confirm = $("modal-confirm");
+
+  $("modal-title").textContent = "Reset Password";
+
+  $("modal-desc").innerHTML = `
+    <form id="reset-user-form" style="text-align:left">
+      <p>
+        Akun:
+        <strong>${escapeHTML(user.username)}</strong>
+      </p>
+
+      <label for="reset-user-password">
+        Password Baru
+      </label>
+
+      <input
+        id="reset-user-password"
+        name="password"
+        type="password"
+        minlength="8"
+        required
+        autocomplete="new-password"
+        class="form-input"
+      />
+      <p>Minimal 8 karakter.</p>
+    </form>
+  `;
+
+  confirm.textContent = "Reset Password";
+  confirm.disabled = false;
+
+  confirm.onclick = async () => {
+    const form = $("reset-user-form");
+
+    if (!form.reportValidity()) return;
+
+    const password = form.elements.password.value;
+
+    confirm.disabled = true;
+
+    try {
+      await api("PATCH", `/users/${user.id}`, {
+        password
+      });
+
+      form.reset();
+      closeModal();
+
+      showMessage(
+        `Password akun ${user.username} berhasil diubah.`
+      );
+    } catch (error) {
+      showMessage(error.message, true);
+    } finally {
+      confirm.disabled = false;
+    }
+  };
+
+  backdrop.classList.add("is-open");
+}
+
+/* ========== EVENTS ========== */
+
+function setupActions() {
+  $("users-tbody")?.addEventListener("click", (event) => {
+    const button = event.target.closest(
+      "button[data-action]"
+    );
+
+    if (!button) return;
+
+    const user = state.users.find(
+      (item) => item.id === Number(button.dataset.id)
+    );
+
+    if (!user) return;
+
+    switch (button.dataset.action) {
+      case "edit":
+        openEditForm(user);
+        break;
+
+      case "password":
+        openPasswordForm(user);
+        break;
+
+      case "toggle": {
+        const action = user.status === 1
+          ? "Nonaktifkan"
+          : "Aktifkan";
+
+        openModal(
+          `${action} Akun`,
+          `Yakin ingin ${action.toLowerCase()} akun ${user.username}?`,
+          `Ya, ${action}`,
+          () => toggleStatus(user)
+        );
+
+        break;
+      }
+    }
+  });
+
+  $("pagination")?.addEventListener("click", (event) => {
+    const button = event.target.closest(
+      "button[data-page]"
+    );
+
+    if (!button) return;
+
+    state.page = Number(button.dataset.page);
+    refresh();
+  });
+
+  $("modal-cancel")?.addEventListener("click", closeModal);
+
+  $("modal-backdrop")?.addEventListener("click", (event) => {
+    if (event.target === $("modal-backdrop")) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeModal();
+    }
+  });
+}
+
+/* ========== NONAKTIFKAN MOCK UI ========== */
+
+function hideMockPanels() {
+  // Panel data mock belum terintegrasi.
+  const panels = document.getElementById("panels-grid");
+
+  if (panels) {
+    panels.innerHTML = "";
+    panels.hidden = true;
+  }
+
+  const verification = document.getElementById("verif-section");
+
+  if (verification) {
+    verification.hidden = true;
+  }
+
+  // Nonaktifkan HANYA tombol Unduh Rekap.
+  // Jangan sampai tombol Impor CSV ikut dinonaktifkan.
+  const headerButtons = document.querySelectorAll(
+    ".page-header-actions button"
+  );
+
+  headerButtons.forEach((button) => {
+    if (button.textContent.includes("Unduh Rekap")) {
+      button.disabled = true;
+      button.title = "Ekspor belum diintegrasikan";
+    }
+  });
+
+  // Pastikan tombol Import bisa digunakan.
+  const importButton = document.getElementById(
+    "btn-import-csv"
+  );
+
+  if (importButton) {
+    importButton.disabled = false;
+    importButton.removeAttribute("disabled");
+  }
+}
+
+/* ========== INIT ========== */
+
+async function initUsersPage() {
+  if (!checkAdmin()) return;
+
+  hideMockPanels();
+  setupActions();
+  setupFilters();
+
+  const tbody = $("users-tbody");
+
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7">Memuat pengguna dari backend...</td>
+      </tr>
+    `;
+  }
 
   try {
-    users = await loadUsers();
-  } catch (e) {
-    users = [];
-    tbody.innerHTML = `<tr><td colspan="8">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
-    return;
-  }
+    await loadUsers();
+    updateUnitFilter();
+    refresh();
 
-  renderStats();
-  renderPanels();
-  refresh();
-  renderVerif();
+    console.info(
+      "Manajemen Pengguna berhasil dimuat:",
+      state.users.length,
+      "akun"
+    );
+  } catch (error) {
+    console.error("Gagal memuat pengguna:", error.message);
+
+    showMessage(
+      "Gagal mengambil data pengguna: " + error.message,
+      true
+    );
+
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7">
+            Gagal memuat data pengguna.
+          </td>
+        </tr>
+      `;
+    }
+  }
 }
 
-init();
-
-const REG_KEY = "eoffice_registrations";
-
-/* ============================================
-   ANTREAN VERIFIKASI PENDAFTAR
-   LIVE: GET /api/registrations + PUT /api/registrations/{id}/status
-   MOCK: localStorage eoffice_registrations (dari halaman registrasi)
-   ============================================ */
-
-async function getRegs() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getRegistrations();
-  }
-  try { return JSON.parse(localStorage.getItem(REG_KEY) || "[]"); }
-  catch { return []; }
-}
-
-function escHtml(s) {  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[c]));
-}
-
-function setRegStatus(id, status) {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    EOfficeAPI.verifyRegistration(id, status)
-      .then(() => renderVerif())
-      .catch(() => console.error("Gagal memverifikasi pendaftar:", id));
-    return;
-  }
-  const regs = JSON.parse(localStorage.getItem(REG_KEY) || "[]");
-  const target = regs.find((r) => String(r.daftarPada) === id);
-  if (target) {
-    target.status = status;
-    target.diverifikasiPada = new Date().toISOString();
-    localStorage.setItem(REG_KEY, JSON.stringify(regs));
-  }
-  renderVerif();
-}
-
-async function renderVerif() {
-  const section = document.getElementById("verif-section");
-  const list = document.getElementById("verif-list");
-  const count = document.getElementById("verif-count");
-  if (!section || !list) return;
-
-  const regs = await getRegs();
-  if (!regs.length) { section.hidden = true; return; }
-  section.hidden = false;
-
-  const pending = regs.filter((r) => r.status === "menunggu-verifikasi");
-  if (count) count.textContent = pending.length;
-
-  list.innerHTML = "";
-  regs.slice().reverse().forEach((r) => {
-    const chip =
-      r.status === "menunggu-verifikasi" ? '<span class="verif-chip pending">MENUNGGU</span>' :
-      r.status === "ditolak" ? '<span class="verif-chip rejected">DITOLAK</span>' :
-      '<span class="verif-chip approved">AKTIF</span>';
-
-    const roleLabel = r.role === "kepala-seksi" ? "KEPALA SEKSI" : "STAFF";
-
-    const actions = r.status === "menunggu-verifikasi"
-      ? `<button type="button" class="verif-btn approve" data-id="${escHtml(r.daftarPada)}">Verifikasi</button>
-         <button type="button" class="verif-btn reject" data-id="${escHtml(r.daftarPada)}">Tolak</button>`
-      : "";
-
-    const li = document.createElement("li");
-    li.className = "verif-item" + (r.status === "menunggu-verifikasi" ? " is-pending" : "");
-    li.innerHTML = `
-      <div class="verif-info">
-        <p class="verif-nama">${escHtml(r.nama)}</p>
-        <p class="verif-meta">${escHtml(r.idAtauEmail)}${r.resort ? " &bull; Resort " + escHtml(r.resort) : ""} &bull; ${new Date(r.daftarPada).toLocaleString("id-ID")}</p>
-      </div>
-      <span class="verif-chip role">${roleLabel}</span>
-      ${chip}
-      <div class="verif-actions">${actions}</div>`;
-    list.appendChild(li);
-  });
-
-  list.querySelectorAll(".verif-btn.approve").forEach((btn) => {
-    btn.addEventListener("click", () => setRegStatus(btn.dataset.id, "aktif"));
-  });
-  list.querySelectorAll(".verif-btn.reject").forEach((btn) => {
-    btn.addEventListener("click", () => setRegStatus(btn.dataset.id, "ditolak"));
-  });
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initUsersPage,
+    { once: true }
+  );
+} else {
+  initUsersPage();
 }

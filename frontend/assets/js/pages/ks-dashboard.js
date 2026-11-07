@@ -1,217 +1,325 @@
-/* ============================================
-   DASHBOARD KEPALA SEKSI — E-Office SKSDA
-   Semua angka & list dari objek mock
-   dashboardData, dirender oleh renderDashboard().
-   Siap diganti fetch API.
-   ============================================ */
 
-/* ===== DATA: diisi loadDashboard() — API saat LIVE, mock saat belum ===== */
-let dashboardData = null;
+/*
+ * Dashboard Kepala Seksi — E-Office BKSDA
+ * Data live dari backend CodeIgniter 4.
+ * Tidak memakai data mock.
+ */
 
-const DASHBOARD_MOCK = {
-  /* Baris stat card */
-  stats: [
-    { label: "Surat Masuk", value: 24, note: "+3 hari ini", noteIcon: "trendUp", tone: "blue", icon: "inbox" },
-    { label: "Menunggu Persetujuan", value: 12, note: "Butuh aksi", noteIcon: "clock", tone: "amber", icon: "clock" },
-    { label: "Disposisi Aktif", value: 8, note: "Dalam proses", noteIcon: "refresh", icon: "refresh" },
-    { label: "Tugas Seksi", value: 36, note: "65%", progress: 65, icon: "clipboard" },
-    { label: "Menunggu Review", value: 5, note: "Dari staf", noteIcon: "clock", icon: "clock" },
-    { label: "Deadline Hari Ini", value: 3, valueRed: true, note: "Segera", noteIcon: "alert", notePrefix: "! ", tone: "red", icon: "alert" }
-  ],
+import {
+  initRunningText,
+  listenRunningText
+} from "../utils/running-text.js";
 
-  /* Perlu tindakan */
-  actions: [
-    {
-      icon: "mail",
-      title: "Surat Dinas Kehutanan",
-      desc: "Permohonan izin survei lahan kawasan konservasi Gunung Merbabu.",
-      tags: [
-        { text: "Batas: Hari Ini", tone: "gray" },
-        { text: "High Priority", tone: "red" }
-      ],
-      btn: { text: "Review", href: "detail-surat-masuk.html", style: "blue" }
-    },
-    {
-      icon: "file",
-      title: "Laporan Kegiatan",
-      desc: "Laporan patroli rutin resort wilayah utara periode bulan lalu.",
-      tags: [{ text: "Dari: Budi Santoso", tone: "gray" }],
-      btn: { text: "Review", href: "detail-tugas.html?id=3", style: "muted" }
-    },
-    {
-      icon: "clipboard",
-      title: "Tugas #TSK-021",
-      desc: "Penyusunan draft anggaran seksi tahun depan.",
-      tags: [{ text: "Batas: Besok", tone: "gray" }],
-      btn: { text: "Buka", href: "tugas-seksi.html", style: "muted" }
-    }
-  ],
+const $ = (id) => document.getElementById(id);
 
-  /* Surat terbaru */
-  letters: [
-    { title: "Undangan Rapat Koordinasi Lintas Sektoral", meta: "10:30 WIB \u2022 Dari Sekda", accent: "blue" },
-    { title: "Edaran Penetapan Hari Libur Nasional", meta: "09:15 WIB \u2022 Kemenpan RB", accent: "" },
-    { title: "Tembusan Surat Penugasan Lapangan", meta: "Kemarin \u2022 Seksi Wilayah I", accent: "" }
-  ],
+const escapeHTML = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
 
-  /* Jadwal hari ini */
-  schedule: [
-    {
-      time: "13:00 - 15:00",
-      accent: "blue",
-      name: "Rapat Evaluasi Seksi",
-      place: "Ruang Rapat Lt. 2",
-      placeIcon: "pin"
-    },
-    {
-      time: "15:30 - 16:30",
-      accent: "",
-      name: "Review Berkas Bulanan",
-      place: "Meja Kerja",
-      placeIcon: "monitor"
-    }
-  ],
+const number = (value) =>
+  Number(value ?? 0).toLocaleString("id-ID");
 
-  /* Progress pekerjaan seksi */
-  progress: [
-    { label: "Penyelesaian Disposisi", percent: 85, color: "#2563EB" },
-    { label: "Tugas Rutin", percent: 92, color: "#10B981" },
-    { label: "Laporan Bulanan", percent: 45, color: "#F59E0B" }
-  ]
-};
-
-/* ===== IKON SVG INLINE ===== */
-const ICONS = {
-  inbox: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>',
-  clock: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
-  refresh: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>',
-  clipboard: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>',
-  alert: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
-  trendUp: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>',
-  mail: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>',
-  file: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
-  pin: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>',
-  monitor: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'
-};
-
-/* ===== RENDER: stat card ===== */
-function renderStats() {
-  document.getElementById("ksd-stats").innerHTML = dashboardData.stats.map((s) => {
-    const noteClass = s.tone ? ` ksd-stat-note--${s.tone}` : "";
-    const noteIcon = s.noteIcon ? ICONS[s.noteIcon] : "";
-    const prefix = s.notePrefix || "";
-    const progress = s.progress
-      ? `<div class="ksd-stat-progress"><span style="width:${s.progress}%"></span></div>`
-      : "";
-    return `
-      <article class="ksd-stat">
-        <span class="ksd-stat-icon">${ICONS[s.icon]}</span>
-        <p class="ksd-stat-label">${s.label}</p>
-        <p class="ksd-stat-value${s.valueRed ? " ksd-stat-value--red" : ""}">${s.value}</p>
-        <p class="ksd-stat-note${noteClass}">${noteIcon}${prefix}${s.note}</p>
-        ${progress}
-      </article>`;
-  }).join("");
-}
-
-/* ===== RENDER: perlu tindakan ===== */
-function renderActions() {
-  const badge = document.getElementById("ksd-actions-badge");
-  badge.textContent = `${dashboardData.actions.length} Item`;
-
-  document.getElementById("ksd-actions").innerHTML = dashboardData.actions.map((a) => {
-    const tags = a.tags
-      .map((t) => `<span class="ksd-tag ksd-tag--${t.tone}">${t.text}</span>`)
-      .join("");
-    const btnClass = a.btn.style === "muted" ? "ksd-action-btn ksd-action-btn--muted" : "ksd-action-btn";
-    return `
-      <div class="ksd-action">
-        <span class="ksd-action-icon">${ICONS[a.icon]}</span>
-        <div class="ksd-action-body">
-          <p class="ksd-action-title">${a.title}</p>
-          <p class="ksd-action-desc">${a.desc}</p>
-          <div class="ksd-action-meta">${tags}</div>
-        </div>
-        <a href="${a.btn.href}" class="${btnClass}">${a.btn.text}</a>
-      </div>`;
-  }).join("");
-}
-
-/* ===== RENDER: surat terbaru ===== */
-function renderLetters() {
-  document.getElementById("ksd-letters").innerHTML = dashboardData.letters.map(
-    (l) => `
-      <div class="ksd-letter${l.accent === "blue" ? " ksd-letter--blue" : ""}">
-        <p class="ksd-letter-title">${l.title}</p>
-        <span class="ksd-letter-meta">${l.meta}</span>
-      </div>`
-  ).join("");
-}
-
-/* ===== RENDER: jadwal hari ini ===== */
-function renderSchedule() {
-  document.getElementById("ksd-schedule").innerHTML = dashboardData.schedule.map(
-    (s) => `
-      <div class="ksd-schedule-item">
-        <span class="ksd-schedule-dot${s.accent === "blue" ? " ksd-schedule-dot--blue" : ""}"></span>
-        <div class="ksd-schedule-body">
-          <span class="ksd-schedule-time${s.accent === "blue" ? " ksd-schedule-time--blue" : ""}">${s.time}</span>
-          <div class="ksd-schedule-box">
-            <p class="ksd-schedule-name">${s.name}</p>
-            <span class="ksd-schedule-place">${ICONS[s.placeIcon]}${s.place}</span>
-          </div>
-        </div>
-      </div>`
-  ).join("");
-}
-
-/* ===== RENDER: progress pekerjaan (width dari mock, bukan hardcode) ===== */
-function renderProgress() {
-  document.getElementById("ksd-progress").innerHTML = dashboardData.progress.map(
-    (p) => `
-      <div class="ksd-progress-item">
-        <div class="ksd-progress-label-row">
-          <span class="ksd-progress-label">${p.label}</span>
-          <span class="ksd-progress-percent" style="color:${p.color}">${p.percent}%</span>
-        </div>
-        <div class="ksd-progress-bar">
-          <span style="width:${p.percent}%; background:${p.color}"></span>
-        </div>
-      </div>`
-  ).join("");
-}
-
-/* ===== RENDER UTAMA ===== */
-function renderDashboard() {
-  renderStats();
-  renderActions();
-  renderLetters();
-  renderSchedule();
-  renderProgress();
-}
-
-/* ===== Muat data — API saat LIVE, mock saat belum ===== */
-async function loadDashboard() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getDashboardKS();
+const request = (path) => {
+  if (
+    typeof EOfficeAPI === "undefined" ||
+    !EOfficeAPI.config?.LIVE ||
+    typeof EOfficeAPI.request !== "function"
+  ) {
+    throw new Error("API backend belum siap.");
   }
-  return DASHBOARD_MOCK;
+
+  return EOfficeAPI.request("GET", path);
+};
+
+async function getList(path) {
+  const response = await request(path);
+
+  if (
+    response?.status !== true ||
+    !Array.isArray(response.data)
+  ) {
+    throw new Error(`Format data tidak valid: ${path}`);
+  }
+
+  return {
+    items: response.data,
+    total: Number(
+      response.pagination?.total ??
+      response.data.length
+    )
+  };
 }
 
-async function init() {
+function readSession() {
   try {
-    dashboardData = await loadDashboard();
-  } catch (e) {
-    console.error("Gagal memuat dashboard:", e);
+    const raw =
+      sessionStorage.getItem("eoffice_session") ||
+      localStorage.getItem("eoffice_session");
+
+    return JSON.parse(raw || "null");
+  } catch {
+    return null;
+  }
+}
+
+function verifyRole() {
+  const session = readSession();
+  const token = localStorage.getItem("eoffice_token");
+
+  if (!token || session?.role !== "kepala-seksi") {
+    location.replace("../../login.html");
+    return false;
+  }
+
+  return true;
+}
+
+function setText(id, value) {
+  const element = $(id);
+  if (element) element.textContent = value;
+}
+
+function makeCard(label, value, note, icon) {
+  const icons = {
+    surat: "✉",
+    proses: "◷",
+    selesai: "✓",
+    total: "▣"
+  };
+
+  return `
+    <article class="ksd-stat">
+      <span class="ksd-stat-icon">
+        ${icons[icon] || "▣"}
+      </span>
+      <p class="ksd-stat-label">
+        ${escapeHTML(label)}
+      </p>
+      <p class="ksd-stat-value">
+        ${number(value)}
+      </p>
+      <p class="ksd-stat-note">
+        ${escapeHTML(note)}
+      </p>
+    </article>
+  `;
+}
+
+function renderStats(surat, disposisi) {
+  const list = disposisi.items;
+
+  const menunggu = list.filter(
+    (item) => item.status === "menunggu"
+  ).length;
+
+  const proses = list.filter(
+    (item) => item.status === "dalam_proses"
+  ).length;
+
+  const selesai = list.filter(
+    (item) => item.status === "selesai"
+  ).length;
+
+  $("ksd-stats").innerHTML = [
+    makeCard(
+      "Surat Masuk",
+      surat.total,
+      "Surat yang dapat diakses",
+      "surat"
+    ),
+    makeCard(
+      "Disposisi Tercatat",
+      disposisi.total,
+      "Disposisi yang diterbitkan",
+      "total"
+    ),
+    makeCard(
+      "Menunggu",
+      menunggu,
+      "Pada halaman data yang dimuat",
+      "proses"
+    ),
+    makeCard(
+      "Dalam Proses",
+      proses,
+      "Pada halaman data yang dimuat",
+      "proses"
+    ),
+    makeCard(
+      "Selesai",
+      selesai,
+      "Pada halaman data yang dimuat",
+      "selesai"
+    )
+  ].join("");
+}
+
+function renderActions(disposisi) {
+  const list = disposisi.items.filter((item) =>
+    ["menunggu", "dalam_proses", "dikembalikan"]
+      .includes(item.status)
+  );
+
+  setText(
+    "ksd-actions-badge",
+    `${list.length} Item`
+  );
+
+  if (!list.length) {
+    setText(
+      "ksd-actions",
+      "Tidak ada disposisi aktif pada data yang dimuat."
+    );
     return;
   }
-  renderDashboard();
+
+  $("ksd-actions").innerHTML =
+    list.slice(0, 5).map((item) => `
+      <div class="ksd-action">
+        <span class="ksd-action-icon">✉</span>
+
+        <div class="ksd-action-body">
+          <p class="ksd-action-title">
+            ${escapeHTML(item.perihal || "Disposisi")}
+          </p>
+
+          <p class="ksd-action-desc">
+            Kepada:
+            ${escapeHTML(item.ke_user_name || "-")}
+          </p>
+
+          <div class="ksd-action-meta">
+            <span class="ksd-tag ksd-tag--gray">
+              ${escapeHTML(item.status)}
+            </span>
+          </div>
+        </div>
+
+        <a
+          class="ksd-action-btn"
+          href="disposisi.html"
+        >
+          Lihat
+        </a>
+      </div>
+    `).join("");
 }
 
-init();
+function renderLetters(surat) {
+  if (!surat.items.length) {
+    setText(
+      "ksd-letters",
+      "Belum ada surat masuk."
+    );
+    return;
+  }
 
-/* ===== RUNNING TEXT (PENGUMUMAN) — utilitas bersama ===== */
-import { initRunningText, listenRunningText } from "../utils/running-text.js";
+  $("ksd-letters").innerHTML =
+    surat.items.slice(0, 5).map((item) => `
+      <div class="ksd-letter">
+        <p class="ksd-letter-title">
+          ${escapeHTML(item.perihal || "Tanpa perihal")}
+        </p>
 
-initRunningText("kepala-seksi");
-listenRunningText("kepala-seksi");
+        <span class="ksd-letter-meta">
+          ${escapeHTML(item.no_surat || "-")}
+          •
+          ${escapeHTML(item.asal || "-")}
+        </span>
+      </div>
+    `).join("");
+}
+
+function hideUnintegrated() {
+  // Belum ada endpoint dashboard khusus
+  // untuk jadwal dan progress pekerjaan.
+  const schedule = $("ksd-schedule");
+  const progress = $("ksd-progress");
+
+  if (schedule) {
+    schedule.textContent =
+      "Jadwal belum terhubung ke API.";
+  }
+
+  if (progress) {
+    progress.textContent =
+      "Progress pekerjaan belum terhubung ke API.";
+  }
+
+  // Hindari tombol tambah jadwal
+  // yang belum memiliki integrasi.
+  document.querySelectorAll(
+    ".ksd-add-btn"
+  ).forEach((button) => {
+    button.disabled = true;
+    button.title = "Fitur belum terintegrasi";
+  });
+}
+
+async function initDashboardKS() {
+  if (!verifyRole()) return;
+
+  setText("ksd-stats", "Memuat statistik...");
+  setText("ksd-actions", "Memuat disposisi...");
+  setText("ksd-letters", "Memuat surat...");
+
+  hideUnintegrated();
+
+  try {
+    const [surat, disposisi] =
+      await Promise.all([
+        getList("/surat-masuk?per_page=50"),
+        getList("/disposisi?per_page=50")
+      ]);
+
+    renderStats(surat, disposisi);
+    renderActions(disposisi);
+    renderLetters(surat);
+
+    console.info(
+      "Dashboard Kepala Seksi berhasil dimuat."
+    );
+
+  } catch (error) {
+    console.error(
+      "Dashboard Kepala Seksi:",
+      error.message
+    );
+
+    setText(
+      "ksd-stats",
+      "Statistik gagal dimuat."
+    );
+
+    setText(
+      "ksd-actions",
+      "Disposisi gagal dimuat."
+    );
+
+    setText(
+      "ksd-letters",
+      "Surat gagal dimuat."
+    );
+  }
+}
+
+function start() {
+  initRunningText("kepala-seksi");
+  listenRunningText("kepala-seksi");
+  initDashboardKS();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    start,
+    { once: true }
+  );
+} else {
+  start();
+}
