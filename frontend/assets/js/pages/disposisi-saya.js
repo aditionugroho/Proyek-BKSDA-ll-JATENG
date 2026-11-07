@@ -14,8 +14,69 @@ let disposisiPgData = [];
 
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getDisposisiSaya();
+    const response = await EOfficeAPI.request(
+      "GET",
+      "/disposisi?per_page=50"
+    );
+
+    if (!response.status || !Array.isArray(response.data)) {
+      throw new Error(
+        response.message || "Format respons disposisi tidak sesuai."
+      );
+    }
+
+    const statusMap = {
+      menunggu: "baru",
+      dalam_proses: "berjalan",
+      dikembalikan: "diterima",
+      selesai: "selesai"
+    };
+
+    return response.data.map((d) => {
+      const deadline = d.deadline
+        ? String(d.deadline).slice(0, 10)
+        : "";
+
+      const tanggal = deadline
+        ? new Date(deadline + "T00:00:00")
+        : null;
+
+      const terlambat =
+        tanggal &&
+        !Number.isNaN(tanggal.getTime()) &&
+        tanggal.getTime() < new Date().setHours(0, 0, 0, 0) &&
+        d.status !== "selesai";
+
+      return {
+        id: Number(d.id),
+        nomor: `DSP-${d.id}`,
+        suratNomor:
+          d.no_surat ||
+          d.no_agenda ||
+          `Surat #${d.surat_masuk_id}`,
+        suratPerihal: d.perihal || "-",
+        instruksi: d.catatan || "-",
+        status: statusMap[d.status] || "baru",
+        statusBackend: d.status,
+        prioritas: {
+          text: "Tidak ditetapkan",
+          tone: "gray"
+        },
+        batas: {
+          line1: deadline || "Tanpa deadline",
+          line2: terlambat ? "Terlambat" : "",
+          red: Boolean(terlambat)
+        },
+        laporan: d.hasil_tindak_lanjut
+          ? {
+              text: d.hasil_tindak_lanjut,
+              waktu: d.updated_at || "-"
+            }
+          : null
+      };
+    });
   }
+
   return DISPOSISI_PG_MOCK;
 }
 
@@ -128,54 +189,168 @@ document.getElementById("pgd-tbody").addEventListener("click", (event) => {
   window.location.href = `detail-disposisi.html?id=${row.dataset.id}`;
 });
 
-/* ===== EVENT: + Lapor Tindak Lanjut → modal form ===== */
+/* ===== LAPOR TINDAK LANJUT ===== */
 document.getElementById("btn-lapor").addEventListener("click", () => {
-  const belumSelesai = disposisiPgData.filter((d) => d.status === "baru" || d.status === "diterima");
-  if (belumSelesai.length === 0) {
-    showToast("Tidak ada disposisi aktif untuk dilaporkan");
+  const live = Boolean(window.EOfficeAPI && EOfficeAPI.config.LIVE);
+
+  const aktif = disposisiPgData.filter((d) =>
+    live
+      ? d.statusBackend !== "selesai"
+      : d.status !== "selesai"
+  );
+
+  if (aktif.length === 0) {
+    showToast("Tidak ada disposisi aktif untuk dilaporkan.");
     return;
   }
 
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  let sedangKirim = false;
+
   openModal({
     title: "Lapor Tindak Lanjut",
-    desc: "Pilih disposisi dan tuliskan laporan progres Anda:",
+    desc: "Pilih disposisi dan tuliskan laporan progres Anda.",
     html: `
       <div class="app-modal-list">
-        <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Disposisi</strong>
-          <select id="lapor-id" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none">
-            ${belumSelesai.map((d) => `<option value="${d.id}">${d.nomor} — ${d.suratPerihal}</option>`).join("")}
+        <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+          <strong>Disposisi</strong>
+          <select id="lapor-id" style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:8px">
+            ${aktif.map((d) => `
+              <option value="${Number(d.id)}">
+                ${escapeHtml(d.nomor)} - ${escapeHtml(d.suratPerihal)}
+              </option>
+            `).join("")}
           </select>
         </div>
-        <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Laporan Tindak Lanjut *</strong>
-          <textarea id="lapor-text" rows="4" placeholder="Tuliskan progres atau hasil tindak lanjut..." style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none;resize:vertical"></textarea>
-          <p id="lapor-error" style="display:none;margin:0;font-size:12px;color:#DC2626"></p>
+        <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+          <strong>Laporan Tindak Lanjut *</strong>
+          <textarea id="lapor-text" rows="4"
+            placeholder="Tuliskan progres atau hasil tindak lanjut..."
+            style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:8px"></textarea>
+          <p id="lapor-error" style="display:none;color:#DC2626;font-size:12px"></p>
         </div>
       </div>`,
     confirmLabel: "Kirim Laporan",
     cancelLabel: "Batal",
+
     onConfirm: () => {
-      const id = Number(document.getElementById("lapor-id").value);
-      const text = document.getElementById("lapor-text").value.trim();
+      if (sedangKirim) return false;
+
+      const id = Number(document.getElementById("lapor-id")?.value);
+      const hasil = document.getElementById("lapor-text")?.value.trim() || "";
       const errorEl = document.getElementById("lapor-error");
 
-      if (text === "") {
-        errorEl.textContent = "Laporan wajib diisi";
+      if (!hasil) {
+        errorEl.textContent = "Laporan wajib diisi.";
         errorEl.style.display = "block";
         return false;
       }
 
-      const now = new Date();
-      const waktu = `Hari ini, ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} WIB`;
-      const item = disposisiPgData.find((d) => d.id === id);
-      if (item) {
-        item.laporan = { text, waktu };
-        item.status = "berjalan";
+      if (!aktif.some((d) => Number(d.id) === id)) {
+        errorEl.textContent = "Disposisi tidak valid.";
+        errorEl.style.display = "block";
+        return false;
       }
 
-      renderTable();
-      showToast("Laporan tindak lanjut dikirim");
+      if (!live) {
+        const item = disposisiPgData.find((d) => Number(d.id) === id);
+        if (item) {
+          item.laporan = {
+            text: hasil,
+            waktu: new Date().toLocaleString("id-ID")
+          };
+          item.status = "berjalan";
+        }
+
+        renderTabCount();
+        renderTable();
+        showToast("Laporan tindak lanjut disimpan dalam mode demo.");
+        return;
+      }
+
+      sedangKirim = true;
+
+      const confirmBtn = document.querySelector(
+        ".app-modal-backdrop [data-modal-confirm]"
+      );
+
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Mengirim...";
+      }
+
+      errorEl.style.display = "none";
+
+      // Modal tetap terbuka sampai request selesai.
+      void (async () => {
+        let tersimpan = false;
+
+        try {
+          const response = await EOfficeAPI.tindakLanjutDisposisi(
+            id,
+            hasil
+          );
+
+          if (!response.status) {
+            throw new Error(
+              response.message || "Backend menolak laporan."
+            );
+          }
+
+          tersimpan = true;
+
+          disposisiPgData = await loadData();
+
+          currentStatus = "berjalan";
+
+          document.querySelectorAll(".pgd-tab").forEach((tab) => {
+            tab.classList.toggle(
+              "is-active",
+              tab.dataset.status === currentStatus
+            );
+          });
+
+          renderTabCount();
+          renderTable();
+
+          document.querySelector(
+            ".app-modal-backdrop [data-modal-cancel]"
+          )?.click();
+
+          showToast("Laporan tindak lanjut berhasil tersimpan.");
+        } catch (error) {
+          if (tersimpan) {
+            document.querySelector(
+              ".app-modal-backdrop [data-modal-cancel]"
+            )?.click();
+
+            showToast(
+              "Laporan tersimpan, tetapi daftar gagal diperbarui. Muat ulang halaman."
+            );
+          } else {
+            errorEl.textContent =
+              error.message || "Gagal mengirim laporan.";
+            errorEl.style.display = "block";
+          }
+        } finally {
+          sedangKirim = false;
+
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Kirim Laporan";
+          }
+        }
+      })();
+
+      // Wajib false: modal.js tidak mendukung Promise pada onConfirm.
+      return false;
     }
   });
 });
@@ -191,6 +366,16 @@ async function init() {
     disposisiPgData = [];
     tbody.innerHTML = `<tr class="pgd-empty"><td colspan="5">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
     return;
+  }
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const tabRevisi = document.querySelector(
+      '.pgd-tab[data-status="diterima"]'
+    );
+    if (tabRevisi) {
+      tabRevisi.title =
+        "Tab ini menampilkan disposisi yang dikembalikan untuk revisi.";
+    }
   }
 
   renderTabCount();

@@ -14,6 +14,14 @@ use CodeIgniter\Router\RouteCollection;
 | Header CORS tetap diatur oleh Cors.php dan Filters.php.
 */
 
+// Daftar staf aktif untuk pembuatan disposisi oleh Kepala Seksi
+$routes->get(
+    'api/disposisi/staf-tujuan',
+    'Api\\DisposisiController::stafTujuan',
+    ['filter' => 'role:kepala_seksi']
+);
+
+
 $routes->options(
     'api/(:any)',
     static fn () => service('response')->setStatusCode(204)

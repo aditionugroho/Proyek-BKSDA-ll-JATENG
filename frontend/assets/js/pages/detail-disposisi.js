@@ -15,7 +15,35 @@ let STATUS_KEY = "";
 
 async function loadDetail(id) {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getDisposisiSayaDetail(id);
+    const response = await EOfficeAPI.getDisposisiSayaDetail(id);
+
+    if (!response.status || !response.data) {
+      throw new Error(response.message || "Detail disposisi tidak valid.");
+    }
+
+    const d = response.data;
+
+    return {
+      id: Number(d.id),
+      judul: d.perihal || `Disposisi #${d.id}`,
+      pemberi: d.dari_user_name || "Kepala Seksi",
+      tenggat: d.deadline || "Tidak ditentukan",
+      instruksi: d.catatan || "-",
+      status: d.status || "menunggu",
+      surat: {
+        nomor: d.no_surat || d.no_agenda || "-",
+        tanggal: "-",
+        pengirim: d.asal || "-",
+        perihal: d.perihal || "-"
+      },
+      files: [],
+      laporan: d.hasil_tindak_lanjut
+        ? {
+            text: d.hasil_tindak_lanjut,
+            waktu: d.updated_at || "-"
+          }
+        : null
+    };
   }
   /* Mock: prioritaskan data per-item (baris yang diklik);
      fallback ke DISPOSISI_DETAIL_PG bila field belum ada */
@@ -30,6 +58,15 @@ async function loadDetail(id) {
     surat: found?.surat || DISPOSISI_DETAIL_PG.surat,
     files: found?.files || DISPOSISI_DETAIL_PG.files
   };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /* ===== IKON ===== */
@@ -53,7 +90,7 @@ function renderLaporan() {
   const lama = document.getElementById("pgdd-laporan");
   if (lama) lama.remove();
 
-  if (!found?.laporan) return;
+  if (!disposisi?.laporan) return;
 
   const card = document.querySelector(".pgdd-left .pgdd-card--instruksi");
   if (!card) return;
@@ -71,8 +108,8 @@ function renderLaporan() {
         <h2 class="pgdd-card-title">Laporan Tindak Lanjut</h2>
       </div>
     </div>
-    <div class="pgdd-instruksi-box" style="background:#F0FDF4">${found.laporan.text}</div>
-    <p style="margin:8px 0 0;font-size:11.5px;color:#9CA3AF">Dilaporkan: ${found.laporan.waktu}</p>
+    <div class="pgdd-instruksi-box" style="background:#F0FDF4">${escapeHtml(disposisi.laporan.text)}</div>
+    <p style="margin:8px 0 0;font-size:11.5px;color:#9CA3AF">Dilaporkan: ${escapeHtml(disposisi.laporan.waktu)}</p>
   `;
   card.after(box);
 }
@@ -82,6 +119,12 @@ function renderSurat() {
   document.getElementById("pgdd-surat-tanggal").textContent = disposisi.surat.tanggal;
   document.getElementById("pgdd-surat-pengirim").textContent = disposisi.surat.pengirim;
   document.getElementById("pgdd-surat-perihal").textContent = disposisi.surat.perihal;
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    document.getElementById("pgdd-files").textContent =
+      "Lampiran belum dimuat dari API detail disposisi.";
+    return;
+  }
 
   document.getElementById("pgdd-files").innerHTML = disposisi.files
     .map(
@@ -101,13 +144,41 @@ function renderSurat() {
 /* ===== STATUS DITERIMA ===== */
 function isDiterima() {
   if (window.sessionStorage.getItem(STATUS_KEY) === "diterima") return true;
-  return found ? found.status === "diterima" : false;
+  return disposisi?.status === "diterima";
 }
 
 function renderStatus() {
   const badge = document.getElementById("pgdd-status");
   const btn = document.getElementById("btn-terima");
   const btnLabel = document.getElementById("btn-terima-label");
+
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    const labels = {
+      menunggu: "Menunggu",
+      dalam_proses: "Dalam Proses",
+      dikembalikan: "Perlu Revisi",
+      selesai: "Selesai"
+    };
+
+    badge.textContent = labels[disposisi.status] || disposisi.status;
+    badge.className = "pgdd-badge " +
+      (disposisi.status === "selesai"
+        ? "pgdd-badge--green"
+        : "pgdd-badge--gray");
+
+    // Backend belum menyediakan endpoint "Terima" tersendiri.
+    btn.disabled = true;
+    btnLabel.textContent = "Penerimaan belum tersedia";
+    btn.title = "Status hanya dapat diubah melalui operasi backend yang tersedia.";
+
+    const klarifikasi = document.getElementById("btn-klarifikasi");
+    if (klarifikasi) {
+      klarifikasi.disabled = true;
+      klarifikasi.title = "Endpoint pengiriman klarifikasi belum tersedia.";
+    }
+
+    return;
+  }
 
   if (isDiterima()) {
     badge.textContent = "Diterima";
@@ -131,7 +202,7 @@ document.getElementById("btn-terima").addEventListener("click", () => {
     onConfirm: () => {
       // Simpan di sessionStorage + ubah status di shared data
       window.sessionStorage.setItem(STATUS_KEY, "diterima");
-      if (found) found.status = "diterima";
+      disposisi.status = "diterima";
       renderStatus();
       showToast("Disposisi diterima — status: Sedang Dikerjakan");
     }
@@ -163,6 +234,11 @@ document.getElementById("pgdd-files").addEventListener("click", (event) => {
   const btn = event.target.closest("[data-download]");
   if (!btn) return;
   const file = disposisi.files[Number(btn.dataset.download)];
+  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+    showToast("Unduh lampiran dari detail disposisi belum terhubung.");
+    return;
+  }
+
   showToast(`Mengunduh ${file.name}...`);
 });
 

@@ -48,28 +48,164 @@ const TOTAL_MOCK = 24; // total sistem (untuk teks "dari N disposisi")
 /* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
 let disposisiData = [];
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatTanggalAPI(value) {
+  if (!value) return "—";
+
+  const tanggal = new Date(
+    String(value).replace(" ", "T")
+  );
+
+  if (Number.isNaN(tanggal.getTime())) {
+    return "—";
+  }
+
+  return tanggal.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+let totalDisposisi = 0;
+
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getDisposisi();
+    const response = await EOfficeAPI.request(
+      "GET",
+      "/disposisi?per_page=50"
+    );
+
+    if (!response.status || !Array.isArray(response.data)) {
+      throw new Error(
+        response.message || "Format data disposisi tidak valid."
+      );
+    }
+
+    totalDisposisi =
+      Number(response.pagination?.total) || response.data.length;
+
+    return response.data.map((item) => ({
+      id: item.id,
+      nomor: `DSP-${item.id}`,
+      surat: [
+        item.no_surat || item.no_agenda || `Surat #${item.surat_masuk_id}`,
+        item.perihal
+      ].filter(Boolean).join(" - "),
+      pic: item.ke_user_name || "Tidak diketahui",
+      tanggal: formatTanggalAPI(item.created_at),
+      deadline: item.deadline
+        ? formatTanggalAPI(item.deadline)
+        : "",
+      instruksi: item.catatan || "",
+      catatan: item.catatan || "",
+      status: item.status
+    }));
   }
+
+  totalDisposisi = DISPOSISI_MOCK.length;
   return DISPOSISI_MOCK;
 }
 
-/* ===== SARAN NOMOR SURAT (datalist) — mengurangi salah ketik ===== */
+
+/* ===== PILIHAN SURAT DAN STAF DARI BACKEND ===== */
+let suratOptions = [];
+let stafOptions = [];
+
 async function isiDaftarSurat() {
-  let daftar = [];
-  try {
-    daftar = window.EOfficeAPI && EOfficeAPI.config.LIVE
-      ? await EOfficeAPI.getSuratMasuk()
-      : SURAT_MASUK_MOCK;
-  } catch (e) {
-    return; // saran opsional; gagal memuat tidak menghalangi form
-  }
   const datalist = document.getElementById("daftar-surat");
   if (!datalist) return;
-  datalist.innerHTML = daftar
-    .map((s) => `<option value="${s.nomor} - ${s.perihal}"></option>`)
-    .join("");
+
+  if (!window.EOfficeAPI || !EOfficeAPI.config.LIVE) {
+    datalist.replaceChildren();
+    SURAT_MASUK_MOCK.forEach((s) => {
+      const option = document.createElement("option");
+      option.value = `${s.nomor} - ${s.perihal}`;
+      datalist.appendChild(option);
+    });
+    return;
+  }
+
+  try {
+    const response = await EOfficeAPI.request(
+      "GET",
+      "/surat-masuk?per_page=50"
+    );
+
+    if (!response.status || !Array.isArray(response.data)) {
+      throw new Error("Format daftar surat masuk tidak sesuai.");
+    }
+
+    suratOptions = response.data.filter(
+      (s) => Number(s.id) > 0 && s.status !== "selesai"
+    );
+
+    datalist.replaceChildren();
+
+    suratOptions.forEach((s) => {
+      const option = document.createElement("option");
+      option.value = `${s.no_surat || s.no_agenda || "Surat #" + s.id} - ${s.perihal || ""}`;
+      datalist.appendChild(option);
+    });
+  } catch (error) {
+    suratOptions = [];
+    datalist.replaceChildren();
+    showToast(error.message || "Gagal memuat surat masuk.");
+  }
+}
+
+async function isiDaftarStaf() {
+  if (!window.EOfficeAPI || !EOfficeAPI.config.LIVE) {
+    return;
+  }
+
+  const select = document.getElementById("f-staf");
+  select.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Pilih staf tujuan...";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  select.appendChild(placeholder);
+
+  select.disabled = true;
+
+  try {
+    const response = await EOfficeAPI.getStafTujuan();
+
+    if (!response.status || !Array.isArray(response.data)) {
+      throw new Error("Format daftar staf tidak sesuai.");
+    }
+
+    stafOptions = response.data.filter(
+      (u) => Number.isInteger(Number(u.id)) && Number(u.id) > 0
+    );
+
+    stafOptions.forEach((u) => {
+      const option = document.createElement("option");
+      option.value = String(u.id);
+      option.textContent = u.name;
+      select.appendChild(option);
+    });
+
+    if (stafOptions.length === 0) {
+      throw new Error("Tidak ada staf aktif yang dapat dipilih.");
+    }
+
+    select.disabled = false;
+  } catch (error) {
+    stafOptions = [];
+    showToast(error.message || "Gagal memuat staf.");
+  }
 }
 
 /* ===== IKON ===== */
@@ -100,25 +236,25 @@ function renderTable() {
       (d) => `
       <tr data-id="${d.id}" title="Klik untuk detail disposisi">
         <td>
-          <span class="kdp-nomor">${d.nomor}</span>
-          <span class="kdp-surat">${d.surat}</span>
+          <span class="kdp-nomor">${escapeHtml(d.nomor)}</span>
+          <span class="kdp-surat">${escapeHtml(d.surat)}</span>
         </td>
         <td>
           <div class="kdp-pic">
-            <span class="kdp-avatar">${inisial(d.pic)}</span>
-            <span class="kdp-pic-name">${d.pic}</span>
+            <span class="kdp-avatar">${inisial(escapeHtml(d.pic))}</span>
+            <span class="kdp-pic-name">${escapeHtml(d.pic)}</span>
           </div>
         </td>
         <td>
-          <span class="kdp-tanggal">${d.tanggal}</span>
-          <span class="kdp-deadline">${CLOCK_ICON}${d.deadline || "\u2014"}</span>
+          <span class="kdp-tanggal">${escapeHtml(d.tanggal)}</span>
+          <span class="kdp-deadline">${CLOCK_ICON}${escapeHtml(d.deadline) || "\u2014"}</span>
         </td>
       </tr>`
     )
     .join("");
 
   document.getElementById("dsp-showing").textContent =
-    `Menampilkan 1-${disposisiData.length} dari ${TOTAL_MOCK + (disposisiData.length > 3 ? disposisiData.length - 3 : 0)} disposisi`;
+  `Menampilkan ${disposisiData.length} dari ${totalDisposisi} disposisi`;
 
   document.getElementById("dsp-prev").disabled = true;
   document.getElementById("dsp-next").disabled = disposisiData.length <= 3;
@@ -139,7 +275,7 @@ REQUIRED.forEach((id) => {
 });
 
 /* ===== SUBMIT: tambah disposisi baru ===== */
-document.getElementById("dsp-form").addEventListener("submit", (event) => {
+document.getElementById("dsp-form").addEventListener("submit", async (event) => {
   event.preventDefault();
 
   let valid = true;
@@ -160,24 +296,72 @@ document.getElementById("dsp-form").addEventListener("submit", (event) => {
     showToast("Disposisi berhasil dikirim");
   };
 
+
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    // LIVE: id, nomor, dan tanggal dibuat oleh server
-    EOfficeAPI.createDisposisi({
-      surat: suratLabel,
-      pic: document.getElementById("f-staf").value,
-      deadline: deadlineRaw || null,
-      instruksi: document.getElementById("f-instruksi").value,
-      catatan: document.getElementById("f-catatan").value
-    })
-      .then((baru) => {
-        disposisiData.unshift(baru);
-        afterSuccess();
-      })
-      .catch((err) => showToast((err && err.message) || "Gagal mengirim disposisi. Periksa koneksi lalu coba lagi."));
+    const surat = suratOptions.find(
+      (s) =>
+        `${s.no_surat || s.no_agenda || "Surat #" + s.id} - ${s.perihal || ""}` === suratLabel
+    );
+
+    const keUserId = Number(
+      document.getElementById("f-staf").value
+    );
+
+    if (!surat) {
+      showToast("Pilih nomor surat dari daftar yang tersedia.");
+      return;
+    }
+
+    if (
+      !Number.isInteger(keUserId) ||
+      !stafOptions.some((u) => Number(u.id) === keUserId)
+    ) {
+      showToast("Pilih staf tujuan yang tersedia.");
+      return;
+    }
+
+    const instruksi = document.getElementById("f-instruksi").value.trim();
+    const catatanTambahan = document.getElementById("f-catatan").value.trim();
+
+    const payload = {
+      surat_masuk_id: Number(surat.id),
+      ke_user_id: keUserId,
+      catatan: [instruksi, catatanTambahan].filter(Boolean).join("\n"),
+      deadline: deadlineRaw || ""
+    };
+
+    const submitButton = document.querySelector(
+      '#dsp-form button[type="submit"]'
+    );
+
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      const response = await EOfficeAPI.createDisposisi(payload);
+
+      if (!response.status) {
+        throw new Error(
+          response.message || "Gagal membuat disposisi."
+        );
+      }
+
+      disposisiData = await loadData();
+      afterSuccess();
+
+      // Perbarui pilihan surat setelah perubahan status
+      await isiDaftarSurat();
+    } catch (error) {
+      showToast(
+        error.message || "Gagal mengirim disposisi."
+      );
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+
     return;
   }
 
-  // MOCK: nomor urut & tanggal dibuat lokal
+    // MOCK: nomor urut & tanggal dibuat lokal
   const urut = disposisiData.length + 1;
 
   // Pemicu notif: pegawai tujuan diberi tahu (mock)
@@ -251,7 +435,7 @@ async function init() {
   const tbody = document.getElementById("dsp-tbody");
   tbody.innerHTML = `<tr><td colspan="3">Memuat data disposisi...</td></tr>`;
 
-  isiDaftarSurat(); // saran nomor surat — jalan paralel, tidak menahan tabel
+  await Promise.allSettled([isiDaftarSurat(), isiDaftarStaf()]);
 
   try {
     disposisiData = await loadData();
