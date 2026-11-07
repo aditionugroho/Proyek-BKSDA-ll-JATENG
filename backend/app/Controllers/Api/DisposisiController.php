@@ -1737,4 +1737,30 @@ public function kembalikan($id = null)
     ]);
 }
 
+
+    public function stafTujuan()
+    {
+        $user = $this->getCurrentUser();
+
+        if (!$user || $user['role'] !== 'kepala_seksi') {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akses tidak diizinkan.',
+            ], 403);
+        }
+
+        $staf = $this->userModel
+            ->select('id, name')
+            ->where('role', 'staf')
+            ->where('status', 1)
+            ->orderBy('name', 'ASC')
+            ->findAll();
+
+        return $this->respond([
+            'status' => true,
+            'message' => 'Daftar staf tujuan berhasil diambil.',
+            'data' => $staf,
+        ]);
+    }
+
 }

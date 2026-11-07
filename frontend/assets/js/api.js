@@ -257,6 +257,22 @@ const EOfficeAPI = (() => {
     return request("POST", "/disposisi", payload);
   }
 
+  async function tindakLanjutDisposisi(id, hasil) {
+    return request(
+      "PATCH",
+      "/disposisi/" + encodeURIComponent(id) + "/tindak-lanjut",
+      { hasil_tindak_lanjut: hasil }
+    );
+  }
+
+  async function selesaikanDisposisi(id) {
+    return request(
+      "PATCH",
+      "/disposisi/" + encodeURIComponent(id) + "/selesai",
+      {}
+    );
+  }
+
   /* ============================================
      NOTIFIKASI
      KONTRAK (LIVE):
@@ -341,6 +357,10 @@ const EOfficeAPI = (() => {
 
   async function getStaf() {
     return request("GET", "/staf");
+  }
+
+  async function getStafTujuan() {
+    return request("GET", "/disposisi/staf-tujuan");
   }
 
   /* ============================================
@@ -647,7 +667,7 @@ const EOfficeAPI = (() => {
   }
 
   async function getDisposisiSaya() {
-    return request("GET", "/disposisi-saya");
+    return request("GET", "/disposisi");
   }
 
   async function getDokumenSaya() {
@@ -678,7 +698,7 @@ const EOfficeAPI = (() => {
   }
 
   async function getDisposisiSayaDetail(id) {
-    return request("GET", "/disposisi-saya/" + id);
+    return request("GET", "/disposisi/" + id);
   }
 
   async function getDokumenSayaDetail(id) {
@@ -899,6 +919,8 @@ const EOfficeAPI = (() => {
     getSuratKeluar: getSuratKeluar,
     getDisposisi: getDisposisi,
     createDisposisi: createDisposisi,
+    tindakLanjutDisposisi: tindakLanjutDisposisi,
+    selesaikanDisposisi: selesaikanDisposisi,
     getNotifikasi: getNotifikasi,
     markNotifikasiRead: markNotifikasiRead,
     markAllNotifikasiRead: markAllNotifikasiRead,
@@ -906,6 +928,7 @@ const EOfficeAPI = (() => {
     getArsip: getArsip,
     getJadwal: getJadwal,
     getStaf: getStaf,
+    getStafTujuan: getStafTujuan,
     getSuratMasukDetail: getSuratMasukDetail,
     getSuratKeluarDetail: getSuratKeluarDetail,
     getArsipDetail: getArsipDetail,
@@ -957,3 +980,5 @@ const EOfficeAPI = (() => {
     request: request // untuk endpoint baru: selalu lewat sini
   };
 })();
+
+window.EOfficeAPI = EOfficeAPI;
