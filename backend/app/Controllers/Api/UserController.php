@@ -874,4 +874,24 @@ if (array_key_exists('resort_id', $data)) {
             'message' => 'User berhasil dinonaktifkan.',
         ]);
     }
+
+    /**
+     * GET /api/staf
+     * Direktori staf untuk Kepala Seksi.
+     */
+    public function direktoriStaf()
+    {
+        $staf = (new UserModel())
+            ->select('id, name, email, no_whatsapp, jabatan, status')
+            ->where('role', 'staf')
+            ->orderBy('name', 'ASC')
+            ->findAll();
+
+        return $this->respond([
+            'status' => true,
+            'message' => 'Direktori staf berhasil diambil.',
+            'data' => $staf,
+        ]);
+    }
+
 }

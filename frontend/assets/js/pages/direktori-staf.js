@@ -12,9 +12,36 @@ let stafData = [];
 
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getStaf();
+    const response = await EOfficeAPI.getStaf();
+
+    if (!response || response.status !== true ||
+        !Array.isArray(response.data)) {
+      throw new Error(response?.message || "Format data staf tidak sesuai.");
+    }
+
+    return response.data.map((s) => ({
+      id: s.id,
+      nama: String(s.name || "Tanpa Nama"),
+      nip: "?",
+      golongan: "Data golongan belum tersedia",
+      jabatan: String(s.jabatan || "Belum diisi"),
+      email: String(s.email || "?"),
+      telp: String(s.no_whatsapp || "?"),
+      tugas: null,
+      status: Number(s.status) === 1 ? "AKTIF" : "NONAKTIF"
+    }));
   }
+
   return STAF_MOCK;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 const ICONS = {
@@ -35,15 +62,15 @@ let jabatanFilter = "all";
 function renderStats() {
   const total = stafData.length;
   const aktif = stafData.filter((s) => s.status === "AKTIF").length;
-  const bertugas = stafData.filter((s) => s.tugas > 0).length;
-  const beban = stafData.reduce((sum, s) => sum + (s.tugas || 0), 0);
+  const bertugas = stafData.some((s) => s.tugas === null) ? null : stafData.filter((s) => s.tugas > 0).length;
+  const beban = stafData.some((s) => s.tugas === null) ? null : stafData.reduce((sum, s) => sum + (s.tugas || 0), 0);
   const pct = total ? Math.round((aktif / total) * 100) : 0;
 
   const stats = [
     { label: "Total Staf", labelTone: "", value: String(total), valueTone: "", suffix: "personel", sub: "Personel terdaftar pada seksi", icon: "users", tone: "blue" },
     { label: "Staf Aktif", labelTone: "green", value: String(aktif), valueTone: "green", suffix: `orang (${pct}%)`, sub: "Siap menerima disposisi harian", icon: "check", tone: "green" },
-    { label: "Sedang Bertugas", labelTone: "blue", value: String(bertugas), valueTone: "blue", suffix: "personel", sub: "Memiliki tugas berjalan", icon: "clipboard", tone: "blue" },
-    { label: "Total Beban Tugas", labelTone: "orange", value: String(beban), valueTone: "orange", suffix: "tugas", sub: "Akumulasi tugas seluruh seksi", icon: "clock", tone: "amber" }
+    { label: "Sedang Bertugas", labelTone: "blue", value: bertugas === null ? "?" : String(bertugas), valueTone: "blue", suffix: "personel", sub: "Data tugas belum tersedia", icon: "clipboard", tone: "blue" },
+    { label: "Total Beban Tugas", labelTone: "orange", value: beban === null ? "?" : String(beban), valueTone: "orange", suffix: "tugas", sub: "Data beban tugas belum tersedia", icon: "clock", tone: "amber" }
   ];
 
   document.getElementById("st-stats").innerHTML = stats.map((s) => `
@@ -79,23 +106,23 @@ function renderTable(rows) {
     .map(
       (s, i) => `
       <tr>
-        <td><span class="st-no">${i + 1}</span></td>
+        <td><span class="st-no">${(page - 1) * PAGE_SIZE + i + 1}</span></td>
         <td>
           <div class="st-identity">
-            <span class="st-avatar">${inisial(s.nama)}</span>
+            <span class="st-avatar">${escapeHtml(inisial(s.nama))}</span>
             <div>
-              <span class="st-nama">${s.nama}</span>
-              <span class="st-golongan">${s.golongan}</span>
+              <span class="st-nama">${escapeHtml(s.nama)}</span>
+              <span class="st-golongan">${escapeHtml(s.golongan)}</span>
             </div>
           </div>
         </td>
-        <td><span class="st-nip">${s.nip}</span></td>
-        <td><span class="st-jabatan">${s.jabatan}</span></td>
+        <td><span class="st-nip">${escapeHtml(s.nip)}</span></td>
+        <td><span class="st-jabatan">${escapeHtml(s.jabatan)}</span></td>
         <td>
-          <span class="st-email">${s.email}</span>
-          <span class="st-telp">${s.telp}</span>
+          <span class="st-email">${escapeHtml(s.email)}</span>
+          <span class="st-telp">${escapeHtml(s.telp)}</span>
         </td>
-        <td><span class="st-tugas-box">${s.tugas} Tugas</span></td>
+        <td><span class="st-tugas-box">${s.tugas === null ? "?" : s.tugas + " Tugas"}</span></td>
         <td><span class="st-badge st-badge--${s.status === "AKTIF" ? "green" : "amber"}">${s.status}</span></td>
         <td class="th-actions"><button type="button" class="st-detail-link" data-detail="${s.id}">Lihat Detail</button></td>
       </tr>`
@@ -114,10 +141,10 @@ function renderGrid(rows) {
     .map(
       (s) => `
       <article class="st-card-item">
-        <span class="st-avatar st-avatar--lg">${inisial(s.nama)}</span>
-        <p class="st-card-nama">${s.nama}</p>
-        <p class="st-card-jabatan">${s.jabatan}</p>
-        <span class="st-tugas-box">${s.tugas} Tugas</span>
+        <span class="st-avatar st-avatar--lg">${escapeHtml(inisial(s.nama))}</span>
+        <p class="st-card-nama">${escapeHtml(s.nama)}</p>
+        <p class="st-card-jabatan">${escapeHtml(s.jabatan)}</p>
+        <span class="st-tugas-box">${s.tugas === null ? "?" : s.tugas + " Tugas"}</span>
         <button type="button" class="st-btn st-btn--outline st-btn--sm" data-detail="${s.id}">Lihat Detail</button>
       </article>`
     )
@@ -125,20 +152,55 @@ function renderGrid(rows) {
 }
 
 /* ===== RENDER FOOTER ===== */
-function renderFooter(rows) {
-  const showing = page === 1 ? `Menampilkan 1-${rows.length} dari ${stafData.length} staf seksi` : `Menampilkan 1-4 dari ${stafData.length} staf seksi`;
-  document.getElementById("st-showing").textContent = showing;
-  document.getElementById("st-count").textContent = `${rows.length} dari ${stafData.length} staf`;
-  document.getElementById("st-prev").disabled = page === 1;
-  document.getElementById("st-next").disabled = page === 2;
-  document.querySelectorAll(".st-page-num").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.page) === page));
+const PAGE_SIZE = 4;
+
+function renderFooter(rows, totalFiltered) {
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const start = totalFiltered === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const end = totalFiltered === 0 ? 0 : start + rows.length - 1;
+
+  document.getElementById("st-showing").textContent =
+    `Menampilkan ${start}-${end} dari ${totalFiltered} staf`;
+
+  document.getElementById("st-count").textContent =
+    `${rows.length} dari ${totalFiltered} staf`;
+
+  document.getElementById("st-prev").disabled = page <= 1;
+  document.getElementById("st-next").disabled = page >= totalPages;
+
+  const firstButton = document.querySelector(".st-page-num");
+  if (!firstButton) return;
+
+  const parent = firstButton.parentElement;
+  parent.querySelectorAll(".st-page-num").forEach((button) => button.remove());
+
+  for (let p = 1; p <= totalPages; p++) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "st-page-num";
+    button.dataset.page = String(p);
+    button.textContent = String(p);
+
+    if (p === page) button.classList.add("is-active");
+
+    button.addEventListener("click", () => {
+      page = p;
+      refresh();
+    });
+
+    parent.appendChild(button);
+  }
 }
 
 /* ===== REFRESH ===== */
 function refresh() {
-  let rows = getFiltered();
-  // Halaman 2 (dummy): tampilkan 4 baris terakhir
-  if (page === 2) rows = rows.slice(4, 8);
+  const filtered = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  page = Math.min(Math.max(page, 1), totalPages);
+
+  const start = (page - 1) * PAGE_SIZE;
+  const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (mode === "tabel") {
     document.getElementById("st-table-wrap").hidden = false;
@@ -149,7 +211,8 @@ function refresh() {
     document.getElementById("st-grid").hidden = false;
     renderGrid(rows);
   }
-  renderFooter(rows);
+
+  renderFooter(rows, filtered.length);
 }
 
 /* ===== UTIL ===== */
@@ -208,7 +271,7 @@ document.getElementById("st-prev").addEventListener("click", () => {
   }
 });
 document.getElementById("st-next").addEventListener("click", () => {
-  if (page < 2) {
+  if (page < Math.max(1, Math.ceil(getFiltered().length / PAGE_SIZE))) {
     page++;
     refresh();
   }
@@ -229,10 +292,10 @@ function openDetail(id) {
     desc: s.golongan,
     html: `
       <div class="app-modal-list">
-        <div class="app-modal-option" style="cursor:default"><span><strong>NIP</strong><span>${s.nip}</span></span></div>
-        <div class="app-modal-option" style="cursor:default"><span><strong>Jabatan</strong><span>${s.jabatan}</span></span></div>
-        <div class="app-modal-option" style="cursor:default"><span><strong>Kontak</strong><span>${s.email} \u2022 ${s.telp}</span></span></div>
-        <div class="app-modal-option" style="cursor:default"><span><strong>Tugas Aktif</strong><span>${s.tugas} tugas berjalan \u2022 Status: ${s.status}</span></span></div>
+        <div class="app-modal-option" style="cursor:default"><span><strong>NIP</strong><span>${escapeHtml(s.nip)}</span></span></div>
+        <div class="app-modal-option" style="cursor:default"><span><strong>Jabatan</strong><span>${escapeHtml(s.jabatan)}</span></span></div>
+        <div class="app-modal-option" style="cursor:default"><span><strong>Kontak</strong><span>${escapeHtml(s.email)} \u2022 ${escapeHtml(s.telp)}</span></span></div>
+        <div class="app-modal-option" style="cursor:default"><span><strong>Tugas Aktif</strong><span>${s.tugas === null ? "Data belum tersedia" : s.tugas + " tugas berjalan"} \u2022 Status: ${s.status}</span></span></div>
       </div>`,
     cancelLabel: null,
     confirmLabel: "Tutup"
@@ -245,13 +308,17 @@ document.addEventListener("click", (event) => {
 });
 
 /* ===== EVENT: sinkron ===== */
-document.getElementById("btn-sinkron").addEventListener("click", () => {
-  showToast("Data tersinkronisasi");
+document.getElementById("btn-sinkron").addEventListener("click", async () => {
+  const ok = await init();
+  if (ok) showToast("Data staf berhasil diperbarui");
 });
 
 /* ===== OPSI JABATAN (dinamis dari data) ===== */
 function isiOpsiJabatan() {
   const jabatanSelect = document.getElementById("st-jabatan");
+  jabatanSelect.querySelectorAll('option:not([value="all"])')
+    .forEach((option) => option.remove());
+
   [...new Set(stafData.map((s) => s.jabatan))].forEach((j) => {
     const opt = document.createElement("option");
     opt.value = j;
@@ -267,15 +334,21 @@ async function init() {
 
   try {
     stafData = await loadData();
+    if (!Array.isArray(stafData)) {
+      throw new Error("Data staf bukan array.");
+    }
   } catch (e) {
+    console.error("Gagal memuat direktori staf:", e);
     stafData = [];
     tbody.innerHTML = `<tr class="st-empty"><td colspan="8">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</td></tr>`;
-    return;
+    showToast("Gagal memuat data staf");
+    return false;
   }
 
   isiOpsiJabatan();
   renderStats();
   refresh();
+  return true;
 }
 
 init();
