@@ -856,11 +856,11 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function getAdminProfil() {
-    return request("GET", "/admin/profil");
+    return getProfil();
   }
 
   async function updateAdminProfil(payload) {
-    return request("PUT", "/admin/profil", payload);
+    return updateProfil(payload);
   }
 
   /* ============================================

@@ -7,6 +7,7 @@
 
 let backdropEl = null;
 let confirmCb = null;
+let confirmPending = false;
 
 const MODAL_STYLE = `
   .app-modal-backdrop {
@@ -127,10 +128,18 @@ function ensureModal() {
     document.body.appendChild(backdropEl);
 
     backdropEl.addEventListener("click", (event) => {
-      if (event.target.closest("[data-modal-cancel]") || event.target === backdropEl) closeModal();
+      if (!confirmPending &&
+        (event.target.closest("[data-modal-cancel]") ||
+         event.target === backdropEl)) {
+      closeModal();
+    }
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && backdropEl.classList.contains("is-open")) closeModal();
+      if (!confirmPending &&
+        event.key === "Escape" &&
+        backdropEl.classList.contains("is-open")) {
+      closeModal();
+    }
     });
   }
 }
@@ -147,6 +156,7 @@ function ensureModal() {
  * @param {Function} [opts.onConfirm]
  */
 export function openModal(opts = {}) {
+  if (confirmPending) return;
   ensureModal();
 
   confirmCb = opts.onConfirm || null;
@@ -167,17 +177,45 @@ export function openModal(opts = {}) {
   confirmBtn.textContent = opts.confirmLabel || "OK";
   confirmBtn.className = `app-modal-btn app-modal-btn--confirm${opts.danger ? " app-modal-btn--danger" : ""}`;
 
-  confirmBtn.onclick = () => {
-    let result;
-    if (typeof confirmCb === "function") result = confirmCb();
-    // onConfirm yang mengembalikan false menjaga modal tetap terbuka
-    if (result !== false) closeModal();
+  confirmPending = false;
+  confirmBtn.disabled = false;
+  cancelBtn.disabled = false;
+
+  confirmBtn.onclick = async () => {
+    if (confirmPending) return;
+
+    confirmPending = true;
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+
+    const originalLabel = confirmBtn.textContent;
+    confirmBtn.textContent = "Memproses...";
+
+    try {
+      const result = typeof confirmCb === "function"
+        ? await confirmCb()
+        : true;
+
+      // false berarti validasi atau request gagal.
+      if (result !== false) {
+        closeModal(true);
+      }
+    } catch (error) {
+      console.error("Konfirmasi modal gagal:", error);
+      // Modal tetap terbuka jika callback gagal.
+    } finally {
+      confirmPending = false;
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      confirmBtn.textContent = originalLabel;
+    }
   };
 
   backdropEl.classList.add("is-open");
 }
 
-export function closeModal() {
+export function closeModal(force = false) {
+  if (confirmPending && !force) return;
   if (backdropEl) backdropEl.classList.remove("is-open");
   confirmCb = null;
 }

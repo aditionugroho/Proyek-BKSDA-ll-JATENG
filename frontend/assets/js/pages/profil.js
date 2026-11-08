@@ -20,10 +20,34 @@ const PROFILE_MOCK = {
 let PROFILE = null;
 
 async function loadProfil() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getProfil();
+  if (window.EOfficeAPI?.config?.LIVE) {
+    const response = await EOfficeAPI.getProfil();
+
+    if (
+      !response ||
+      response.status !== true ||
+      !response.data ||
+      typeof response.data !== "object" ||
+      Array.isArray(response.data)
+    ) {
+      throw new Error(
+        response?.message || "Format respons profil tidak sesuai."
+      );
+    }
+
+    const p = response.data;
+
+    return {
+      nama: String(p.nama || "Belum tersedia"),
+      jabatan: String(p.jabatan || "Belum tersedia"),
+      nip: String(p.nip || "Belum tersedia"),
+      unit: String(p.unit || "Belum tersedia"),
+      email: String(p.email || ""),
+      telepon: String(p.telepon || "")
+    };
   }
-  return PROFILE_MOCK;
+
+  return { ...PROFILE_MOCK };
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,26 +89,32 @@ function setEditMode(on) {
 }
 
 /* Tombol Edit / Simpan */
-editBtn.addEventListener("click", () => {
+editBtn.addEventListener("click", async () => {
   if (!editMode) {
     setEditMode(true);
     namaInput.focus();
     return;
   }
 
-  // Simpan: validasi
-  let valid = true;
+  if (editBtn.disabled) return;
+
+  const nama = namaInput.value.trim();
+  const email = emailInput.value.trim();
+  const telepon = teleponInput.value.trim();
 
   const namaError = document.getElementById("pf-nama-error");
-  if (namaInput.value.trim() === "") {
+  const emailError = document.getElementById("pf-email-error");
+
+  let valid = true;
+
+  if (!nama) {
     namaError.hidden = false;
     valid = false;
   } else {
     namaError.hidden = true;
   }
 
-  const emailError = document.getElementById("pf-email-error");
-  if (!EMAIL_RE.test(emailInput.value.trim())) {
+  if (!EMAIL_RE.test(email)) {
     emailError.textContent = "Format email tidak valid";
     emailError.hidden = false;
     valid = false;
@@ -94,27 +124,61 @@ editBtn.addEventListener("click", () => {
 
   if (!valid) return;
 
-  const simpanSukses = () => {
-    PROFILE.nama = namaInput.value.trim();
-    PROFILE.email = emailInput.value.trim();
-    PROFILE.telepon = teleponInput.value.trim();
-    setEditMode(false);
+  editBtn.disabled = true;
+  cancelBtn.disabled = true;
+
+  try {
+    if (window.EOfficeAPI?.config?.LIVE) {
+      const response = await EOfficeAPI.updateProfil({
+        nama,
+        email,
+        telepon
+      });
+
+      if (
+        response?.status !== true ||
+        !response.data ||
+        typeof response.data !== "object"
+      ) {
+        throw new Error(
+          response?.message ||
+          "Server tidak mengonfirmasi perubahan profil."
+        );
+      }
+
+      const p = response.data;
+
+      PROFILE.nama = String(p.nama ?? "");
+      PROFILE.email = String(p.email ?? "");
+      PROFILE.telepon = String(p.telepon ?? "");
+      PROFILE.jabatan = String(p.jabatan || "Belum tersedia");
+      PROFILE.nip = String(p.nip || "Belum tersedia");
+      PROFILE.unit = String(p.unit || "Belum tersedia");
+
+    } else {
+      PROFILE.nama = nama;
+      PROFILE.email = email;
+      PROFILE.telepon = telepon;
+    }
+
     applyProfile();
-    showToast("Profil diperbarui");
-  };
+    setEditMode(false);
 
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    EOfficeAPI.updateProfil({
-      nama: namaInput.value.trim(),
-      email: emailInput.value.trim(),
-      telepon: teleponInput.value.trim()
-    })
-      .then(simpanSukses)
-      .catch(() => showToast("Gagal menyimpan profil. Periksa koneksi lalu coba lagi."));
-    return;
+    showToast("Profil berhasil diperbarui.");
+
+  } catch (error) {
+    console.error("Gagal menyimpan profil:", error);
+
+    showToast(
+      error?.message ||
+      "Gagal menyimpan profil. Silakan coba kembali."
+    );
+
+    // Tetap dalam mode edit agar data tidak hilang.
+  } finally {
+    editBtn.disabled = false;
+    cancelBtn.disabled = false;
   }
-
-  simpanSukses();
 });
 
 /* Batal: kembali read-only tanpa mengubah data */
@@ -130,59 +194,90 @@ document.querySelectorAll("[data-locked]").forEach((input) => {
   });
 });
 
-/* ===== MODAL GANTI PASSWORD ===== */
+/* ===== GANTI PASSWORD DENGAN BACKEND ===== */
 document.getElementById("btn-password").addEventListener("click", () => {
   openModal({
     title: "Ubah Kata Sandi",
-    desc: "Masukkan kata sandi lama dan kata sandi baru (minimal 8 karakter).",
+    desc: "Masukkan password lama dan password baru (8-128 karakter).",
     html: `
       <div class="app-modal-list">
         <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Kata Sandi Lama</strong>
-          <input type="password" id="pw-lama" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none" />
+          <strong>Password Lama</strong>
+          <input type="password" id="pw-lama" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px" />
         </div>
         <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Kata Sandi Baru</strong>
-          <input type="password" id="pw-baru" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none" />
+          <strong>Password Baru</strong>
+          <input type="password" id="pw-baru" autocomplete="new-password" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px" />
         </div>
         <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Konfirmasi Kata Sandi Baru</strong>
-          <input type="password" id="pw-konfirmasi" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none" />
+          <strong>Konfirmasi Password Baru</strong>
+          <input type="password" id="pw-konfirmasi" autocomplete="new-password" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px" />
         </div>
-        <p id="pw-error" style="display:none;margin:0;font-size:12px;color:#DC2626"></p>
+        <p id="pw-error" role="alert" style="display:none;margin:0;font-size:12px;color:#DC2626"></p>
       </div>`,
-    confirmLabel: "Simpan Kata Sandi",
+    confirmLabel: "Simpan Password",
     cancelLabel: "Batal",
-    onConfirm: () => {
+
+    onConfirm: async () => {
       const lama = document.getElementById("pw-lama").value;
       const baru = document.getElementById("pw-baru").value;
       const konfirmasi = document.getElementById("pw-konfirmasi").value;
       const errorEl = document.getElementById("pw-error");
 
-      const showError = (msg) => {
-        errorEl.textContent = msg;
+      const showError = (message) => {
+        errorEl.textContent = message;
         errorEl.style.display = "block";
       };
 
-      if (lama === "" || baru === "" || konfirmasi === "") {
+      errorEl.textContent = "";
+      errorEl.style.display = "none";
+
+      if (!lama || !baru || !konfirmasi) {
         showError("Semua field wajib diisi.");
-        return false; // modal tetap terbuka
-      }
-      if (baru.length < 8) {
-        showError("Kata sandi baru minimal 8 karakter.");
-        return false;
-      }
-      if (baru !== konfirmasi) {
-        showError("Konfirmasi kata sandi tidak cocok.");
         return false;
       }
 
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        EOfficeAPI.gantiKataSandi(lama, baru)
-          .then(() => showToast("Kata sandi berhasil diubah"))
-          .catch(() => showToast("Gagal mengubah kata sandi. Periksa koneksi lalu coba lagi."));
-      } else {
-        showToast("Kata sandi berhasil diubah");
+      if (baru.length < 8 || baru.length > 128) {
+        showError("Password baru harus 8-128 karakter.");
+        return false;
+      }
+
+      if (baru !== konfirmasi) {
+        showError("Konfirmasi password tidak cocok.");
+        return false;
+      }
+
+      if (lama === baru) {
+        showError("Password baru harus berbeda dari password lama.");
+        return false;
+      }
+
+      if (!window.EOfficeAPI?.config?.LIVE) {
+        showError("Ganti password memerlukan koneksi backend aktif.");
+        return false;
+      }
+
+      try {
+        const response = await EOfficeAPI.gantiKataSandi(lama, baru);
+
+        if (response?.status !== true) {
+          throw new Error(
+            response?.message || "Server tidak mengonfirmasi perubahan."
+          );
+        }
+
+        // Backend sudah mencabut semua token setelah password berubah.
+        // Bersihkan sesi lokal dan arahkan pengguna untuk login ulang.
+        await EOfficeAPI.logout();
+
+        window.location.href = "../../login.html";
+        return true;
+      } catch (error) {
+        console.error("Ganti password gagal:", error);
+        showError(
+          error?.message || "Gagal mengubah password. Coba kembali."
+        );
+        return false;
       }
     }
   });
@@ -214,10 +309,23 @@ document.getElementById("btn-logout").addEventListener("click", () => {
 async function init() {
   try {
     PROFILE = await loadProfil();
-  } catch (e) {
-    PROFILE = PROFILE_MOCK;
-    showToast("Gagal memuat profil. Menampilkan data bawaan.");
+  } catch (error) {
+    console.error("Gagal memuat profil Kepala Seksi:", error);
+
+    PROFILE = {
+      nama: "Belum tersedia",
+      jabatan: "Belum tersedia",
+      nip: "Belum tersedia",
+      unit: "Belum tersedia",
+      email: "",
+      telepon: ""
+    };
+
+    editBtn.disabled = true;
+    document.getElementById("btn-password").disabled = true;
+    showToast("Profil gagal dimuat. Periksa koneksi atau login ulang.");
   }
+
   applyProfile();
 }
 

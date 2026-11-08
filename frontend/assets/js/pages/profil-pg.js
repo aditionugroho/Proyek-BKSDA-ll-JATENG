@@ -15,30 +15,43 @@ const PROFILE_MOCK = {
   telepon: "+62 812 3456 7890"
 };
 
-let PROFILE = { ...PROFILE_MOCK };
+let PROFILE = {
+  nama: "Belum tersedia",
+  nip: "Belum tersedia",
+  email: "",
+  telepon: ""
+};
 
 async function loadProfil() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    try {
-      return await EOfficeAPI.getProfil();
-    } catch (e) {
-      /* fallback ke mock bila server belum siap */
+  if (window.EOfficeAPI?.config?.LIVE) {
+    const response = await EOfficeAPI.getProfil();
+
+    if (
+      !response ||
+      response.status !== true ||
+      !response.data ||
+      typeof response.data !== "object" ||
+      Array.isArray(response.data)
+    ) {
+      throw new Error(
+        response?.message || "Format respons profil tidak sesuai."
+      );
     }
+
+    const p = response.data;
+
+    return {
+      nama: String(p.nama || "Belum tersedia"),
+      jabatan: String(p.jabatan || "Belum tersedia"),
+      statusAkun: Number(p.status) === 1 ? "Aktif" : "Nonaktif",
+      nip: String(p.nip || "Belum tersedia"),
+      unit: String(p.unit || "Belum tersedia"),
+      email: String(p.email || ""),
+      telepon: String(p.telepon || "")
+    };
   }
-  /* Mock: nama dari sesi login (bila ada) */
-  const profil = { ...PROFILE_MOCK };
-  try {
-    const session = JSON.parse(window.sessionStorage.getItem("eoffice_session") || "null");
-    if (session?.userId) {
-      profil.nama = session.userId
-        .split(/[._-]/)
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-    }
-  } catch {
-    /* abaikan */
-  }
-  return profil;
+
+  return { ...PROFILE_MOCK };
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,19 +70,36 @@ function applyProfile() {
   document.getElementById("pgpr-nip").textContent = PROFILE.nip;
   emailInput.value = PROFILE.email;
   teleponInput.value = PROFILE.telepon;
+  updateAvatar();
+
+  document.getElementById("pgpr-jabatan").textContent =
+    PROFILE.jabatan || "Belum tersedia";
+
+  document.getElementById("pgpr-unit").textContent =
+    PROFILE.unit || "Belum tersedia";
+
+  document.getElementById("pgpr-golongan").textContent = "Belum tersedia";
+
+  document.getElementById("pgpr-status").textContent =
+    PROFILE.statusAkun || "Belum tersedia";
 }
 
-/* Inisial avatar dari nama */
-(function initAvatar() {
-  const inisial = PROFILE.nama
+/* Inisial avatar mengikuti profil yang sedang login. */
+function updateAvatar() {
+  const nama = String(PROFILE.nama || "").trim();
+
+  const inisial = nama
     .replace(/,.*$/, "")
-    .split(" ")
-    .map((w) => w[0])
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((kata) => kata.charAt(0))
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  document.getElementById("pgpr-avatar").textContent = inisial || "ST";
-})();
+
+  document.getElementById("pgpr-avatar").textContent =
+    inisial && inisial !== "Belum tersedia" ? inisial : "ST";
+}
 
 /* ===== MODE EDIT (email & telepon saja) ===== */
 function setEditMode(on) {
@@ -84,38 +114,60 @@ function setEditMode(on) {
 }
 
 /* Tombol Edit / Simpan */
-editBtn.addEventListener("click", () => {
+editBtn.addEventListener("click", async () => {
   if (!editMode) {
     setEditMode(true);
     emailInput.focus();
     return;
   }
 
-  // Simpan: validasi email
-  if (!EMAIL_RE.test(emailInput.value.trim())) {
-    document.getElementById("pgpr-email-error").hidden = false;
+  const email = emailInput.value.trim();
+  const telepon = teleponInput.value.trim();
+
+  const errorEl = document.getElementById("pgpr-email-error");
+
+  if (email && !EMAIL_RE.test(email)) {
+    errorEl.textContent = "Format email tidak valid.";
+    errorEl.hidden = false;
     return;
   }
 
-  const simpanSukses = () => {
-    PROFILE.email = emailInput.value.trim();
-    PROFILE.telepon = teleponInput.value.trim();
+  errorEl.hidden = true;
+
+  // Mencegah pengguna menekan Simpan berkali-kali.
+  editBtn.disabled = true;
+
+  try {
+    if (window.EOfficeAPI?.config?.LIVE) {
+      const response = await EOfficeAPI.updateProfil({
+        email,
+        telepon
+      });
+
+      if (response?.status !== true || !response.data) {
+        throw new Error(
+          response?.message || "Server tidak mengonfirmasi perubahan."
+        );
+      }
+
+      PROFILE.email = String(response.data.email || "");
+      PROFILE.telepon = String(response.data.telepon || "");
+    } else {
+      PROFILE.email = email;
+      PROFILE.telepon = telepon;
+    }
+
+    applyProfile();
     setEditMode(false);
-    showToast("Profil diperbarui");
-  };
-
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    EOfficeAPI.updateProfil({
-      nama: PROFILE.nama,
-      email: emailInput.value.trim(),
-      telepon: teleponInput.value.trim()
-    })
-      .then(simpanSukses)
-      .catch(() => showToast("Gagal menyimpan profil. Periksa koneksi lalu coba lagi."));
-    return;
+    showToast("Profil berhasil diperbarui.");
+  } catch (error) {
+    console.error("Gagal memperbarui profil:", error);
+    showToast(
+      error?.message || "Gagal menyimpan profil. Coba kembali."
+    );
+  } finally {
+    editBtn.disabled = false;
   }
-
-  simpanSukses();
 });
 
 /* Tombol Batal (mode edit) */
@@ -125,59 +177,90 @@ document.getElementById("btn-batal-edit").addEventListener("click", () => {
   setEditMode(false);
 });
 
-/* ===== GANTI PASSWORD (modal + validasi) ===== */
+/* ===== GANTI PASSWORD DENGAN BACKEND ===== */
 document.getElementById("btn-password").addEventListener("click", () => {
   openModal({
     title: "Ganti Password",
-    desc: "Masukkan password lama dan password baru (minimal 8 karakter).",
+    desc: "Masukkan password lama dan password baru (8-128 karakter).",
     html: `
       <div class="app-modal-list">
         <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Password Lama</strong>
-          <input type="password" id="pw-lama" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none" />
+          <strong>Password Lama</strong>
+          <input type="password" id="pw-lama" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px" />
         </div>
         <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Password Baru</strong>
-          <input type="password" id="pw-baru" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none" />
+          <strong>Password Baru</strong>
+          <input type="password" id="pw-baru" autocomplete="new-password" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px" />
         </div>
         <div class="app-modal-option" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px">
-          <strong style="font-size:12.5px;color:#374151">Konfirmasi Password Baru</strong>
-          <input type="password" id="pw-konfirmasi" style="width:100%;padding:10px 12px;font:inherit;font-size:13px;border:1px solid #E5E7EB;border-radius:8px;outline:none" />
+          <strong>Konfirmasi Password Baru</strong>
+          <input type="password" id="pw-konfirmasi" autocomplete="new-password" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px" />
         </div>
-        <p id="pw-error" style="display:none;margin:0;font-size:12px;color:#DC2626"></p>
+        <p id="pw-error" role="alert" style="display:none;margin:0;font-size:12px;color:#DC2626"></p>
       </div>`,
     confirmLabel: "Simpan Password",
     cancelLabel: "Batal",
-    onConfirm: () => {
+
+    onConfirm: async () => {
       const lama = document.getElementById("pw-lama").value;
       const baru = document.getElementById("pw-baru").value;
       const konfirmasi = document.getElementById("pw-konfirmasi").value;
       const errorEl = document.getElementById("pw-error");
 
-      const showError = (msg) => {
-        errorEl.textContent = msg;
+      const showError = (message) => {
+        errorEl.textContent = message;
         errorEl.style.display = "block";
       };
 
-      if (lama === "" || baru === "" || konfirmasi === "") {
+      errorEl.textContent = "";
+      errorEl.style.display = "none";
+
+      if (!lama || !baru || !konfirmasi) {
         showError("Semua field wajib diisi.");
-        return false; // modal tetap terbuka
-      }
-      if (baru.length < 8) {
-        showError("Password baru minimal 8 karakter.");
         return false;
       }
+
+      if (baru.length < 8 || baru.length > 128) {
+        showError("Password baru harus 8-128 karakter.");
+        return false;
+      }
+
       if (baru !== konfirmasi) {
         showError("Konfirmasi password tidak cocok.");
         return false;
       }
 
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        EOfficeAPI.gantiKataSandi(lama, baru)
-          .then(() => showToast("Password berhasil diubah"))
-          .catch(() => showToast("Gagal mengubah password. Periksa koneksi lalu coba lagi."));
-      } else {
-        showToast("Password berhasil diubah");
+      if (lama === baru) {
+        showError("Password baru harus berbeda dari password lama.");
+        return false;
+      }
+
+      if (!window.EOfficeAPI?.config?.LIVE) {
+        showError("Ganti password memerlukan koneksi backend aktif.");
+        return false;
+      }
+
+      try {
+        const response = await EOfficeAPI.gantiKataSandi(lama, baru);
+
+        if (response?.status !== true) {
+          throw new Error(
+            response?.message || "Server tidak mengonfirmasi perubahan."
+          );
+        }
+
+        // Backend sudah mencabut semua token setelah password berubah.
+        // Bersihkan sesi lokal dan arahkan pengguna untuk login ulang.
+        await EOfficeAPI.logout();
+
+        window.location.href = "../../login.html";
+        return true;
+      } catch (error) {
+        console.error("Ganti password gagal:", error);
+        showError(
+          error?.message || "Gagal mengubah password. Coba kembali."
+        );
+        return false;
       }
     }
   });
@@ -207,7 +290,23 @@ document.getElementById("btn-logout").addEventListener("click", () => {
 
 /* ===== Inisialisasi: muat data dulu, baru render ===== */
 async function init() {
-  PROFILE = await loadProfil();
+  try {
+    PROFILE = await loadProfil();
+  } catch (error) {
+    console.error("Gagal memuat profil Staf:", error);
+
+    PROFILE = {
+      nama: "Belum tersedia",
+      nip: "Belum tersedia",
+      email: "",
+      telepon: ""
+    };
+
+    editBtn.disabled = true;
+    document.getElementById("btn-password").disabled = true;
+    showToast("Profil gagal dimuat. Periksa koneksi atau login ulang.");
+  }
+
   applyProfile();
 }
 

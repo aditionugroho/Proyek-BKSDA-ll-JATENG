@@ -66,7 +66,9 @@ function renderAvatar() {
 }
 
 /* Upload foto: validasi tipe & ukuran → preview base64 */
-document.getElementById("btn-photo").addEventListener("click", () => fileInput.click());
+document
+  .getElementById("btn-photo")
+  .addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", () => {
   photoError.hidden = true;
@@ -75,7 +77,8 @@ fileInput.addEventListener("change", () => {
 
   const validTypes = ["image/jpeg", "image/png", "image/webp"];
   if (!validTypes.includes(file.type)) {
-    photoError.textContent = "Format tidak didukung. Gunakan JPG, PNG, atau WebP.";
+    photoError.textContent =
+      "Format tidak didukung. Gunakan JPG, PNG, atau WebP.";
     photoError.hidden = false;
     fileInput.value = "";
     return;
@@ -146,7 +149,7 @@ function collectValues() {
     nama: namaInput.value,
     email: emailInput.value,
     telepon: teleponInput.value,
-    avatarUrl
+    avatarUrl,
   };
 }
 
@@ -217,7 +220,9 @@ form.addEventListener("submit", (event) => {
     spinner.remove();
     saveBtn.disabled = false;
     saveBtnText.textContent = "Simpan Perubahan";
-    showToast("Perubahan Sukses - Profil Administrator berhasil diperbarui ke server SKSDA.");
+    showToast(
+      "Perubahan Sukses - Profil Administrator berhasil diperbarui ke server SKSDA.",
+    );
   };
 
   const gagal = () => {
@@ -229,9 +234,27 @@ form.addEventListener("submit", (event) => {
 
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     const v = collectValues();
-    EOfficeAPI.updateAdminProfil({ nama: v.nama, email: v.email, telepon: v.telepon })
-      .then(selesai)
-      .catch(gagal);
+    EOfficeAPI.updateAdminProfil({
+      nama: v.nama.trim(),
+      email: v.email.trim(),
+      telepon: v.telepon.trim(),
+    })
+      .then((response) => {
+        if (response?.status !== true) {
+          throw new Error(response?.message || "Gagal menyimpan profil.");
+        }
+
+        selesai();
+      })
+      .catch((error) => {
+        console.error("Update profil Admin gagal:", error);
+
+        spinner.remove();
+        saveBtn.disabled = false;
+        saveBtnText.textContent = "Simpan Perubahan";
+
+        showToast(error.message || "Gagal menyimpan profil.");
+      });
     return;
   }
 
@@ -239,7 +262,7 @@ form.addEventListener("submit", (event) => {
     // Mock: simpan hasil ke sessionStorage
     window.sessionStorage.setItem(
       SESSION_KEY,
-      JSON.stringify({ ...collectValues(), savedAt: new Date().toISOString() })
+      JSON.stringify({ ...collectValues(), savedAt: new Date().toISOString() }),
     );
     selesai();
   }, 1500);
@@ -300,11 +323,17 @@ document.getElementById("btn-invalid").addEventListener("click", () => {
 /* ===== METRIK AKUN SISTEM (render dari mock) ===== */
 function renderMetrik() {
   const rows = [
-    { label: "Status Akun", badge: { text: "\u2022 Aktif & Terverifikasi", tone: "green" } },
+    {
+      label: "Status Akun",
+      badge: { text: "\u2022 Aktif & Terverifikasi", tone: "green" },
+    },
     { label: "ID Akun Kepegawaian", value: ADMIN_PROFILE.idAkun, mono: true },
     { label: "Tanggal Terdaftar", value: ADMIN_PROFILE.tanggalTerdaftar },
-    { label: "Terakhir Diperbarui", value: ADMIN_PROFILE.terakhirDiperbaruiDetail },
-    { label: "Basis Otoritas", value: "Super Administrator SKSDA", bold: true }
+    {
+      label: "Terakhir Diperbarui",
+      value: ADMIN_PROFILE.terakhirDiperbaruiDetail,
+    },
+    { label: "Basis Otoritas", value: "Super Administrator SKSDA", bold: true },
   ];
 
   document.getElementById("metrik-list").innerHTML = rows
@@ -326,9 +355,57 @@ function renderMetrik() {
     .join("");
 }
 
-/* ===== Inisialisasi ===== */
-fillLockedFields();
-fillForm(ADMIN_PROFILE);
-renderAvatar();
-renderMetrik();
-checkDraft();
+/* ===== Inisialisasi Profil dari Backend ===== */
+
+async function initProfilAdmin() {
+  fillLockedFields();
+
+  // Jangan gunakan data mock sebagai identitas profil.
+  fillForm({
+    nama: "",
+    email: "",
+    telepon: "",
+  });
+
+  // Hapus draft lama yang berpotensi berisi data dummy.
+  clearDraft();
+
+  renderAvatar();
+  renderMetrik();
+
+  if (!window.EOfficeAPI?.config?.LIVE) {
+    showToast("Mode LIVE belum aktif.");
+    saveBtn.disabled = true;
+    return;
+  }
+
+  saveBtn.disabled = true;
+
+  try {
+    const response = await EOfficeAPI.getAdminProfil();
+
+    if (response?.status !== true || !response.data) {
+      throw new Error(response?.message || "Gagal mengambil profil Admin.");
+    }
+
+    const profil = response.data;
+
+    fillForm({
+      nama: profil.nama ?? "",
+      email: profil.email ?? "",
+      telepon: profil.telepon ?? "",
+    });
+
+    saveBtn.disabled = false;
+
+    console.log("Profil Admin berhasil dimuat:", profil);
+  } catch (error) {
+    console.error("Gagal memuat profil Admin:", error);
+
+    saveBtn.disabled = true;
+
+    showToast(error.message || "Gagal mengambil profil dari server.");
+  }
+}
+
+initProfilAdmin();

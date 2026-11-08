@@ -962,3 +962,15 @@ $routes->get(
     'Api\\UserController::direktoriStaf',
     ['filter' => 'role:kepala_seksi']
 );
+
+
+// Profil akun yang sedang login.
+$routes->group(
+    'api/profil',
+    ['filter' => 'role:admin,kepala_seksi,staf'],
+    static function ($routes) {
+        $routes->get('', 'Api\ProfilController::show');
+        $routes->put('', 'Api\ProfilController::update');
+        $routes->post('password', 'Api\ProfilController::changePassword');
+    }
+);

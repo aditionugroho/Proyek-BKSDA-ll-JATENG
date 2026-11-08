@@ -4,23 +4,95 @@
    assets/js/data/admin-profile.js
    ============================================ */
 
-import { ADMIN_PROFILE as ADMIN_PROFILE_MOCK } from "../data/admin-profile.js";
+/* Profil Admin dari API pengguna yang sedang login. */
+let PROFILE = null;
+let AKSES = [];
+let AKTIVITAS = [];
+let LOGIN_INFO = [];
 
-/* ===== DATA: diisi loadProfil() — API saat LIVE, mock saat belum ===== */
-let PROFILE = ADMIN_PROFILE_MOCK;
-let AKSES = ADMIN_PROFILE_MOCK.akses;
-let AKTIVITAS = ADMIN_PROFILE_MOCK.aktivitas;
-let LOGIN_INFO = ADMIN_PROFILE_MOCK.loginInfo;
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function emptyProfile() {
+  return {
+    nama: "Belum tersedia",
+    jabatan: "Belum tersedia",
+    statusPill: "Tidak tersedia",
+    roleOtoritas: "Belum tersedia",
+    terakhirLogin: "Belum tersedia",
+    terakhirDiperbarui: "Belum tersedia",
+    meta: [],
+    info: [],
+    akses: [],
+    aktivitas: [],
+    loginInfo: []
+  };
+}
 
 async function loadProfil() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    try {
-      return await EOfficeAPI.getAdminProfil();
-    } catch (e) {
-      /* fallback ke mock bila server belum siap */
-    }
+  if (!window.EOfficeAPI?.config?.LIVE) {
+    throw new Error("Profil Admin memerlukan API aktif.");
   }
-  return ADMIN_PROFILE_MOCK;
+
+  const response = await EOfficeAPI.getAdminProfil();
+
+  if (
+    response?.status !== true ||
+    !response.data ||
+    typeof response.data !== "object" ||
+    Array.isArray(response.data)
+  ) {
+    throw new Error(
+      response?.message || "Format respons profil tidak valid."
+    );
+  }
+
+  const p = response.data;
+
+  if (p.role !== "admin") {
+    throw new Error("Akun ini tidak memiliki role Administrator.");
+  }
+
+  const display = (value) =>
+    escapeHtml(value == null || value === "" ? "Belum tersedia" : value);
+
+  const meta = [];
+
+  if (p.email) {
+    meta.push({ icon: "mail", text: display(p.email) });
+  }
+
+  if (p.telepon) {
+    meta.push({ icon: "phone", text: display(p.telepon) });
+  }
+
+  return {
+    nama: display(p.nama),
+    jabatan: display(p.jabatan),
+    statusPill: Number(p.status) === 1 ? "Aktif" : "Nonaktif",
+    roleOtoritas: "Administrator",
+    terakhirLogin: "Belum tersedia",
+    terakhirDiperbarui: "Belum tersedia",
+    meta,
+    info: [
+      { label: "ID Pengguna", value: display(p.id), mono: true },
+      { label: "Username", value: display(p.username) },
+      { label: "Nama", value: display(p.nama) },
+      { label: "Jabatan", value: display(p.jabatan) },
+      { label: "Email", value: display(p.email) },
+      { label: "Nomor WhatsApp", value: display(p.telepon) },
+      { label: "Status Akun", value: Number(p.status) === 1 ? "Aktif" : "Nonaktif" }
+    ],
+    akses: [],
+    aktivitas: [],
+    loginInfo: []
+  };
 }
 
 /* ===== IKON SVG INLINE ===== */
@@ -93,6 +165,11 @@ function renderInfo() {
 
 /* ===== RENDER: grid hak akses ===== */
 function renderAkses() {
+  if (!AKSES.length) {
+    document.getElementById("akses-grid").textContent =
+      "Data rincian hak akses belum tersedia.";
+    return;
+  }
   document.getElementById("akses-grid").innerHTML = AKSES.map(
     (a) => `
       <div class="akses-item">
@@ -104,6 +181,11 @@ function renderAkses() {
 
 /* ===== RENDER: list aktivitas ===== */
 function renderAktivitas() {
+  if (!AKTIVITAS.length) {
+    document.getElementById("aktivitas-list").textContent =
+      "Riwayat aktivitas belum tersedia.";
+    return;
+  }
   document.getElementById("aktivitas-list").innerHTML = AKTIVITAS.map(
     (a) => `
       <div class="aktivitas-item">
@@ -124,6 +206,11 @@ function renderAktivitas() {
 
 /* ===== RENDER: informasi login ===== */
 function renderLogin() {
+  if (!LOGIN_INFO.length) {
+    document.getElementById("login-list").textContent =
+      "Informasi login belum tersedia.";
+    return;
+  }
   document.getElementById("login-list").innerHTML = LOGIN_INFO.map((row) => {
     let value;
     if (row.badge) {
@@ -142,12 +229,19 @@ function renderLogin() {
   }).join("");
 }
 
-/* ===== Inisialisasi: muat data dulu, baru render ===== */
+/* ===== Inisialisasi Profil Admin ===== */
 async function init() {
-  PROFILE = await loadProfil();
+  try {
+    PROFILE = await loadProfil();
+  } catch (error) {
+    console.error("Gagal memuat Profil Admin:", error);
+    PROFILE = emptyProfile();
+  }
+
   AKSES = PROFILE.akses || [];
   AKTIVITAS = PROFILE.aktivitas || [];
-  LOGIN_INFO = PROFILE.loginInfo || {};
+  LOGIN_INFO = PROFILE.loginInfo || [];
+
   renderHero();
   renderInfo();
   renderAkses();
