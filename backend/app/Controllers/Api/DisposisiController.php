@@ -852,6 +852,342 @@ if ($suratTerkunci['status'] === 'selesai') {
     ]);
 }
 
+/**
+ * TERIMA DISPOSISI
+ * Staf menerima disposisi dan mengubah status menjadi dalam_proses.
+ */
+public function terima($id = null)
+{
+    $user = $this->getCurrentUser();
+
+    if (!$user) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'User tidak terautentikasi.',
+        ], 401);
+    }
+
+    if ($user['role'] !== 'staf') {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Hanya Staf yang dapat menerima disposisi.',
+        ], 403);
+    }
+
+    if (!$id || !ctype_digit((string) $id) || (int) $id < 1) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'ID disposisi tidak valid.',
+        ], 400);
+    }
+
+    $db = \Config\Database::connect();
+
+    if (!$db->transBegin()) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal memulai transaksi database.',
+        ], 500);
+    }
+
+    try {
+        // Kunci disposisi untuk mencegah penerimaan bersamaan.
+        $disposisi = $db->query(
+            'SELECT id, surat_masuk_id, dari_user_id,
+                    ke_user_id, status
+             FROM disposisi
+             WHERE id = ?
+             FOR UPDATE',
+            [(int) $id]
+        )->getRowArray();
+
+        if (!$disposisi) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak ditemukan.',
+            ], 404);
+        }
+
+        if ((int) $disposisi['ke_user_id'] !== (int) $user['id']) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi ini bukan ditujukan kepada Anda.',
+            ], 403);
+        }
+
+        if ($disposisi['status'] !== 'menunggu') {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak lagi menunggu penerimaan.',
+            ], 409);
+        }
+
+        $statusSebelum = $disposisi['status'];
+
+        // Update status secara bersyarat.
+        $updated = $db->table('disposisi')
+            ->where('id', (int) $id)
+            ->where('ke_user_id', (int) $user['id'])
+            ->where('status', 'menunggu')
+            ->update([
+                'status' => 'dalam_proses',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        if (!$updated || $db->affectedRows() !== 1) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Status disposisi telah berubah. Silakan muat ulang.',
+            ], 409);
+        }
+
+        // Activity log.
+        $activityLogId = $this->logActivity(
+            'terima',
+            (int) $id,
+            'Staf menerima disposisi dan mulai mengerjakan tugas.'
+        );
+
+        // Riwayat disposisi.
+        $this->simpanRiwayat(
+            (int) $id,
+            (int) $user['id'],
+            'terima',
+            $statusSebelum,
+            'dalam_proses',
+            'Disposisi diterima oleh staf.',
+            $activityLogId
+        );
+
+        // Ambil informasi surat.
+        $surat = $this->suratModel->find(
+            $disposisi['surat_masuk_id']
+        );
+
+        // Beri notifikasi kepada Kepala Seksi.
+        $this->createNotification(
+            (int) $disposisi['dari_user_id'],
+            'Staf telah menerima disposisi surat "' .
+            ($surat['perihal'] ?? 'Surat Masuk') . '".',
+            'disposisi_diterima'
+        );
+
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'Terjadi kegagalan transaksi database.'
+            );
+        }
+
+        if (!$db->transCommit()) {
+            throw new \RuntimeException(
+                'Gagal melakukan commit transaksi.'
+            );
+        }
+
+    } catch (\Throwable $e) {
+        $db->transRollback();
+
+        log_message(
+            'error',
+            'Gagal menerima disposisi ID ' . $id .
+            ': ' . $e->getMessage()
+        );
+
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal menerima disposisi.',
+        ], 500);
+    }
+
+    return $this->respond([
+        'status' => true,
+        'message' => 'Disposisi berhasil diterima.',
+        'data' => $this->disposisiModel->find($id),
+    ], 200);
+}
+
+
+/**
+ * MINTA KLARIFIKASI
+ * Staf meminta penjelasan kepada Kepala Seksi.
+ * Status disposisi tidak berubah.
+ */
+public function klarifikasi($id = null)
+{
+    $user = $this->getCurrentUser();
+
+    if (!$user) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'User tidak terautentikasi.',
+        ], 401);
+    }
+
+    if ($user['role'] !== 'staf') {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Hanya Staf yang dapat meminta klarifikasi.',
+        ], 403);
+    }
+
+    if (!$id || !ctype_digit((string) $id) || (int) $id < 1) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'ID disposisi tidak valid.',
+        ], 400);
+    }
+
+    $data = $this->request->getJSON(true);
+
+    if (!is_array($data)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Request harus menggunakan format JSON.',
+        ], 400);
+    }
+
+    $pesan = $data['pertanyaan']
+        ?? $data['catatan_klarifikasi']
+        ?? $data['pesan']
+        ?? $data['catatan']
+        ?? '';
+
+    if (!is_string($pesan) || trim($pesan) === '') {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Pertanyaan klarifikasi wajib diisi.',
+        ], 422);
+    }
+
+    $pesan = trim($pesan);
+
+    $db = \Config\Database::connect();
+
+    if (!$db->transBegin()) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal memulai transaksi database.',
+        ], 500);
+    }
+
+    try {
+        // Kunci dan validasi disposisi.
+        $disposisi = $db->query(
+            'SELECT id, surat_masuk_id, dari_user_id,
+                    ke_user_id, status
+             FROM disposisi
+             WHERE id = ?
+             FOR UPDATE',
+            [(int) $id]
+        )->getRowArray();
+
+        if (!$disposisi) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi tidak ditemukan.',
+            ], 404);
+        }
+
+        if ((int) $disposisi['ke_user_id'] !== (int) $user['id']) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Disposisi ini bukan ditujukan kepada Anda.',
+            ], 403);
+        }
+
+        if (!in_array(
+            $disposisi['status'],
+            ['menunggu', 'dalam_proses'],
+            true
+        )) {
+            $db->transRollback();
+
+            return $this->respond([
+                'status' => false,
+                'message' => 'Klarifikasi tidak dapat diajukan pada status ini.',
+            ], 409);
+        }
+
+        $statusSekarang = $disposisi['status'];
+
+        // Catat aktivitas klarifikasi.
+        $activityLogId = $this->logActivity(
+            'klarifikasi',
+            (int) $id,
+            'Staf meminta klarifikasi: ' . $pesan
+        );
+
+        // Catat snapshot tanpa mengubah status.
+        $this->simpanRiwayat(
+            (int) $id,
+            (int) $user['id'],
+            'klarifikasi',
+            $statusSekarang,
+            $statusSekarang,
+            $pesan,
+            $activityLogId
+        );
+
+        // Ambil informasi surat.
+        $surat = $this->suratModel->find(
+            $disposisi['surat_masuk_id']
+        );
+
+        // Kirim notifikasi kepada Kepala Seksi.
+        $this->createNotification(
+            (int) $disposisi['dari_user_id'],
+            'Staf meminta klarifikasi untuk surat "' .
+            ($surat['perihal'] ?? 'Surat Masuk') .
+            '". Pertanyaan: ' . $pesan,
+            'klarifikasi_disposisi'
+        );
+
+        if ($db->transStatus() === false) {
+            throw new \RuntimeException(
+                'Terjadi kegagalan transaksi database.'
+            );
+        }
+
+        if (!$db->transCommit()) {
+            throw new \RuntimeException(
+                'Gagal melakukan commit transaksi.'
+            );
+        }
+
+    } catch (\Throwable $e) {
+        $db->transRollback();
+
+        log_message(
+            'error',
+            'Gagal meminta klarifikasi disposisi ID ' .
+            $id . ': ' . $e->getMessage()
+        );
+
+        return $this->respond([
+            'status' => false,
+            'message' => 'Gagal mengirim permintaan klarifikasi.',
+        ], 500);
+    }
+
+    return $this->respond([
+        'status' => true,
+        'message' => 'Permintaan klarifikasi berhasil dikirim.',
+        'data' => $this->disposisiModel->find($id),
+    ], 200);
+}
+
     /*
     |--------------------------------------------------------------------------
     | TINDAK LANJUT

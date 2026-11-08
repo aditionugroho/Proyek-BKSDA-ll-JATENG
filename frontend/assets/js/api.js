@@ -17,7 +17,7 @@
 const API_CONFIG = {
   LIVE: true,
   BASE_URL: "http://127.0.0.1:8080/api",
-  TIMEOUT_MS: 10000
+  TIMEOUT_MS: 10000,
 };
 
 const EOfficeAPI = (() => {
@@ -45,17 +45,19 @@ const EOfficeAPI = (() => {
         headers: Object.assign(
           {
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            Accept: "application/json",
           },
-          getToken() ? { Authorization: "Bearer " + getToken() } : {}
+          getToken() ? { Authorization: "Bearer " + getToken() } : {},
         ),
         body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = new Error((data && data.message) || "Terjadi kesalahan pada server.");
+        const err = new Error(
+          (data && data.message) || "Terjadi kesalahan pada server.",
+        );
         err.status = res.status;
         err.data = data;
         throw err;
@@ -88,66 +90,63 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function login(idPengguna, kataSandi) {
-  if (!API_CONFIG.LIVE) {
-    return mockLogin(idPengguna, kataSandi);
+    if (!API_CONFIG.LIVE) {
+      return mockLogin(idPengguna, kataSandi);
+    }
+
+    try {
+      const res = await request("POST", "/auth/login", {
+        username: idPengguna,
+        password: kataSandi,
+      });
+
+      const result = res && res.data;
+
+      if (!result || !result.token || !result.user) {
+        throw new Error("Format respons login backend tidak sesuai.");
+      }
+
+      // Role asli dari CodeIgniter
+      // disesuaikan dengan nama folder frontend.
+      const allowedRoles = {
+        admin: "admin",
+        kepala_seksi: "kepala-seksi",
+        staf: "pegawai",
+      };
+
+      const uiRole = allowedRoles[result.user.role];
+
+      if (!uiRole) {
+        throw new Error("Role akun tidak dikenali.");
+      }
+
+      setToken(result.token);
+
+      return {
+        status: "ok",
+        token: result.token,
+        user: Object.assign({}, result.user, {
+          role: uiRole,
+        }),
+      };
+    } catch (err) {
+      const code = err.data && err.data.code;
+
+      if (code === "pending") {
+        return { status: "pending" };
+      }
+
+      if (code === "rejected") {
+        return { status: "rejected" };
+      }
+
+      if (err.status === 401) {
+        return { status: "invalid" };
+      }
+
+      throw err;
+    }
   }
-
-  try {
-    const res = await request("POST", "/auth/login", {
-      username: idPengguna,
-      password: kataSandi
-    });
-
-    const result = res && res.data;
-
-    if (!result || !result.token || !result.user) {
-      throw new Error(
-        "Format respons login backend tidak sesuai."
-      );
-    }
-
-    // Role asli dari CodeIgniter
-    // disesuaikan dengan nama folder frontend.
-    const allowedRoles = {
-      admin: "admin",
-      kepala_seksi: "kepala-seksi",
-      staf: "pegawai"
-    };
-
-    const uiRole = allowedRoles[result.user.role];
-
-    if (!uiRole) {
-      throw new Error("Role akun tidak dikenali.");
-    }
-
-    setToken(result.token);
-
-    return {
-      status: "ok",
-      token: result.token,
-      user: Object.assign({}, result.user, {
-        role: uiRole
-      })
-    };
-
-  } catch (err) {
-    const code = err.data && err.data.code;
-
-    if (code === "pending") {
-      return { status: "pending" };
-    }
-
-    if (code === "rejected") {
-      return { status: "rejected" };
-    }
-
-    if (err.status === 401) {
-      return { status: "invalid" };
-    }
-
-    throw err;
-  }
-}
 
   /* ---------- MOCK LOGIN: replika logika localStorage lama ---------- */
 
@@ -156,18 +155,31 @@ const EOfficeAPI = (() => {
       setTimeout(() => {
         let match = null;
         try {
-          const regs = JSON.parse(window.localStorage.getItem("eoffice_registrations") || "[]");
+          const regs = JSON.parse(
+            window.localStorage.getItem("eoffice_registrations") || "[]",
+          );
           const v = String(idPengguna).toLowerCase();
-          match = regs.find(function (r) {
-            return String(r.idAtauEmail).toLowerCase() === v || String(r.nama).toLowerCase() === v;
-          }) || null;
+          match =
+            regs.find(function (r) {
+              return (
+                String(r.idAtauEmail).toLowerCase() === v ||
+                String(r.nama).toLowerCase() === v
+              );
+            }) || null;
         } catch (e) {
           match = null;
         }
 
-        if (match && match.status === "ditolak") return resolve({ status: "rejected" });
-        if (match && match.status === "menunggu-verifikasi") return resolve({ status: "pending" });
-        if (match && match.status === "aktif" && match.kataSandi && kataSandi !== match.kataSandi) {
+        if (match && match.status === "ditolak")
+          return resolve({ status: "rejected" });
+        if (match && match.status === "menunggu-verifikasi")
+          return resolve({ status: "pending" });
+        if (
+          match &&
+          match.status === "aktif" &&
+          match.kataSandi &&
+          kataSandi !== match.kataSandi
+        ) {
           return resolve({ status: "invalid" });
         }
 
@@ -177,7 +189,7 @@ const EOfficeAPI = (() => {
           token: "mock-token",
           user: match
             ? { id: match.idAtauEmail, nama: match.nama, role: null }
-            : { id: idPengguna, nama: idPengguna, role: null }
+            : { id: idPengguna, nama: idPengguna, role: null },
         });
       }, 400); // simulasi latensi jaringan
     });
@@ -189,21 +201,19 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function logout() {
-  try {
-    if (API_CONFIG.LIVE && getToken()) {
-      await request("POST", "/auth/logout");
-    }
-  } catch (error) {
-    console.warn(
-      "Logout backend gagal. Sesi lokal tetap diakhiri."
-    );
-  } finally {
-    setToken(null);
+    try {
+      if (API_CONFIG.LIVE && getToken()) {
+        await request("POST", "/auth/logout");
+      }
+    } catch (error) {
+      console.warn("Logout backend gagal. Sesi lokal tetap diakhiri.");
+    } finally {
+      setToken(null);
 
-    window.localStorage.removeItem("eoffice_session");
-    window.sessionStorage.removeItem("eoffice_session");
+      window.localStorage.removeItem("eoffice_session");
+      window.sessionStorage.removeItem("eoffice_session");
+    }
   }
-}
 
   /* ============================================
      DAFTAR SURAT MASUK
@@ -261,7 +271,7 @@ const EOfficeAPI = (() => {
     return request(
       "PATCH",
       "/disposisi/" + encodeURIComponent(id) + "/tindak-lanjut",
-      { hasil_tindak_lanjut: hasil }
+      { hasil_tindak_lanjut: hasil },
     );
   }
 
@@ -269,7 +279,27 @@ const EOfficeAPI = (() => {
     return request(
       "PATCH",
       "/disposisi/" + encodeURIComponent(id) + "/selesai",
-      {}
+      {},
+    );
+  }
+
+  // TERIMA DISPOSISI
+  async function terimaDisposisi(id) {
+    return request(
+      "PATCH",
+      "/disposisi/" + encodeURIComponent(id) + "/terima",
+      {},
+    );
+  }
+
+  // MINTA KLARIFIKASI
+  async function mintaKlarifikasi(id, pertanyaan) {
+    return request(
+      "POST",
+      "/disposisi/" + encodeURIComponent(id) + "/klarifikasi",
+      {
+        pertanyaan: pertanyaan,
+      },
     );
   }
 
@@ -291,18 +321,6 @@ const EOfficeAPI = (() => {
        POST /api/notifikasi/{id}/read     — tandai satu dibaca
        POST /api/notifikasi/read-all      — tandai semua dibaca
      ============================================ */
-
-  async function getNotifikasi() {
-    return request("GET", "/notifikasi");
-  }
-
-  async function markNotifikasiRead(id) {
-    return request("POST", "/notifikasi/" + id + "/read");
-  }
-
-  async function markAllNotifikasiRead() {
-    return request("POST", "/notifikasi/read-all");
-  }
 
   /* ============================================
      DAFTAR TUGAS SEKSI
@@ -463,7 +481,12 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function getTargetRealisasi(tahun, resort) {
-    const q = "tahun=" + encodeURIComponent(tahun) + (resort && resort !== "semua" ? "&resort=" + encodeURIComponent(resort) : "");
+    const q =
+      "tahun=" +
+      encodeURIComponent(tahun) +
+      (resort && resort !== "semua"
+        ? "&resort=" + encodeURIComponent(resort)
+        : "");
     return request("GET", "/target-realisasi?" + q);
   }
 
@@ -516,21 +539,24 @@ const EOfficeAPI = (() => {
         method: "POST",
         headers: Object.assign(
           { Accept: "application/json" },
-          getToken() ? { Authorization: "Bearer " + getToken() } : {}
+          getToken() ? { Authorization: "Bearer " + getToken() } : {},
         ),
         body: form,
-        signal: controller.signal
+        signal: controller.signal,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = new Error((data && data.message) || "Gagal menyimpan laporan patroli.");
+        const err = new Error(
+          (data && data.message) || "Gagal menyimpan laporan patroli.",
+        );
         err.status = res.status;
         err.data = data;
         throw err;
       }
       return data;
     } catch (e) {
-      if (e.name === "AbortError") throw new Error("Waktu upload habis. Coba dengan foto lebih kecil.");
+      if (e.name === "AbortError")
+        throw new Error("Waktu upload habis. Coba dengan foto lebih kecil.");
       throw e;
     } finally {
       clearTimeout(timer);
@@ -543,10 +569,18 @@ const EOfficeAPI = (() => {
     return new Promise((resolve) => {
       setTimeout(() => {
         let session = null;
-        try { session = JSON.parse(window.sessionStorage.getItem("eoffice_session") || window.localStorage.getItem("eoffice_session") || "null"); } catch (e) {}
+        try {
+          session = JSON.parse(
+            window.sessionStorage.getItem("eoffice_session") ||
+              window.localStorage.getItem("eoffice_session") ||
+              "null",
+          );
+        } catch (e) {}
         const KEY = "eoffice_laporan_patroli";
         let daftar = [];
-        try { daftar = JSON.parse(window.localStorage.getItem(KEY) || "[]"); } catch (e) {}
+        try {
+          daftar = JSON.parse(window.localStorage.getItem(KEY) || "[]");
+        } catch (e) {}
         const baru = {
           id: "LP-" + Date.now(),
           petugas: (session && session.userId) || "Petugas",
@@ -555,7 +589,7 @@ const EOfficeAPI = (() => {
           catatan: payload.catatan,
           status: "Terkirim",
           dibuatPada: new Date().toISOString(),
-          foto: (payload.foto || []).filter((f) => typeof f === "string")
+          foto: (payload.foto || []).filter((f) => typeof f === "string"),
         };
         daftar.unshift(baru);
         window.localStorage.setItem(KEY, JSON.stringify(daftar));
@@ -565,8 +599,13 @@ const EOfficeAPI = (() => {
   }
 
   function mockGetPatroli() {
-    try { return JSON.parse(window.localStorage.getItem("eoffice_laporan_patroli") || "[]"); }
-    catch (e) { return []; }
+    try {
+      return JSON.parse(
+        window.localStorage.getItem("eoffice_laporan_patroli") || "[]",
+      );
+    } catch (e) {
+      return [];
+    }
   }
 
   /* ============================================
@@ -585,7 +624,8 @@ const EOfficeAPI = (() => {
     try {
       return await request("POST", "/register", payload);
     } catch (err) {
-      if (err.data && err.data.code === "duplicate") return { status: "duplicate" };
+      if (err.data && err.data.code === "duplicate")
+        return { status: "duplicate" };
       throw err;
     }
   }
@@ -595,7 +635,9 @@ const EOfficeAPI = (() => {
   function mockRegister(payload) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const daftar = JSON.parse(window.localStorage.getItem("eoffice_registrations") || "[]");
+        const daftar = JSON.parse(
+          window.localStorage.getItem("eoffice_registrations") || "[]",
+        );
         daftar.push({
           nama: payload.nama,
           idAtauEmail: payload.id_pengguna,
@@ -604,9 +646,12 @@ const EOfficeAPI = (() => {
           resort: payload.resort || "",
           sumber: "registrasi-mandiri",
           status: "menunggu-verifikasi",
-          daftarPada: new Date().toISOString()
+          daftarPada: new Date().toISOString(),
         });
-        window.localStorage.setItem("eoffice_registrations", JSON.stringify(daftar));
+        window.localStorage.setItem(
+          "eoffice_registrations",
+          JSON.stringify(daftar),
+        );
         resolve({ status: "pending" });
       }, 400);
     });
@@ -636,7 +681,7 @@ const EOfficeAPI = (() => {
   async function gantiKataSandi(kataSandiLama, kataSandiBaru) {
     return request("POST", "/profil/password", {
       kata_sandi_lama: kataSandiLama,
-      kata_sandi_baru: kataSandiBaru
+      kata_sandi_baru: kataSandiBaru,
     });
   }
 
@@ -655,15 +700,33 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function getSuratSaya() {
-    return request("GET", "/surat-saya");
+    const [masukResponse, keluarResponse] = await Promise.all([
+      getSuratMasuk(),
+      getSuratKeluar(),
+    ]);
+
+    if (masukResponse?.status !== true || keluarResponse?.status !== true) {
+      throw new Error("Gagal mengambil data surat pegawai.");
+    }
+
+    const masuk = Array.isArray(masukResponse.data) ? masukResponse.data : [];
+
+    const keluar = Array.isArray(keluarResponse.data)
+      ? keluarResponse.data
+      : [];
+
+    return [
+      ...masuk.map((s) => ({ ...s, jenis: "masuk" })),
+      ...keluar.map((s) => ({ ...s, jenis: "keluar" })),
+    ];
   }
 
   async function getTugasSaya() {
-    return request("GET", "/tugas-saya");
+    return request("GET", "/disposisi");
   }
 
   async function getTugasSayaDetail(id) {
-    return request("GET", "/tugas-saya/" + id);
+    return request("GET", "/disposisi/" + encodeURIComponent(id));
   }
 
   async function getDisposisiSaya() {
@@ -682,10 +745,6 @@ const EOfficeAPI = (() => {
     return request("GET", "/jadwal-saya");
   }
 
-  async function getNotifikasiSaya() {
-    return request("GET", "/notifikasi-saya");
-  }
-
   /* ============================================
      DETAIL PEGAWAI (per-ID)
      KONTRAK (LIVE): GET /api/{surat|disposisi|dokumen|arsip}-saya/{id}
@@ -693,8 +752,14 @@ const EOfficeAPI = (() => {
      disposisi-saya/{id} menambah: instruksi, catatan, checklist, timeline.
      ============================================ */
 
-  async function getSuratSayaDetail(id) {
-    return request("GET", "/surat-saya/" + id);
+  async function getSuratSayaDetail(id, jenis = "masuk") {
+    if (!["masuk", "keluar"].includes(jenis)) {
+      throw new Error("Jenis surat tidak valid.");
+    }
+
+    const endpoint = jenis === "keluar" ? "/surat-keluar/" : "/surat-masuk/";
+
+    return request("GET", endpoint + encodeURIComponent(id));
   }
 
   async function getDisposisiSayaDetail(id) {
@@ -789,7 +854,9 @@ const EOfficeAPI = (() => {
   }
 
   async function verifyRegistration(id, status) {
-    return request("PUT", "/registrations/" + id + "/status", { status: status });
+    return request("PUT", "/registrations/" + id + "/status", {
+      status: status,
+    });
   }
 
   async function createSuratMasuk(payload) {
@@ -892,24 +959,114 @@ const EOfficeAPI = (() => {
       return new Promise((resolve) => {
         setTimeout(() => {
           try {
-            const regs = JSON.parse(window.localStorage.getItem("eoffice_registrations") || "[]");
-            const idx = regs.findIndex((r) => String(r.idAtauEmail).toLowerCase() === String(idPengguna).toLowerCase());
+            const regs = JSON.parse(
+              window.localStorage.getItem("eoffice_registrations") || "[]",
+            );
+            const idx = regs.findIndex(
+              (r) =>
+                String(r.idAtauEmail).toLowerCase() ===
+                String(idPengguna).toLowerCase(),
+            );
             if (idx >= 0) {
               regs[idx].kataSandi = kataSandiBaru;
-              window.localStorage.setItem("eoffice_registrations", JSON.stringify(regs));
+              window.localStorage.setItem(
+                "eoffice_registrations",
+                JSON.stringify(regs),
+              );
             }
-          } catch (e) { /* abaikan */ }
+          } catch (e) {
+            /* abaikan */
+          }
           resolve({ status: "ok" });
         }, 400);
       });
     }
     return request("POST", "/lupa-password", {
       id_pengguna: idPengguna,
-      kata_sandi_baru: kataSandiBaru
+      kata_sandi_baru: kataSandiBaru,
     });
   }
 
   /* ---------- API publik ---------- */
+
+  async function getNotifikasi() {
+    return request("GET", "/notifikasi");
+  }
+
+  async function getNotifikasiSaya() {
+    return getNotifikasi();
+  }
+
+  async function markNotifikasiRead(id) {
+    return request("PATCH", "/notifikasi/" + encodeURIComponent(id) + "/read");
+  }
+
+  async function markAllNotifikasiRead() {
+    return request("PATCH", "/notifikasi/read-all");
+  }
+
+
+  // Unduh file surat masuk menggunakan token login.
+  async function downloadLampiranSuratMasuk(id) {
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      30000
+    );
+
+    try {
+      const response = await fetch(
+        API_CONFIG.BASE_URL +
+          "/surat-masuk/" + encodeURIComponent(id) + "/file",
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/octet-stream, application/pdf, */*",
+            Authorization: "Bearer " + getToken()
+          },
+          signal: controller.signal
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(
+          error.message || "Gagal mengunduh lampiran surat."
+        );
+      }
+
+      const blob = await response.blob();
+
+      let filename = "lampiran-surat-" + id;
+
+      const disposition =
+        response.headers.get("Content-Disposition") || "";
+
+      const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      const plain = disposition.match(/filename="?([^";]+)"?/i);
+
+      if (encoded) {
+        try {
+          filename = decodeURIComponent(encoded[1].trim());
+        } catch (_) {}
+      } else if (plain) {
+        filename = plain[1].trim();
+      }
+
+      // Pastikan nama file tidak mengandung path.
+      filename = filename.replace(/[\\/]/g, "_");
+
+      return { blob, filename };
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Waktu unduh lampiran habis.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   return {
     config: API_CONFIG,
     getToken: getToken,
@@ -921,6 +1078,8 @@ const EOfficeAPI = (() => {
     createDisposisi: createDisposisi,
     tindakLanjutDisposisi: tindakLanjutDisposisi,
     selesaikanDisposisi: selesaikanDisposisi,
+    terimaDisposisi: terimaDisposisi,
+    mintaKlarifikasi: mintaKlarifikasi,
     getNotifikasi: getNotifikasi,
     markNotifikasiRead: markNotifikasiRead,
     markAllNotifikasiRead: markAllNotifikasiRead,
@@ -930,6 +1089,7 @@ const EOfficeAPI = (() => {
     getStaf: getStaf,
     getStafTujuan: getStafTujuan,
     getSuratMasukDetail: getSuratMasukDetail,
+    downloadLampiranSuratMasuk: downloadLampiranSuratMasuk,
     getSuratKeluarDetail: getSuratKeluarDetail,
     getArsipDetail: getArsipDetail,
     getTugasDetail: getTugasDetail,
@@ -977,7 +1137,7 @@ const EOfficeAPI = (() => {
     updateAdminProfil: updateAdminProfil,
     getNotifikasiAdmin: getNotifikasiAdmin,
     lupaPassword: lupaPassword,
-    request: request // untuk endpoint baru: selalu lewat sini
+    request: request, // untuk endpoint baru: selalu lewat sini
   };
 })();
 

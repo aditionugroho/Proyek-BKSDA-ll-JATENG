@@ -13,10 +13,80 @@ const STATE_KEY = "surat-pg";
 /* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
 let suratPgData = [];
 
-async function loadData() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getSuratSaya();
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[ch]);
+}
+
+function getResponseData(response) {
+  if (response?.status !== true || !Array.isArray(response.data)) {
+    throw new Error(response?.message || "Format respons API surat tidak valid.");
   }
+  return response.data;
+}
+
+function mapSurat(s, jenis) {
+  const rawDate = String(s.tanggal || s.created_at || "");
+  const iso = rawDate.match(/^\d{4}-\d{2}-\d{2}/)?.[0] || "";
+  const date = iso ? new Date(iso + "T00:00:00") : null;
+
+  const tanggal = date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      })
+    : "Belum tersedia";
+
+  const status = String(s.status || "Belum tersedia");
+  const sifat = String(s.sifat || "Biasa");
+  const prioritas = /penting|segera|rahasia/i.test(sifat);
+
+  return {
+    id: s.id,
+    jenis,
+    nomor: String(s.no_surat || s.no_agenda || "Belum ada nomor"),
+    pengirim: String(
+      jenis === "masuk"
+        ? (s.asal || s.created_by_name || "Tidak diketahui")
+        : (s.tujuan || s.created_by_name || "Tidak diketahui")
+    ),
+    perihal: String(s.perihal || "Tanpa perihal"),
+    perihalDetail: String(s.klasifikasi || ""),
+    tanggal,
+    waktu: String(s.created_at || "").match(/\d{2}:\d{2}/)?.[0] || "",
+    iso,
+    sifat,
+    status,
+    label: {
+      text: status,
+      tone: prioritas ? "red" : "gray",
+      dot: prioritas
+    }
+  };
+}
+
+async function loadData() {
+  if (window.EOfficeAPI?.config?.LIVE) {
+    const [masukResponse, keluarResponse] = await Promise.all([
+      EOfficeAPI.getSuratMasuk(),
+      EOfficeAPI.getSuratKeluar()
+    ]);
+
+    const masuk = getResponseData(masukResponse);
+    const keluar = getResponseData(keluarResponse);
+
+    return [
+      ...masuk.map(s => mapSurat(s, "masuk")),
+      ...keluar.map(s => mapSurat(s, "keluar"))
+    ];
+  }
+
   return SURAT_PG_MOCK;
 }
 
@@ -77,23 +147,23 @@ function renderTable() {
           <td>
             <div class="pgs-status-wrap">
               ${s.label.dot ? '<span class="pgs-status-dot" title="Butuh perhatian"></span>' : ""}
-              <span class="pgs-status-badge pgs-status-badge--${s.label.tone}">${s.label.text}</span>
+              <span class="pgs-status-badge pgs-status-badge--${s.label.tone}">${escapeHtml(s.label.text)}</span>
             </div>
           </td>
           <td>
-            <span class="pgs-nomor">${s.nomor}</span>
-            <span class="pgs-pengirim">${s.pengirim}</span>
+            <span class="pgs-nomor">${escapeHtml(s.nomor)}</span>
+            <span class="pgs-pengirim">${escapeHtml(s.pengirim)}</span>
           </td>
           <td>
-            <span class="pgs-perihal">${s.perihal}</span>
-            <span class="pgs-perihal-detail">${s.perihalDetail}</span>
+            <span class="pgs-perihal">${escapeHtml(s.perihal)}</span>
+            <span class="pgs-perihal-detail">${escapeHtml(s.perihalDetail)}</span>
           </td>
           <td>
-            <span class="pgs-tanggal">${s.tanggal}</span>
-            <span class="pgs-waktu">${s.waktu}</span>
+            <span class="pgs-tanggal">${escapeHtml(s.tanggal)}</span>
+            <span class="pgs-waktu">${escapeHtml(s.waktu)}</span>
           </td>
           <td class="th-actions">
-            <button type="button" class="pgs-eye" data-preview="${s.id}" title="Lihat surat" aria-label="Lihat ${s.perihal}">${EYE_ICON}</button>
+            <button type="button" class="pgs-eye" data-preview="${escapeHtml(s.id)}" data-jenis="${escapeHtml(s.jenis)}" title="Lihat surat" aria-label="Lihat ${escapeHtml(s.perihal)}">${EYE_ICON}</button>
           </td>
         </tr>`
       )
@@ -143,7 +213,15 @@ document.getElementById("btn-filter-lanjutan").addEventListener("click", () => {
 document.getElementById("pgs-tbody").addEventListener("click", (event) => {
   const btn = event.target.closest("[data-preview]");
   if (!btn) return;
-  window.location.href = `detail-surat.html?id=${btn.dataset.preview}`;
+  if (btn.dataset.jenis === "keluar") {
+    showToast("Detail surat keluar pegawai belum terhubung.");
+    return;
+  }
+  const id = btn.dataset.preview;
+const jenis = btn.dataset.jenis;
+
+window.location.href =
+  `detail-surat.html?id=${encodeURIComponent(id)}&jenis=${encodeURIComponent(jenis)}`;
 });
 
 /* ===== Inisialisasi: muat data dulu, baru render ===== */

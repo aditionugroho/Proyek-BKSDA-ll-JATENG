@@ -1,118 +1,394 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#2563EB" />
   <link rel="apple-touch-icon" href="/assets/js/images/apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="E-Office SKSDA" />
+
   <title>Detail Surat - E-Office SKSDA</title>
 
-  <!-- ===== Stylesheet ===== -->
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="../../assets/css/variables.css" />
   <link rel="stylesheet" href="../../assets/css/base.css" />
   <link rel="stylesheet" href="../../assets/css/layout-pg.css" />
   <link rel="stylesheet" href="../../assets/css/pages/detail-generic.css" />
 </head>
+
 <body>
 
-  <!-- ===== Layout bersama ===== -->
+  <!-- Layout bersama -->
   <aside id="pg-sidebar"></aside>
   <header id="pg-navbar"></header>
 
-  <!-- ===== Konten ===== -->
+  <!-- Konten -->
   <main class="main-content">
 
-    <!-- Breadcrumb 3-level -->
+    <!-- Breadcrumb -->
     <nav class="dg-breadcrumb" aria-label="Breadcrumb">
       <a href="dashboard.html">Dashboard</a>
       <span class="dg-breadcrumb-sep">&gt;</span>
       <a href="surat.html">Surat</a>
       <span class="dg-breadcrumb-sep">&gt;</span>
-      <span class="dg-breadcrumb-current" id="dg-crumb">Detail Surat</span>
+      <span class="dg-breadcrumb-current" id="dg-crumb">
+        Detail Surat
+      </span>
     </nav>
 
-    <!-- Tombol kembali eksplisit -->
+    <!-- Tombol kembali -->
     <a href="surat.html" class="dg-back">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
       Kembali ke Daftar Surat
     </a>
 
-    <!-- Kartu detail -->
+    <!-- Kartu detail surat -->
     <section class="dg-card">
+
       <div class="dg-title-row">
         <div>
-          <h1 class="dg-title" id="dg-title">Memuat...</h1>
+          <h1 class="dg-title" id="dg-title">
+            Memuat detail surat...
+          </h1>
+
           <p class="dg-sub" id="dg-sub"></p>
         </div>
+
         <span class="dg-badge" id="dg-badge"></span>
       </div>
+
       <div class="dg-grid" id="dg-info"></div>
+
     </section>
 
   </main>
 
-  <footer class="pg-footer">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
+  <!-- Footer -->
+  <footer class="pg-footer">
+    &copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.
+  </footer>
 
-  <!-- ===== Skrip ===== -->
+  <!-- API dan komponen -->
   <script src="../../assets/js/api.js"></script>
   <script type="module" src="../../assets/js/auth.js"></script>
   <script type="module" src="../../assets/js/components/sidebar-pg.js"></script>
   <script type="module" src="../../assets/js/components/navbar-pg.js"></script>
-  <script type="module">
-    import { suratPgData as MOCK } from "../../assets/js/data/surat-pegawai.js";
 
-    async function loadDetail(id) {
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        return EOfficeAPI.getSuratSayaDetail(id);
+  <!-- Logika Detail Surat -->
+  <script type="module">
+
+    import {
+      suratPgData as MOCK
+    } from "../../assets/js/data/surat-pegawai.js";
+
+    const params = new URLSearchParams(window.location.search);
+
+    const id = Number(params.get("id"));
+    const jenis = params.get("jenis") || "masuk";
+
+    const TONE = {
+      red: "red",
+      gray: "gray",
+      blue: "blue",
+      green: "green",
+      amber: "gray"
+    };
+
+    // ==========================================
+    // FORMAT TANGGAL
+    // ==========================================
+
+    function formatTanggal(value) {
+      if (!value) return "-";
+
+      const raw = String(value);
+      const iso = raw.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+
+      if (!iso) return raw;
+
+      const date = new Date(`${iso}T00:00:00`);
+
+      if (Number.isNaN(date.getTime())) {
+        return raw;
       }
-      return MOCK.find((x) => x.id === id) || MOCK[0];
+
+      return date.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
     }
 
-    async function init() {
-      const id = Number(new URLSearchParams(location.search).get("id"));
-      let d;
-      try {
-        d = await loadDetail(id);
-      } catch (e) {
-        document.getElementById("dg-title").textContent = "Gagal memuat detail surat";
-        return;
+    // ==========================================
+    // FORMAT WAKTU
+    // ==========================================
+
+    function formatWaktu(value) {
+      if (!value) return "-";
+
+      const match = String(value).match(/\b\d{2}:\d{2}\b/);
+
+      return match ? `${match[0]} WIB` : "-";
+    }
+
+    // ==========================================
+    // MAPPING DATA BACKEND
+    // ==========================================
+
+    function mapDetail(raw) {
+      const status = String(raw.status || "Belum tersedia");
+
+      const sifat = raw.sifat
+        ? String(raw.sifat)
+        : "Tidak tercantum";
+
+      let warna = "gray";
+
+      if (/penting|segera|rahasia/i.test(sifat)) {
+        warna = "red";
+      } else if (/selesai|terkirim/i.test(status)) {
+        warna = "green";
+      } else if (/baru|proses|disposisi/i.test(status)) {
+        warna = "blue";
       }
 
-      const TONE = { red: "red", gray: "gray", blue: "blue", green: "green", amber: "gray" };
+      return {
+        id: raw.id,
 
-      document.getElementById("dg-crumb").textContent = d.nomor;
-      document.getElementById("dg-title").textContent = d.perihal;
-      document.getElementById("dg-sub").textContent = `${d.pengirim} \u2022 ${d.tanggal}, ${d.waktu}`;
+        jenis,
+
+        nomor:
+          raw.no_surat ||
+          raw.no_agenda ||
+          "-",
+
+        pengirim:
+          jenis === "masuk"
+            ? (raw.asal || "-")
+            : (raw.tujuan || "-"),
+
+        perihal:
+          raw.perihal ||
+          "Tanpa perihal",
+
+        tanggal:
+          formatTanggal(raw.tanggal),
+
+        waktu:
+          formatWaktu(raw.created_at),
+
+        sifat,
+
+        status,
+
+        klasifikasi:
+          raw.klasifikasi || "-",
+
+        dibuatOleh:
+          raw.created_by_name || "-",
+
+        label: {
+          text: status,
+          tone: warna
+        }
+      };
+    }
+
+    // ==========================================
+    // MENGAMBIL DETAIL SURAT
+    // ==========================================
+
+    async function loadDetail() {
+      if (window.EOfficeAPI?.config?.LIVE) {
+
+        if (typeof EOfficeAPI.getSuratSayaDetail !== "function") {
+          throw new Error(
+            "Fungsi getSuratSayaDetail belum tersedia di api.js."
+          );
+        }
+
+        const response = await EOfficeAPI.getSuratSayaDetail(
+          id,
+          jenis
+        );
+
+        if (response?.status !== true || !response.data) {
+          throw new Error(
+            response?.message || "Gagal mengambil detail surat."
+          );
+        }
+
+        return mapDetail(response.data);
+      }
+
+      const mockItem = MOCK.find(
+        (item) =>
+          Number(item.id) === id &&
+          item.jenis === jenis
+      );
+
+      return mockItem || null;
+    }
+
+    // ==========================================
+    // MEMBUAT FIELD DETAIL
+    // ==========================================
+
+    function createField(label, value, mono = false) {
+      const field = document.createElement("div");
+      field.className = "dg-field";
+
+      const labelElement = document.createElement("p");
+      labelElement.className = "dg-label";
+      labelElement.textContent = label;
+
+      const valueElement = document.createElement("p");
+
+      valueElement.className = mono
+        ? "dg-value dg-value--mono"
+        : "dg-value";
+
+      valueElement.textContent = String(value ?? "-");
+
+      field.appendChild(labelElement);
+      field.appendChild(valueElement);
+
+      return field;
+    }
+
+    // ==========================================
+    // RENDER DETAIL SURAT
+    // ==========================================
+
+    function renderDetail(d) {
+      const title = document.getElementById("dg-title");
+      const subtitle = document.getElementById("dg-sub");
+      const breadcrumb = document.getElementById("dg-crumb");
       const badge = document.getElementById("dg-badge");
-      badge.textContent = d.label.text;
-      badge.className = `dg-badge dg-badge--${TONE[d.label.tone] || "gray"}`;
+      const container = document.getElementById("dg-info");
+
+      breadcrumb.textContent = d.nomor || "-";
+      title.textContent = d.perihal || "Tanpa perihal";
+
+      subtitle.textContent =
+        `${d.pengirim || "-"} • ${d.tanggal || "-"}, ${d.waktu || "-"}`;
+
+      const label = d.label || {
+        text: d.status || "Belum tersedia",
+        tone: "gray"
+      };
+
+      badge.textContent = label.text;
+
+      badge.className =
+        `dg-badge dg-badge--${TONE[label.tone] || "gray"}`;
 
       const rows = [
         ["Nomor Surat", d.nomor, true],
-        ["Pengirim", d.pengirim],
-        ["Tanggal Surat", `${d.tanggal} \u2022 ${d.waktu}`],
+        [
+          jenis === "masuk" ? "Pengirim" : "Tujuan",
+          d.pengirim
+        ],
+        ["Tanggal Surat", `${d.tanggal} • ${d.waktu}`],
         ["Sifat", d.sifat],
         ["Status", d.status],
-        ["Jenis", d.jenis.charAt(0).toUpperCase() + d.jenis.slice(1)]
+        ["Jenis", jenis === "masuk" ? "Surat Masuk" : "Surat Keluar"]
       ];
 
-      document.getElementById("dg-info").innerHTML = rows
-        .map(([l, v, mono]) => `
-          <div class="dg-field">
-            <p class="dg-label">${l}</p>
-            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-          </div>`)
-        .join("");
+      if (window.EOfficeAPI?.config?.LIVE) {
+        rows.push(
+          ["Klasifikasi", d.klasifikasi],
+          ["Dibuat Oleh", d.dibuatOleh]
+        );
+      }
 
-      document.title = `${d.perihal} - E-Office SKSDA`;
+      container.replaceChildren();
+
+      rows.forEach(([labelText, value, mono]) => {
+        container.appendChild(
+          createField(labelText, value, mono)
+        );
+      });
+
+      document.title =
+        `${d.perihal || "Detail Surat"} - E-Office SKSDA`;
+    }
+
+    // ==========================================
+    // MENAMPILKAN ERROR
+    // ==========================================
+
+    function renderError(message) {
+      const title = document.getElementById("dg-title");
+      const subtitle = document.getElementById("dg-sub");
+      const badge = document.getElementById("dg-badge");
+      const container = document.getElementById("dg-info");
+
+      title.textContent = "Gagal memuat detail surat";
+      subtitle.textContent = message || "Terjadi kesalahan.";
+
+      badge.textContent = "";
+      badge.className = "dg-badge";
+
+      container.replaceChildren();
+    }
+
+    // ==========================================
+    // INISIALISASI HALAMAN
+    // ==========================================
+
+    async function init() {
+      if (
+        !Number.isInteger(id) ||
+        id <= 0 ||
+        !["masuk", "keluar"].includes(jenis)
+      ) {
+        renderError("ID atau jenis surat tidak valid.");
+        return;
+      }
+
+      try {
+        const detail = await loadDetail();
+
+        if (!detail) {
+          throw new Error("Surat tidak ditemukan.");
+        }
+
+        renderDetail(detail);
+
+      } catch (error) {
+        console.error(
+          "Gagal memuat detail surat:",
+          error
+        );
+
+        renderError(
+          error?.message || "Tidak dapat mengambil data dari server."
+        );
+      }
     }
 
     init();
+
   </script>
+
   <script src="/sw-register.js"></script>
+
 </body>
 </html>
