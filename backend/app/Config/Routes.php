@@ -363,9 +363,28 @@ $routes->group(
 |--------------------------------------------------------------------------
 */
 
+// Mengisi tindak lanjut
 $routes->patch(
     'api/disposisi/(:num)/tindak-lanjut',
     'Api\DisposisiController::tindakLanjut/$1',
+    [
+        'filter' => 'role:staf',
+    ]
+);
+
+// Menerima disposisi
+$routes->patch(
+    'api/disposisi/(:num)/terima',
+    'Api\DisposisiController::terima/$1',
+    [
+        'filter' => 'role:staf',
+    ]
+);
+
+// Meminta klarifikasi kepada Kepala Seksi
+$routes->post(
+    'api/disposisi/(:num)/klarifikasi',
+    'Api\DisposisiController::klarifikasi/$1',
     [
         'filter' => 'role:staf',
     ]

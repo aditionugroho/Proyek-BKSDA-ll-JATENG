@@ -1,0 +1,4 @@
+
+# Backup hasil pengeditan
+*.bak
+*.backup-*

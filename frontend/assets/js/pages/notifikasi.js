@@ -188,8 +188,80 @@ function renderList() {
   );
 }
 
+function normalizeNotifikasi(response) {
+  // Respons langsung berupa array.
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  // Respons CodeIgniter: { status: true, data: [...] }
+  if (Array.isArray(response?.data)) {
+    return response.data;
+  }
+
+  // Beberapa API menggunakan pagination.
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data;
+  }
+
+  throw new Error(
+    response?.message ||
+    "Format data notifikasi dari backend tidak sesuai."
+  );
+}
+
 /* ===== REFRESH ===== */
 function refresh() {
+  notifData = normalizeNotifikasi(notifData).map((n) => {
+    const tipe = String(n.tipe || "");
+    const kategori = tipe.includes("disposisi") ||
+      ["terima", "tindak_lanjut", "klarifikasi"].some(x => tipe.includes(x))
+      ? "disposisi"
+      : "surat";
+
+    const escape = (v) => String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+    return {
+      ...n,
+      kategori: n.kategori || kategori,
+      judul: n.judul || (
+        tipe === "disposisi_diterima" ? "Disposisi Diterima" :
+        tipe === "klarifikasi_disposisi" ? "Permintaan Klarifikasi" :
+        tipe === "tindak_lanjut" ? "Tindak Lanjut Disposisi" :
+        tipe === "disposisi_selesai" ? "Disposisi Selesai" :
+        "Notifikasi"
+      ),
+      teks: n.teks || escape(n.pesan || ""),
+      waktu: n.waktu || n.created_at || "-",
+      meta: n.meta || n.created_at || "Notifikasi sistem",
+      meta: n.meta || n.created_at || "-",
+      unread: n.unread !== undefined
+        ? Boolean(n.unread)
+        : Number(n.is_read ?? 0) === 0,
+      penting: Boolean(n.penting ?? false),
+      badges: Array.isArray(n.badges) ? n.badges : [],
+      aksi: (
+        n.aksi && typeof n.aksi === "object"
+          ? {
+              href: n.aksi.href || "#",
+              label: n.aksi.label || "Lihat Notifikasi",
+              icon: n.aksi.icon || "bell",
+              style: n.aksi.style || "blue"
+            }
+          : {
+              href: "disposisi.html",
+              label: "Notifikasi",
+              icon: "bell",
+              style: "blue"
+            }
+      )
+    };
+  });
   renderStats();
   renderList();
   persistState();

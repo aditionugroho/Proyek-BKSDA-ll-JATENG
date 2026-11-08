@@ -1,165 +1,524 @@
+
 /* ============================================
-   NOTIFIKASI (PEGAWAI) — E-Office SKSDA
-   notifPgData + tab filter, tandai dibaca
-   (satu & semua), ringkasan dari data
+   NOTIFIKASI PEGAWAI - E-Office SKSDA
+   Integrasi API CodeIgniter 4
    ============================================ */
 
 import { notifPgData as NOTIF_PG_MOCK } from "../data/notifikasi-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { saveListState, loadListState } from "../utils/state.js";
-import { ambilNotif, tandaiDibaca, tandaiSemuaDibaca } from "../utils/notif-mock.js";
-
-/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
-let notifPgData = [];
-
-async function loadData() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getNotifikasiSaya();
-  }
-  /* Mock: notifikasi dinamis (pemicu aksi) + data contoh */
-  return [...ambilNotif("pegawai"), ...NOTIF_PG_MOCK];
-}
+import {
+  ambilNotif,
+  tandaiDibaca,
+  tandaiSemuaDibaca
+} from "../utils/notif-mock.js";
 
 const STATE_KEY = "notifikasi-pg";
 
-/* ===== IKON ===== */
+const isLive = () =>
+  Boolean(window.EOfficeAPI?.config?.LIVE);
+
+let notifPgData = [];
+let currentFilter = "all";
+let isSaving = false;
+
+/* ============================================
+   IKON
+   ============================================ */
+
 const ICONS = {
-  plus: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
-  check: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
-  minus: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
+  plus: `
+    <svg xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5"
+      stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>`,
+
+  check: `
+    <svg xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>`,
+
+  minus: `
+    <svg xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5"
+      stroke-linecap="round">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>`
 };
 
-/* ===== STATE ===== */
-let currentFilter = "all";
+/* ============================================
+   KEAMANAN TAMPILAN
+   ============================================ */
 
-/* ===== PERSIST STATE ===== */
-function persistState() {
-  saveListState(STATE_KEY, { currentFilter });
-}
-
-function restoreState() {
-  const s = loadListState(STATE_KEY);
-  if (!s) return;
-  currentFilter = s.currentFilter ?? "all";
-  document.querySelectorAll(".pgn-tab").forEach((t) =>
-    t.classList.toggle("is-active", t.dataset.filter === currentFilter)
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]
   );
 }
 
-/* ===== FILTER ===== */
-function getFiltered() {
-  return notifPgData.filter((n) => {
-    if (currentFilter === "all") return true;
-    if (currentFilter === "unread") return n.unread;
-    return n.kategori === currentFilter;
+/* ============================================
+   FORMAT WAKTU
+   ============================================ */
+
+function formatWaktu(value) {
+  if (!value) return "-";
+
+  const date = new Date(
+    String(value).replace(" ", "T")
+  );
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
   });
 }
 
-/* ===== RENDER: list ===== */
+/* ============================================
+   KATEGORI NOTIFIKASI
+   ============================================ */
+
+function getKategori(tipe) {
+  const value = String(tipe || "").toLowerCase();
+
+  if (
+    value.includes("surat") ||
+    value.includes("disposisi")
+  ) {
+    return "surat";
+  }
+
+  if (
+    value.includes("tugas") ||
+    value.includes("patroli")
+  ) {
+    return "tugas";
+  }
+
+  return "sistem";
+}
+
+/* ============================================
+   MAPPING DATA BACKEND
+   ============================================ */
+
+function mapNotifikasi(raw) {
+  const tipe = String(raw.tipe || "");
+  const kategori = getKategori(tipe);
+
+  const pesan = String(
+    raw.pesan ||
+    raw.teks ||
+    raw.message ||
+    "Ada notifikasi baru."
+  );
+
+  let judul = "Notifikasi Sistem";
+  let icon = "plus";
+  let tone = "blue";
+
+  if (kategori === "surat") {
+    judul = tipe.toLowerCase().includes("disposisi")
+      ? "Notifikasi Disposisi"
+      : "Notifikasi Surat";
+    icon = "plus";
+    tone = "blue";
+  } else if (kategori === "tugas") {
+    judul = "Notifikasi Tugas";
+    icon = "check";
+    tone = "green";
+  }
+
+  return {
+    id: raw.id,
+    tipe,
+    kategori,
+    judul: String(raw.judul || judul),
+    teks: pesan,
+    waktu: formatWaktu(
+      raw.created_at || raw.waktu
+    ),
+    unread:
+      raw.is_read !== undefined
+        ? Number(raw.is_read) === 0
+        : Boolean(raw.unread),
+    icon,
+    tone
+  };
+}
+
+/* ============================================
+   AMBIL DATA NOTIFIKASI
+   ============================================ */
+
+async function loadData() {
+  if (isLive()) {
+    const response =
+      await EOfficeAPI.getNotifikasiSaya();
+
+    if (
+      response?.status !== true ||
+      !Array.isArray(response.data)
+    ) {
+      throw new Error(
+        response?.message ||
+        "Format data notifikasi tidak valid."
+      );
+    }
+
+    return response.data.map(mapNotifikasi);
+  }
+
+  return [
+    ...ambilNotif("pegawai"),
+    ...NOTIF_PG_MOCK
+  ];
+}
+
+/* ============================================
+   SIMPAN STATE FILTER
+   ============================================ */
+
+function persistState() {
+  saveListState(STATE_KEY, {
+    currentFilter
+  });
+}
+
+function restoreState() {
+  const saved = loadListState(STATE_KEY);
+
+  if (saved?.currentFilter) {
+    currentFilter = saved.currentFilter;
+  }
+
+  document.querySelectorAll(".pgn-tab").forEach(
+    (tab) => {
+      tab.classList.toggle(
+        "is-active",
+        tab.dataset.filter === currentFilter
+      );
+    }
+  );
+}
+
+/* ============================================
+   FILTER DATA
+   ============================================ */
+
+function getFiltered() {
+  return notifPgData.filter((notif) => {
+    if (currentFilter === "all") {
+      return true;
+    }
+
+    if (currentFilter === "unread") {
+      return notif.unread;
+    }
+
+    return notif.kategori === currentFilter;
+  });
+}
+
+/* ============================================
+   RENDER DAFTAR NOTIFIKASI
+   ============================================ */
+
 function renderList() {
-  const listEl = document.getElementById("pgn-list");
+  const list = document.getElementById("pgn-list");
   const rows = getFiltered();
 
-  if (rows.length === 0) {
-    listEl.innerHTML = `<p class="pgn-empty">Tidak ada notifikasi yang cocok dengan filter.</p>`;
-  } else {
-    listEl.innerHTML = rows
-      .map(
-        (n) => `
-        <div class="pgn-item" data-item="${n.id}">
-          <span class="pgn-icon pgn-icon--${n.tone}">${ICONS[n.icon]}</span>
-          <div class="pgn-body">
-            <p class="pgn-judul">${n.judul}</p>
-            <p class="pgn-teks">${n.teks}</p>
-            <span class="pgn-waktu">${n.waktu}</span>
-          </div>
-          ${n.unread ? '<span class="pgn-dot" title="Belum dibaca"></span>' : ""}
-        </div>`
-      )
-      .join("");
+  if (!rows.length) {
+    list.innerHTML = `
+      <p class="pgn-empty">
+        Tidak ada notifikasi yang cocok dengan filter.
+      </p>
+    `;
+    return;
   }
+
+  list.innerHTML = rows.map((notif) => `
+    <div class="pgn-item"
+      data-item="${escapeHtml(notif.id)}">
+
+      <span class="pgn-icon pgn-icon--${escapeHtml(notif.tone)}">
+        ${ICONS[notif.icon] || ICONS.plus}
+      </span>
+
+      <div class="pgn-body">
+
+        <p class="pgn-judul">
+          ${escapeHtml(notif.judul)}
+        </p>
+
+        <p class="pgn-teks">
+          ${escapeHtml(notif.teks)}
+        </p>
+
+        <span class="pgn-waktu">
+          ${escapeHtml(notif.waktu)}
+        </span>
+
+      </div>
+
+      ${
+        notif.unread
+          ? `<span class="pgn-dot"
+              title="Belum dibaca"></span>`
+          : ""
+      }
+
+    </div>
+  `).join("");
 }
 
-/* ===== RENDER: ringkasan (dihitung dari data) ===== */
+/* ============================================
+   RINGKASAN NOTIFIKASI
+   ============================================ */
+
 function renderSummary() {
-  const unread = notifPgData.filter((n) => n.unread).length;
-  const surat = notifPgData.filter((n) => n.kategori === "surat").length;
-  const tugas = notifPgData.filter((n) => n.kategori === "tugas").length;
+  const unread = notifPgData.filter(
+    (notif) => notif.unread
+  ).length;
 
-  document.getElementById("pgn-unread-count").textContent = unread;
-  document.getElementById("pgn-surat-count").textContent = surat;
-  document.getElementById("pgn-tugas-count").textContent = tugas;
-  document.getElementById("pgn-unread-sub").textContent = `${unread} notifikasi belum dibaca`;
+  const surat = notifPgData.filter(
+    (notif) => notif.kategori === "surat"
+  ).length;
 
-  /* Link abu bila semua sudah dibaca */
-  document.getElementById("btn-mark-all").classList.toggle("is-done", unread === 0);
+  const tugas = notifPgData.filter(
+    (notif) => notif.kategori === "tugas"
+  ).length;
+
+  document.getElementById(
+    "pgn-unread-count"
+  ).textContent = unread;
+
+  document.getElementById(
+    "pgn-surat-count"
+  ).textContent = surat;
+
+  document.getElementById(
+    "pgn-tugas-count"
+  ).textContent = tugas;
+
+  document.getElementById(
+    "pgn-unread-sub"
+  ).textContent =
+    `${unread} notifikasi belum dibaca`;
+
+  const button = document.getElementById("btn-mark-all");
+
+  button.classList.toggle(
+    "is-done",
+    unread === 0
+  );
+
+  button.disabled = isSaving || unread === 0;
 }
 
-/* ===== REFRESH ===== */
+/* ============================================
+   REFRESH TAMPILAN
+   ============================================ */
+
 function refresh() {
   renderList();
   renderSummary();
   persistState();
 }
 
-/* ===== EVENT: tab ===== */
-document.getElementById("pgn-tabs").addEventListener("click", (event) => {
-  const tab = event.target.closest(".pgn-tab");
-  if (!tab) return;
-  document.querySelectorAll(".pgn-tab").forEach((t) => t.classList.remove("is-active"));
-  tab.classList.add("is-active");
-  currentFilter = tab.dataset.filter;
-  renderList();
-});
+/* ============================================
+   EVENT FILTER TAB
+   ============================================ */
 
-/* ===== EVENT: klik item → tandai dibaca satu ===== */
-document.getElementById("pgn-list").addEventListener("click", (event) => {
-  const item = event.target.closest("[data-item]");
-  if (!item) return;
-  const notif = notifPgData.find((n) => String(n.id) === item.dataset.item);
-  if (notif && notif.unread) {
-    if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-      EOfficeAPI.markNotifikasiRead(notif.id).catch(() => showToast("Gagal menyimpan status dibaca"));
-    } else {
-      tandaiDibaca("pegawai", notif.id);
-    }
-    notif.unread = false;
+document.getElementById("pgn-tabs")
+  .addEventListener("click", (event) => {
+
+    const tab = event.target.closest(".pgn-tab");
+
+    if (!tab) return;
+
+    currentFilter = tab.dataset.filter;
+
+    document.querySelectorAll(".pgn-tab").forEach(
+      (item) => {
+        item.classList.toggle(
+          "is-active",
+          item === tab
+        );
+      }
+    );
+
     refresh();
-  }
-});
+  });
 
-/* ===== EVENT: tandai semua dibaca ===== */
-document.getElementById("btn-mark-all").addEventListener("click", () => {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    EOfficeAPI.markAllNotifikasiRead().catch(() => showToast("Gagal menyimpan status dibaca"));
-  } else {
-    tandaiSemuaDibaca("pegawai");
-  }
-  notifPgData.forEach((n) => (n.unread = false));
-  refresh();
-  showToast("Semua notifikasi ditandai dibaca");
-});
+/* ============================================
+   TANDAI SATU NOTIFIKASI DIBACA
+   ============================================ */
 
-/* ===== EVENT: pengaturan (toast) ===== */
-document.getElementById("btn-pengaturan").addEventListener("click", () => {
-  showToast("Fitur pengaturan notifikasi menyusul");
-});
+document.getElementById("pgn-list")
+  .addEventListener("click", async (event) => {
 
-/* ===== Inisialisasi: muat data dulu, baru render ===== */
+    const item = event.target.closest("[data-item]");
+
+    if (!item || isSaving) return;
+
+    const notif = notifPgData.find(
+      (n) => String(n.id) === item.dataset.item
+    );
+
+    if (!notif || !notif.unread) return;
+
+    isSaving = true;
+
+    try {
+      if (isLive()) {
+        const response =
+          await EOfficeAPI.markNotifikasiRead(notif.id);
+
+        if (response?.status !== true) {
+          throw new Error(
+            response?.message ||
+            "Gagal menyimpan status notifikasi."
+          );
+        }
+      } else {
+        tandaiDibaca("pegawai", notif.id);
+      }
+
+      notif.unread = false;
+      showToast("Notifikasi ditandai dibaca");
+
+    } catch (error) {
+      console.error(error);
+      showToast("Gagal menyimpan status dibaca");
+
+    } finally {
+      isSaving = false;
+      refresh();
+    }
+  });
+
+/* ============================================
+   TANDAI SEMUA NOTIFIKASI DIBACA
+   ============================================ */
+
+document.getElementById("btn-mark-all")
+  .addEventListener("click", async () => {
+
+    if (isSaving) return;
+
+    const belumDibaca = notifPgData.some(
+      (notif) => notif.unread
+    );
+
+    if (!belumDibaca) return;
+
+    isSaving = true;
+
+    try {
+      if (isLive()) {
+        const response =
+          await EOfficeAPI.markAllNotifikasiRead();
+
+        if (response?.status !== true) {
+          throw new Error(
+            response?.message ||
+            "Gagal menandai semua notifikasi."
+          );
+        }
+      } else {
+        tandaiSemuaDibaca("pegawai");
+      }
+
+      notifPgData.forEach(
+        (notif) => {
+          notif.unread = false;
+        }
+      );
+
+      showToast(
+        "Semua notifikasi berhasil ditandai dibaca"
+      );
+
+    } catch (error) {
+      console.error(error);
+      showToast(
+        "Gagal menyimpan status notifikasi"
+      );
+
+    } finally {
+      isSaving = false;
+      refresh();
+    }
+  });
+
+/* ============================================
+   PENGATURAN
+   ============================================ */
+
+document.getElementById("btn-pengaturan")
+  .addEventListener("click", () => {
+    showToast(
+      "Fitur pengaturan notifikasi menyusul"
+    );
+  });
+
+/* ============================================
+   INISIALISASI
+   ============================================ */
+
 async function init() {
-  const listEl = document.getElementById("pgn-list");
-  listEl.innerHTML = `<p class="pgn-empty">Memuat notifikasi...</p>`;
+  const list = document.getElementById("pgn-list");
+
+  list.innerHTML = `
+    <p class="pgn-empty">
+      Memuat notifikasi...
+    </p>
+  `;
 
   try {
     notifPgData = await loadData();
-  } catch (e) {
-    notifPgData = [];
-    listEl.innerHTML = `<p class="pgn-empty">Gagal memuat data. Periksa koneksi ke server, lalu muat ulang halaman.</p>`;
-    return;
-  }
 
-  restoreState();
-  refresh();
+    restoreState();
+    refresh();
+
+  } catch (error) {
+    console.error(
+      "Gagal memuat notifikasi:",
+      error
+    );
+
+    notifPgData = [];
+
+    list.innerHTML = `
+      <p class="pgn-empty">
+        Gagal memuat notifikasi dari server.
+      </p>
+    `;
+
+    renderSummary();
+  }
 }
 
 init();
