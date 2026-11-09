@@ -14,6 +14,73 @@ const judulInput = document.getElementById("bt-judul");
 const deskripsiInput = document.getElementById("bt-deskripsi");
 const stafSelect = document.getElementById("bt-staf");
 
+// ===== AMBIL STAF AKTIF DARI BACKEND =====
+async function loadStafTugas() {
+  if (!window.EOfficeAPI?.config?.LIVE) return;
+
+  stafSelect.innerHTML = "";
+  stafSelect.disabled = true;
+
+  const loading = document.createElement("option");
+  loading.value = "";
+  loading.textContent = "Memuat daftar staf...";
+  stafSelect.appendChild(loading);
+
+  try {
+    const response = await EOfficeAPI.getStafTujuan();
+
+    if (
+      response.status !== true ||
+      !Array.isArray(response.data)
+    ) {
+      throw new Error(
+        response.message || "Format daftar staf tidak valid."
+      );
+    }
+
+    stafSelect.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Pilih anggota tim";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    stafSelect.appendChild(placeholder);
+
+    response.data.forEach((staf) => {
+      const id = Number(staf.id);
+
+      if (!Number.isSafeInteger(id) || id <= 0) return;
+
+      const option = document.createElement("option");
+      option.value = String(id);
+      option.textContent = String(staf.name || `Staf #${id}`);
+
+      stafSelect.appendChild(option);
+    });
+
+    stafSelect.disabled = false;
+
+  } catch (error) {
+    console.error("Gagal memuat staf:", error);
+
+    stafSelect.innerHTML = "";
+
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Gagal memuat daftar staf";
+    stafSelect.appendChild(option);
+
+    showToast(
+      error.message || "Daftar staf tidak dapat dimuat."
+    );
+  }
+}
+
+loadStafTugas();
+
+
+
 const REQUIRED = ["bt-judul", "bt-deskripsi", "bt-staf"];
 
 /* ===== VALIDASI ===== */
@@ -126,12 +193,20 @@ form.addEventListener("submit", (event) => {
     }, 1000);
   };
 
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
+
+  if (files.length > 0 && window.EOfficeAPI?.config?.LIVE) {
+    showToast(
+      "Lampiran tugas belum didukung API. Hapus lampiran sebelum menyimpan."
+    );
+    return;
+  }
+
+if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     // LIVE: kode & atribut lain dibuat server
     EOfficeAPI.createTugas({
       judul: judulInput.value.trim(),
       deskripsi: deskripsiInput.value.trim(),
-      pic: pic,
+      assigned_to: Number(pic),
       prioritas: prioritas === "Tinggi" ? "TINGGI" : "NORMAL",
       deadline: deadlineRaw || null,
       lampiran: files.slice()

@@ -29,6 +29,130 @@ class AuthController extends BaseController
         $this->loginLogModel = new LoginLogModel();
     }
 
+/**
+ * Register staf mandiri.
+ * Akun langsung aktif tanpa persetujuan Admin.
+ */
+public function register()
+{
+    $data = $this->request->getJSON(true);
+
+    if (!is_array($data)) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Body harus berupa JSON.'
+        ], 400);
+    }
+
+    // Batasi percobaan pendaftaran per IP.
+    $ip = $this->request->getIPAddress();
+
+    if (!service('throttler')->check(
+        'staff-register-' . hash('sha256', $ip),
+        5,
+        3600
+    )) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Terlalu banyak pendaftaran. Coba lagi nanti.'
+        ], 429);
+    }
+
+    $name = trim((string) ($data['name'] ?? ''));
+    $email = strtolower(trim((string) ($data['email'] ?? '')));
+    $username = strtolower(trim((string) ($data['username'] ?? '')));
+    $password = (string) ($data['password'] ?? '');
+
+    $resortId = filter_var(
+        $data['resort_id'] ?? null,
+        FILTER_VALIDATE_INT
+    );
+
+    if (
+        mb_strlen($name) < 3 ||
+        mb_strlen($name) > 255 ||
+        !filter_var($email, FILTER_VALIDATE_EMAIL) ||
+        mb_strlen($email) > 255 ||
+        !preg_match('/^[a-z0-9._-]{3,100}$/', $username) ||
+        strlen($password) < 8 ||
+        strlen($password) > 128 ||
+        !$resortId ||
+        $resortId < 1
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Isi nama, email, username, password minimal 8 karakter, dan resort yang valid.'
+        ], 422);
+    }
+
+    $resort = db_connect()
+        ->table('resorts')
+        ->where('id', $resortId)
+        ->where('status', 1)
+        ->get()
+        ->getRowArray();
+
+    if (!$resort) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Resort tidak tersedia.'
+        ], 422);
+    }
+
+    if (
+        $this->userModel->where('email', $email)->first() ||
+        $this->userModel->where('username', $username)->first()
+    ) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Email atau username sudah terdaftar.'
+        ], 409);
+    }
+
+    try {
+        $id = $this->userModel->insert([
+            'name' => $name,
+            'email' => $email,
+            'username' => $username,
+            'password' => password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            ),
+            'role' => 'staf',
+            'jabatan' => 'Staf',
+            'resort_id' => (int) $resortId,
+            'status' => 1
+        ], true);
+
+        if (!$id) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Pendaftaran gagal.'
+            ], 500);
+        }
+
+    } catch (\Throwable $e) {
+        log_message(
+            'warning',
+            'Konflik pendaftaran staf: ' . $e->getCode()
+        );
+
+        return $this->respond([
+            'status' => false,
+            'message' => 'Pendaftaran tidak dapat diproses.'
+        ], 409);
+    }
+
+    return $this->respond([
+        'status' => true,
+        'message' => 'Akun staf berhasil dibuat. Silakan login.',
+        'data' => [
+            'id' => (int) $id,
+            'role' => 'staf'
+        ]
+    ], 201);
+}
+
     /*
     |--------------------------------------------------------------------------
     | LOGIN

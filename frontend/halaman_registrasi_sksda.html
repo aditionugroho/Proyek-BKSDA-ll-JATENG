@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -92,19 +92,15 @@
 
           <div class="form-field">
             <label class="form-label" for="role"><span data-i18n="reg.role">Role</span> <span class="req">*</span></label>
-            <select id="role" name="role">
-              <option value="pegawai" selected data-i18n="role.opt.pegawai">Staff</option>
-              <option value="kepala-seksi" data-i18n="role.opt.kepala-seksi">Kepala Seksi</option>
+            <select id="role" name="role" disabled>
+              <option value="staf" selected>Staf</option>
             </select>
           </div>
 
           <div class="form-field">
             <label class="form-label" for="resort">Resort <span class="req">*</span></label>
             <select id="resort" name="resort">
-              <option value="" selected disabled>Pilih resort wilayah kerja Anda...</option>
-              <option value="Cilacap">Resort Cilacap</option>
-              <option value="Wonosobo">Resort Wonosobo</option>
-              <option value="Pemalang">Resort Pemalang</option>
+              <option value="" selected disabled>Memuat resort...</option>
             </select>
             <p class="form-error" id="resort-error">Wajib dipilih</p>
           </div>
@@ -131,7 +127,7 @@
               <div class="strength-bars"><span></span><span></span><span></span><span></span></div>
               <p class="strength-text" id="strength-text">Kekuatan sandi</p>
             </div>
-            <p class="form-error" id="password-error">Minimal 6 karakter</p>
+            <p class="form-error" id="password-error">Minimal 8 karakter</p>
           </div>
 
           <div class="form-field">
@@ -282,7 +278,13 @@
     function validateStep1() {
       let ok = true;
       if (!document.getElementById("nama").value.trim()) { setError("nama", true, "reg.err.required"); ok = false; }
-      if (!document.getElementById("idemail").value.trim()) { setError("idemail", true, "reg.err.required"); ok = false; }
+      const email = document.getElementById("idemail").value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError("idemail", true);
+        document.getElementById("idemail-error").textContent =
+          "Masukkan alamat email yang valid.";
+        ok = false;
+      }
       if (!document.getElementById("resort").value) { setError("resort", true, "reg.err.required"); ok = false; }
       return ok;
     }
@@ -291,7 +293,7 @@
       let ok = true;
       const pw = document.getElementById("password").value;
       const kf = document.getElementById("konfirmasi").value;
-      if (pw.length < 6) { setError("password", true, "reg.err.min6"); ok = false; }
+      if (pw.length < 8) { setError("password", true, "reg.err.min6"); ok = false; }
       if (!kf || kf !== pw) { setError("konfirmasi", true, "reg.err.match"); ok = false; }
       return ok;
     }
@@ -362,57 +364,156 @@
     }
     document.getElementById("konfirmasi").addEventListener("input", checkMatch);
 
-    // ===== SUBMIT FINAL =====
-    document.getElementById("reg-btn").addEventListener("click", function() {
-      if (!validateStep2()) { goStep(2); return; }
 
-      const setuju = document.getElementById("setuju");
-      const setujuErr = document.getElementById("setuju-error");
-      setujuErr.textContent = t("reg.err.terms");
-      if (!setuju.checked) { setujuErr.classList.add("show"); return; }
-      setujuErr.classList.remove("show");
+    // ===== MUAT RESORT DARI BACKEND =====
+    async function loadResorts() {
+      const select = document.getElementById("resort");
 
-      const btn = document.getElementById("reg-btn");
-      btn.disabled = true;
-      document.getElementById("reg-btn-text").textContent = t("reg.processing");
+      try {
+        const response = await EOfficeAPI.getResortsPublic();
+        const resorts = Array.isArray(response.data)
+          ? response.data
+          : [];
 
-      // Registrasi lewat lapisan API (mock selama backend belum siap)
-      EOfficeAPI.register({
-        nama: document.getElementById("nama").value.trim(),
-        id_pengguna: document.getElementById("idemail").value.trim(),
-        kata_sandi: document.getElementById("password").value,
-        role: document.getElementById("role").value,
-        resort: document.getElementById("resort").value
-      })
-        .then(function (res) {
-          if (res.status === "duplicate") {
-            btn.disabled = false;
-            document.getElementById("reg-btn-text").textContent = t("reg.submit");
-            setujuErr.textContent = "ID/Email sudah terdaftar. Gunakan yang lain.";
-            setujuErr.classList.add("show");
-            return;
+        select.innerHTML =
+          '<option value="" selected disabled>Pilih resort...</option>';
+
+        resorts.forEach(function(resort) {
+          const option = document.createElement("option");
+          option.value = String(resort.id);
+          option.textContent =
+            "Resort " + (resort.nama || resort.kode || resort.id);
+          select.appendChild(option);
+        });
+
+        if (!resorts.length) {
+          throw new Error("Tidak ada resort aktif.");
+        }
+
+      } catch (error) {
+        select.innerHTML =
+          '<option value="" selected disabled>Resort gagal dimuat</option>';
+
+        const message = document.getElementById("resort-error");
+        message.textContent = error.message;
+        message.classList.add("show");
+      }
+    }
+
+    loadResorts();
+
+    // ===== REGISTER STAF MANDIRI =====
+    document.getElementById("reg-btn")
+      .addEventListener("click", async function() {
+        if (!validateStep1()) {
+          goStep(1);
+          return;
+        }
+
+        if (!validateStep2()) {
+          goStep(2);
+          return;
+        }
+
+        const setuju = document.getElementById("setuju");
+        const setujuError =
+          document.getElementById("setuju-error");
+
+        if (!setuju.checked) {
+          setujuError.textContent =
+            "Centang persetujuan untuk melanjutkan.";
+          setujuError.classList.add("show");
+          return;
+        }
+
+        setujuError.classList.remove("show");
+
+        const nama =
+          document.getElementById("nama").value.trim();
+
+        const email =
+          document.getElementById("idemail")
+            .value.trim().toLowerCase();
+
+        const username =
+          email.split("@")[0];
+
+        if (!/^[a-z0-9._-]{3,100}$/.test(username)) {
+          setujuError.textContent =
+            "Bagian awal email tidak valid sebagai username.";
+          setujuError.classList.add("show");
+          return;
+        }
+
+        const password =
+          document.getElementById("password").value;
+
+        const resortId =
+          Number(document.getElementById("resort").value);
+
+        const button = document.getElementById("reg-btn");
+        const buttonText =
+          document.getElementById("reg-btn-text");
+
+        button.disabled = true;
+        buttonText.textContent = "Memproses...";
+
+        try {
+          const response = await EOfficeAPI.register({
+            name: nama,
+            email: email,
+            username: username,
+            password: password,
+            resort_id: resortId
+          });
+
+          if (response.status !== true) {
+            throw new Error(
+              response.message || "Pendaftaran gagal."
+            );
           }
 
-          document.getElementById("reg-head").style.display = "none";
-          document.getElementById("steps").style.display = "none";
-          document.getElementById("reg-form").style.display = "none";
-          document.getElementById("reg-success").classList.add("show");
+          document.getElementById("reg-head")
+            .style.display = "none";
 
-          let sisa = 3;
-          const num = document.getElementById("count-num");
-          const timer = setInterval(function() {
-            sisa--;
-            if (sisa <= 0) { clearInterval(timer); location.href = "login.html"; }
-            else num.textContent = sisa;
+          document.getElementById("steps")
+            .style.display = "none";
+
+          document.getElementById("reg-form")
+            .style.display = "none";
+
+          document.getElementById("reg-success")
+            .classList.add("show");
+
+          let remaining = 3;
+
+          const number =
+            document.getElementById("count-num");
+
+          number.textContent = remaining;
+
+          const interval = setInterval(function() {
+            remaining--;
+
+            if (remaining <= 0) {
+              clearInterval(interval);
+              window.location.href = "login.html";
+            } else {
+              number.textContent = remaining;
+            }
           }, 1000);
-        })
-        .catch(function () {
-          btn.disabled = false;
-          document.getElementById("reg-btn-text").textContent = t("reg.submit");
-          setujuErr.textContent = "Gagal mengirim pendaftaran. Periksa koneksi lalu coba lagi.";
-          setujuErr.classList.add("show");
-        });
-    });
+
+        } catch (error) {
+          setujuError.textContent =
+            error.message || "Gagal membuat akun.";
+
+          setujuError.classList.add("show");
+
+        } finally {
+          button.disabled = false;
+          buttonText.textContent = "Buat Akun";
+        }
+      });
 
     document.getElementById("setuju").addEventListener("change", function() {
       document.getElementById("setuju-error").classList.remove("show");

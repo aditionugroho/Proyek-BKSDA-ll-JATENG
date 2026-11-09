@@ -39,56 +39,50 @@ function formatTanggal(value) {
   });
 }
 
-function mapDisposisi(d) {
-  const statusAsli = String(d.status || "").toLowerCase();
+function mapTugas(d) {
+  const statusText = String(d.status || "Belum Mulai");
+  const nama = String(d.pemberi_nama || "Kepala Seksi");
 
-  let status = { text: "Belum Mulai", tone: "gray" };
-
-  if (/selesai|completed/.test(statusAsli)) {
-    status = { text: "Selesai", tone: "green" };
-  } else if (/review|verifikasi/.test(statusAsli)) {
-    status = { text: "Menunggu Review", tone: "blue" };
-  } else if (/proses|berjalan|tindak_lanjut/.test(statusAsli)) {
-    status = { text: "Berjalan", tone: "blue" };
-  }
-
-  const rawPrioritas = String(d.prioritas || d.sifat || "Normal");
-
-  const tinggi = /tinggi|penting|segera/i.test(rawPrioritas);
-
-  const pemberiNama = String(
-    d.pemberi_nama || d.created_by_name || "Kepala Seksi",
-  );
+  const prioritasTinggi =
+    String(d.prioritas || "").toUpperCase() === "TINGGI";
 
   return {
     id: d.id,
-    judul: String(d.perihal || d.judul || d.instruksi || `Disposisi #${d.id}`),
-    deskripsi: String(d.instruksi || d.catatan || ""),
+    kode: d.kode || `TGS-${d.id}`,
+    judul: String(d.judul || `Tugas #${d.id}`),
+    deskripsi: String(d.deskripsi || ""),
     pemberi: {
-      nama: pemberiNama,
-      inisial: pemberiNama
+      nama,
+      inisial: nama
         .split(/\s+/)
         .slice(0, 2)
-        .map((s) => s[0] || "")
+        .map(x => x[0] || "")
         .join("")
-        .toUpperCase(),
+        .toUpperCase()
     },
     prioritas: {
-      text: tinggi ? "Tinggi" : "Normal",
-      tone: tinggi ? "red" : "gray",
+      text: prioritasTinggi ? "Tinggi" : "Normal",
+      tone: prioritasTinggi ? "red" : "gray"
     },
-    deadline: formatTanggal(d.batas_waktu || d.deadline || d.tanggal),
-    progress: status.text === "Selesai" ? 100 : 0,
+    deadline: formatTanggal(d.deadline),
+    progress: Number(d.progress || 0),
     progressColor: "#2563EB",
-    status,
-    selesai: status.text === "Selesai",
+    status: {
+      text: statusText,
+      tone: statusText === "Selesai"
+        ? "green"
+        : statusText === "Menunggu Review"
+          ? "blue"
+          : "amber"
+    },
+    selesai: statusText === "Selesai"
   };
 }
 
 async function loadData() {
   if (window.EOfficeAPI?.config?.LIVE) {
     const response = await EOfficeAPI.getTugasSaya();
-    return extractData(response).map(mapDisposisi);
+    return extractData(response).map(mapTugas);
   }
 
   return TUGAS_SAYA_MOCK;
@@ -145,7 +139,7 @@ function renderTable() {
         (t) => `
         <tr${t.selesai ? ' class="pgt-row-done"' : ""}>
           <td>
-            <a href="disposisi-saya.html" class="pgt-nama">${t.judul}</a>
+            <a href="detail-tugas.html?id=${encodeURIComponent(t.id)}" class="pgt-nama">${t.judul}</a>
             <span class="pgt-deskripsi">${t.deskripsi}</span>
           </td>
           <td>

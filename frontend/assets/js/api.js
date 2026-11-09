@@ -412,6 +412,15 @@ const EOfficeAPI = (() => {
     return request("GET", "/arsip/" + id);
   }
 
+
+  async function reviewTugas(id, action, reason = "") {
+    return request(
+      "PATCH",
+      "/tugas/" + encodeURIComponent(id) + "/review",
+      { action, reason }
+    );
+  }
+
   async function getTugasDetail(id) {
     return request("GET", "/tugas/" + id);
   }
@@ -619,15 +628,44 @@ const EOfficeAPI = (() => {
                 409 { "code": "duplicate" } -> ID/email sudah terdaftar
      ============================================ */
 
+
   async function register(payload) {
-    if (!API_CONFIG.LIVE) return mockRegister(payload);
-    try {
-      return await request("POST", "/register", payload);
-    } catch (err) {
-      if (err.data && err.data.code === "duplicate")
-        return { status: "duplicate" };
-      throw err;
+    if (!API_CONFIG.LIVE) {
+      throw new Error("Registrasi membutuhkan koneksi backend.");
     }
+
+    return request("POST", "/auth/register", {
+      name: payload.name,
+      email: payload.email,
+      username: payload.username,
+      password: payload.password,
+      resort_id: payload.resort_id
+    });
+  }
+
+  async function getResortsPublic() {
+    return request("GET", "/public/resorts?status=1");
+  }
+
+  async function requestPasswordOtp(email) {
+    return request("POST", "/auth/forgot-password", {
+      email: email
+    });
+  }
+
+  async function verifyPasswordOtp(email, otp) {
+    return request("POST", "/auth/verify-otp", {
+      email: email,
+      otp: otp
+    });
+  }
+
+  async function resetPasswordWithToken(token, password, confirmation) {
+    return request("POST", "/auth/reset-password", {
+      reset_token: token,
+      new_password: password,
+      confirm_password: confirmation
+    });
   }
 
   /* ---------- MOCK REGISTRASI: replika localStorage lama ---------- */
@@ -722,11 +760,43 @@ const EOfficeAPI = (() => {
   }
 
   async function getTugasSaya() {
-    return request("GET", "/disposisi");
+    return request("GET", "/tugas");
+  }
+
+
+  async function updateTugasProgress(id, progress) {
+    return request(
+      "PATCH",
+      "/tugas/" + encodeURIComponent(id) + "/progress",
+      { progress }
+    );
+  }
+
+
+  async function getKomentarTugas(id) {
+    return request(
+      "GET",
+      "/tugas/" + encodeURIComponent(id) + "/komentar"
+    );
+  }
+
+  async function kirimKomentarTugas(id, isi) {
+    return request(
+      "POST",
+      "/tugas/" + encodeURIComponent(id) + "/komentar",
+      { isi }
+    );
+  }
+
+  async function getAktivitasTugas(id) {
+    return request(
+      "GET",
+      "/tugas/" + encodeURIComponent(id) + "/aktivitas"
+    );
   }
 
   async function getTugasSayaDetail(id) {
-    return request("GET", "/disposisi/" + encodeURIComponent(id));
+    return request("GET", "/tugas/" + encodeURIComponent(id));
   }
 
   async function getDisposisiSaya() {
@@ -1005,42 +1075,37 @@ const EOfficeAPI = (() => {
     return request("PATCH", "/notifikasi/read-all");
   }
 
-
   // Unduh file surat masuk menggunakan token login.
   async function downloadLampiranSuratMasuk(id) {
     const controller = new AbortController();
-    const timer = setTimeout(
-      () => controller.abort(),
-      30000
-    );
+    const timer = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(
         API_CONFIG.BASE_URL +
-          "/surat-masuk/" + encodeURIComponent(id) + "/file",
+          "/surat-masuk/" +
+          encodeURIComponent(id) +
+          "/file",
         {
           method: "GET",
           headers: {
             Accept: "application/octet-stream, application/pdf, */*",
-            Authorization: "Bearer " + getToken()
+            Authorization: "Bearer " + getToken(),
           },
-          signal: controller.signal
-        }
+          signal: controller.signal,
+        },
       );
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(
-          error.message || "Gagal mengunduh lampiran surat."
-        );
+        throw new Error(error.message || "Gagal mengunduh lampiran surat.");
       }
 
       const blob = await response.blob();
 
       let filename = "lampiran-surat-" + id;
 
-      const disposition =
-        response.headers.get("Content-Disposition") || "";
+      const disposition = response.headers.get("Content-Disposition") || "";
 
       const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i);
       const plain = disposition.match(/filename="?([^";]+)"?/i);
@@ -1093,6 +1158,7 @@ const EOfficeAPI = (() => {
     getSuratKeluarDetail: getSuratKeluarDetail,
     getArsipDetail: getArsipDetail,
     getTugasDetail: getTugasDetail,
+    reviewTugas: reviewTugas,
     createTugas: createTugas,
     getDashboardKS: getDashboardKS,
     getLaporan: getLaporan,
@@ -1104,12 +1170,22 @@ const EOfficeAPI = (() => {
     getLaporanPatroliDetail: getLaporanPatroliDetail,
     createLaporanPatroli: createLaporanPatroli,
     register: register,
+    getResortsPublic: getResortsPublic,
+    requestPasswordOtp: requestPasswordOtp,
+    verifyPasswordOtp: verifyPasswordOtp,
+    resetPasswordWithToken: resetPasswordWithToken,
     getProfil: getProfil,
     updateProfil: updateProfil,
     gantiKataSandi: gantiKataSandi,
     getSuratSaya: getSuratSaya,
     getTugasSaya: getTugasSaya,
     getTugasSayaDetail: getTugasSayaDetail,
+
+    getKomentarTugas: getKomentarTugas,
+    kirimKomentarTugas: kirimKomentarTugas,
+    getAktivitasTugas: getAktivitasTugas,
+
+    updateTugasProgress: updateTugasProgress,
     getDisposisiSaya: getDisposisiSaya,
     getDokumenSaya: getDokumenSaya,
     getArsipSaya: getArsipSaya,

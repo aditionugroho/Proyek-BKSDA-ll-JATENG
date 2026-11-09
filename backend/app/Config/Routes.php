@@ -42,9 +42,31 @@ $routes->get('/', 'Home::index');
 |--------------------------------------------------------------------------
 */
 
+$routes->get('api/public/resorts', 'Api\ResortController::publicIndex');
+
 $routes->group(
     'api/auth',
     static function ($routes) {
+
+        $routes->post(
+            'register',
+            'Api\AuthController::register'
+        );
+
+        $routes->post(
+            'forgot-password',
+            'Api\AuthController::forgotPassword'
+        );
+
+        $routes->post(
+            'verify-otp',
+            'Api\AuthController::verifyOtp'
+        );
+
+        $routes->post(
+            'reset-password',
+            'Api\AuthController::resetPassword'
+        );
 
         $routes->post(
             'login',
@@ -991,5 +1013,96 @@ $routes->group(
         $routes->get('', 'Api\ProfilController::show');
         $routes->put('', 'Api\ProfilController::update');
         $routes->post('password', 'Api\ProfilController::changePassword');
+    }
+);
+
+
+// ==========================================
+// MODUL TUGAS
+// ==========================================
+
+$routes->group(
+    'api/tugas',
+    ['filter' => 'role:admin,kepala_seksi,staf'],
+    static function ($routes) {
+        $routes->get(
+            '',
+            'Api\TugasController::index'
+        );
+
+        $routes->get(
+            '(:num)',
+            'Api\TugasController::show/$1'
+        );
+
+        $routes->post(
+            '',
+            'Api\TugasController::create',
+            ['filter' => 'role:admin,kepala_seksi']
+        );
+
+        $routes->patch(
+            '(:num)/progress',
+            'Api\TugasController::updateProgress/$1',
+            ['filter' => 'role:staf']
+        );
+
+        $routes->patch(
+            '(:num)/review',
+            'Api\TugasController::review/$1',
+            ['filter' => 'role:kepala_seksi']
+        );
+
+
+        // Kolaborasi tugas: komentar, aktivitas, lampiran
+        $routes->get(
+            '(:num)/komentar',
+            'Api\TugasKolaborasiController::comments/$1'
+        );
+
+        $routes->post(
+            '(:num)/komentar',
+            'Api\TugasKolaborasiController::addComment/$1'
+        );
+
+        $routes->get(
+            '(:num)/aktivitas',
+            'Api\TugasKolaborasiController::activities/$1'
+        );
+
+        $routes->get(
+            '(:num)/lampiran',
+            'Api\TugasKolaborasiController::attachments/$1'
+        );
+
+        $routes->post(
+            '(:num)/lampiran',
+            'Api\TugasKolaborasiController::upload/$1'
+        );
+
+        $routes->get(
+            '(:num)/lampiran/(:num)/download',
+            'Api\TugasKolaborasiController::download/$1/$2'
+        );
+
+
+        // Checklist pekerjaan
+        $routes->get(
+            '(:num)/checklist',
+            'Api\TugasChecklistController::index/$1'
+        );
+
+        $routes->post(
+            '(:num)/checklist',
+            'Api\TugasChecklistController::create/$1',
+            ['filter' => 'role:kepala_seksi']
+        );
+
+        $routes->patch(
+            '(:num)/checklist/(:num)',
+            'Api\TugasChecklistController::update/$1/$2',
+            ['filter' => 'role:staf']
+        );
+
     }
 );
