@@ -40,6 +40,237 @@ class LaporanPatroliController extends BaseController
         return (int) $token['user_id'];
     }
 
+
+    /**
+     * GET /api/laporan-patroli
+     * Menampilkan laporan sesuai hak akses pengguna.
+     */
+
+    /**
+     * GET /api/laporan-patroli/foto/{id}
+     * Menampilkan foto dengan autentikasi dan otorisasi.
+     */
+    public function tampilFoto($id)
+    {
+        $userId = $this->getAuthenticatedUserId();
+
+        if (!$userId) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Pengguna tidak terautentikasi.',
+            ], 401);
+        }
+
+        $user = (new UserModel())
+            ->where('id', $userId)
+            ->where('status', 1)
+            ->first();
+
+        if (!$user) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akun tidak aktif.',
+            ], 401);
+        }
+
+        $role = $user['role'];
+
+        if (!in_array($role, ['admin', 'kepala_seksi', 'staf'], true)) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akses ditolak.',
+            ], 403);
+        }
+
+        $foto = (new FotoPatroliModel())->find((int) $id);
+
+        if (!$foto) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Foto tidak ditemukan.',
+            ], 404);
+        }
+
+        $laporan = (new LaporanPatroliModel())
+            ->find((int) $foto['laporan_patroli_id']);
+
+        if (!$laporan) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Laporan tidak ditemukan.',
+            ], 404);
+        }
+
+        if ($role === 'staf') {
+            $resortId = (int) ($user['resort_id'] ?? 0);
+
+            if (
+                $resortId < 1 ||
+                (int) $laporan['user_id'] !== $userId ||
+                (int) $laporan['resort_id'] !== $resortId
+            ) {
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Akses foto ditolak.',
+                ], 403);
+            }
+        }
+
+        $baseDir = realpath(WRITEPATH . 'uploads/patroli');
+
+        if ($baseDir === false) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Foto tidak ditemukan.',
+            ], 404);
+        }
+
+        $relativePath = str_replace('\\', '/', $foto['file_path']);
+
+        if (!str_starts_with($relativePath, 'uploads/patroli/')) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Path foto tidak valid.',
+            ], 404);
+        }
+
+        $filePath = realpath(
+            WRITEPATH . str_replace('/', DIRECTORY_SEPARATOR, $relativePath)
+        );
+
+        if (
+            $filePath === false ||
+            !str_starts_with(
+                $filePath,
+                $baseDir . DIRECTORY_SEPARATOR
+            ) ||
+            !is_file($filePath)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'File foto tidak ditemukan.',
+            ], 404);
+        }
+
+        $mime = $foto['mime_type'];
+
+        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Format foto tidak didukung.',
+            ], 415);
+        }
+
+        return $this->response
+            ->setHeader('Content-Type', $mime)
+            ->setHeader('X-Content-Type-Options', 'nosniff')
+            ->setHeader('Cache-Control', 'private, no-store')
+            ->setBody(file_get_contents($filePath));
+    }
+
+    public function index()
+    {
+        $userId = $this->getAuthenticatedUserId();
+
+        if (!$userId) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Pengguna tidak terautentikasi.',
+            ], 401);
+        }
+
+        $user = (new UserModel())
+            ->where('id', $userId)
+            ->where('status', 1)
+            ->first();
+
+        if (!$user) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akun tidak aktif atau tidak ditemukan.',
+            ], 401);
+        }
+
+        $role = $user['role'];
+
+        if (!in_array($role, ['admin', 'kepala_seksi', 'staf'], true)) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akses ditolak.',
+            ], 403);
+        }
+
+        $db = db_connect();
+
+        $query = $db->table('laporan_patroli lp')
+            ->select('lp.id, lp.user_id, lp.resort_id,
+                      lp.tanggal_patroli, lp.keterangan,
+                      lp.status, lp.created_at,
+                      u.name AS petugas,
+                      r.nama AS resort')
+            ->join('users u', 'u.id = lp.user_id', 'left')
+            ->join('resorts r', 'r.id = lp.resort_id', 'left');
+
+        if ($role === 'staf') {
+            $resortId = (int) ($user['resort_id'] ?? 0);
+
+            if ($resortId < 1) {
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Akun staf belum memiliki resort.',
+                ], 403);
+            }
+
+            $query->where('lp.user_id', $userId)
+                  ->where('lp.resort_id', $resortId);
+        }
+
+        $rows = $query
+            ->orderBy('lp.created_at', 'DESC')
+            ->orderBy('lp.id', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $fotoRows = [];
+
+        if (!empty($rows)) {
+            $laporanIds = array_column($rows, 'id');
+
+            $fotoRows = $db->table('foto_patroli')
+                ->select('id, laporan_patroli_id')
+                ->whereIn('laporan_patroli_id', $laporanIds)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+        }
+
+        $fotoByLaporan = [];
+
+        foreach ($fotoRows as $foto) {
+            $laporanId = (int) $foto['laporan_patroli_id'];
+            $fotoByLaporan[$laporanId][] = (int) $foto['id'];
+        }
+
+        $data = [];
+
+        foreach ($rows as $row) {
+            $data[] = [
+                'id' => (int) $row['id'],
+                'petugas' => $row['petugas'] ?? '',
+                'resort' => $row['resort'] ?? '',
+                'tanggal' => $row['tanggal_patroli'],
+                'catatan' => $row['keterangan'] ?? '',
+                'status' => $row['status'] === 'draft'
+                    ? 'Terkirim'
+                    : $row['status'],
+                'dibuatPada' => $row['created_at'],
+                'foto' => $fotoByLaporan[(int) $row['id']] ?? [],
+            ];
+        }
+
+        return $this->respond($data, 200);
+    }
+
     /**
      * POST /api/laporan-patroli
      *

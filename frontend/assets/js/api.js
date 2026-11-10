@@ -1,5 +1,5 @@
 /* ============================================
-   API LAYER — E-Office SKSDA
+   API LAYER â€” E-Office SKSDA
    Satu-satunya gerbang komunikasi frontend <-> backend Laravel.
    Halaman TIDAK boleh memanggil fetch() langsung;
    selalu lewat EOfficeAPI.<fungsi>().
@@ -10,7 +10,7 @@
    - API_CONFIG.LIVE = true  -> MODE LIVE: fetch ke Laravel.
      Cukup ganti satu flag, semua halaman ikut.
 
-   Kontrak JSON tiap endpoint didokumentasikan di atas fungsinya —
+   Kontrak JSON tiap endpoint didokumentasikan di atas fungsinya â€”
    jadikan acuan bersama dengan developer backend.
    ============================================ */
 
@@ -35,6 +35,70 @@ const EOfficeAPI = (() => {
   }
 
   /* ---------- CORE: satu fungsi fetch untuk semua endpoint ---------- */
+
+  /**
+   * Mengambil foto patroli privat menggunakan Bearer Token.
+   * Hasil berupa Blob, bukan JSON.
+   */
+  async function getFotoPatroli(fotoId) {
+    const id = Number(fotoId);
+
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw new Error("ID foto tidak valid.");
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      throw new Error("Sesi login tidak ditemukan.");
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      30000
+    );
+
+    try {
+      const res = await fetch(
+        API_CONFIG.BASE_URL + "/laporan-patroli/foto/" + id,
+        {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + token,
+            Accept: "image/jpeg, image/png"
+          },
+          signal: controller.signal,
+          cache: "no-store"
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          "Gagal mengambil foto patroli (HTTP " +
+          res.status + ")."
+        );
+      }
+
+      const mime = (
+        res.headers.get("content-type") || ""
+      ).split(";")[0].trim().toLowerCase();
+
+      if (!["image/jpeg", "image/png"].includes(mime)) {
+        throw new Error("Respons server bukan gambar yang didukung.");
+      }
+
+      return await res.blob();
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Waktu pengambilan foto habis.");
+      }
+
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   async function request(method, path, body) {
     const controller = new AbortController();
@@ -255,7 +319,7 @@ const EOfficeAPI = (() => {
                   "instruksi": "...", "catatan": "..." }
        Balasan: objek disposisi yang baru dibuat (bentuk sama seperti item GET)
        Validasi: server WAJIB memeriksa "surat" terhadap daftar surat
-       terdaftar — bila nomor tidak ditemukan: 422 { "message": "Nomor surat
+       terdaftar â€” bila nomor tidak ditemukan: 422 { "message": "Nomor surat
        tidak ditemukan. Periksa kembali nomor surat masuk." }
      ============================================ */
 
@@ -318,8 +382,8 @@ const EOfficeAPI = (() => {
                     "badges": [ { "text": "Baru", "tone": "blue" } ],
                     "aksi": { "label": "Lihat Surat", "href": "...", "icon": "arrowUpRight", "style": "blue" } } ]
 
-       POST /api/notifikasi/{id}/read     — tandai satu dibaca
-       POST /api/notifikasi/read-all      — tandai semua dibaca
+       POST /api/notifikasi/{id}/read     â€” tandai satu dibaca
+       POST /api/notifikasi/read-all      â€” tandai semua dibaca
      ============================================ */
 
   /* ============================================
@@ -357,7 +421,7 @@ const EOfficeAPI = (() => {
                   "agenda": [ { "tanggal": "2026-10-27", "jamMulai": "09.00",
                                 "jamSelesai": "10.30", "judul": "...", "lokasi": "...",
                                 "deskripsi": "...", "status": "Terjadwal|Berlangsung|Selesai|..." } ] }
-     (hariIni dipakai sebagai acuan highlight kalender — tanggal server lebih tepercaya)
+     (hariIni dipakai sebagai acuan highlight kalender â€” tanggal server lebih tepercaya)
      ============================================ */
 
   async function getJadwal() {
@@ -383,7 +447,7 @@ const EOfficeAPI = (() => {
 
   /* ============================================
      DETAIL (per-ID)
-     KONTRAK (LIVE): pola sama untuk semua resource —
+     KONTRAK (LIVE): pola sama untuk semua resource â€”
        GET /api/surat-masuk/{id}
          Balasan (rata/di-flatten untuk halaman detail):
          { "nomor": "...", "status": "Menunggu Disposisi", "prioritas": "Segera",
@@ -391,9 +455,9 @@ const EOfficeAPI = (() => {
            "pengirimFull": "...", "nomorAsli": "...", "tanggalSurat": "...",
            "perihal": "...", "klasifikasi": ["000 - Umum"],
            "fileName": "Dokumen_Surat.pdf", "fileSize": "1.2 MB" }
-       GET /api/surat-keluar/{id} — bentuk item sama seperti list surat keluar
-       GET /api/arsip/{id}      — bentuk item sama seperti list arsip
-       GET /api/tugas/{id}      — { ...item list..., "deskripsi": ["..."],
+       GET /api/surat-keluar/{id} â€” bentuk item sama seperti list surat keluar
+       GET /api/arsip/{id}      â€” bentuk item sama seperti list arsip
+       GET /api/tugas/{id}      â€” { ...item list..., "deskripsi": ["..."],
            "checklist": [ { "text": "...", "done": false } ],
            "lampiran": [ { "type": "pdf", "name": "...", "meta": "..." } ],
            "aktivitas": [ { "icon": "check", "tone": "green", "text": "...", "time": "..." } ],
@@ -505,20 +569,20 @@ const EOfficeAPI = (() => {
        POST /api/laporan-patroli  (butuh token, multipart/form-data)
        Field  : tanggal=2026-11-02, resort=Cilacap|Wonosobo|Pemalang,
                 catatan="...", foto[]=<file gambar> (0..n buah)
-       Petugas TIDAK dikirim dari form — diambil server dari token.
+       Petugas TIDAK dikirim dari form â€” diambil server dari token.
        Balasan: 201 objek laporan baru (bentuk sama seperti GET)
 
        GET /api/laporan-patroli  (butuh token)
        Query opsional: ?resort=&petugas=&dari=YYYY-MM-DD&sampai=YYYY-MM-DD
        HAK AKSES: server HARUS memfilter sesuai role & resort yang
        diizinkan untuk pemilik token (mis. KS Wilayah II hanya resort
-       Wilayah II) — data resort lain tidak pernah dikirim ke browser.
+       Wilayah II) â€” data resort lain tidak pernah dikirim ke browser.
        Balasan: [ { "id": 1, "petugas": "Budi Santoso", "resort": "Cilacap",
                     "tanggal": "2026-11-02", "catatan": "...",
                     "status": "Terkirim|Direview", "dibuatPada": "ISO-8601",
                     "foto": [ "https://.../foto1.jpg" ] } ]
 
-       GET /api/laporan-patroli/{id} — satu laporan + array foto
+       GET /api/laporan-patroli/{id} â€” satu laporan + array foto
      ============================================ */
 
   async function getLaporanPatroli() {
@@ -530,43 +594,77 @@ const EOfficeAPI = (() => {
   }
 
   async function createLaporanPatroli(payload) {
-    /* payload = { tanggal, resort, catatan, foto: [File|dataURL] } */
-    if (!API_CONFIG.LIVE) return mockCreatePatroli(payload);
+    if (!API_CONFIG.LIVE) {
+      return mockCreatePatroli(payload);
+    }
+
+    const data = {
+      tanggal_patroli: payload.tanggal,
+      resort_id: Number(payload.resort),
+      lokasi: payload.lokasi || "",
+      keterangan: payload.catatan
+    };
+
+    return request("POST", "/laporan-patroli", data);
+  }
+
+
+  async function uploadFotoPatroli(laporanId, file) {
+    if (!API_CONFIG.LIVE) {
+      throw new Error("Upload foto hanya tersedia pada mode LIVE.");
+    }
+
+    if (!Number.isInteger(Number(laporanId)) || Number(laporanId) < 1) {
+      throw new Error("ID laporan patroli tidak valid.");
+    }
+
+    if (!(file instanceof File)) {
+      throw new Error("Foto harus berupa File.");
+    }
 
     const form = new FormData();
-    form.append("tanggal", payload.tanggal);
-    form.append("resort", payload.resort);
-    form.append("catatan", payload.catatan);
-    (payload.foto || []).forEach((f) => {
-      if (f instanceof File) form.append("foto[]", f, f.name);
-    });
+    form.append("foto", file, file.name);
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60000); // upload foto: 60 dtk
+    const timer = setTimeout(() => controller.abort(), 60000);
+
     try {
-      const res = await fetch(API_CONFIG.BASE_URL + "/laporan-patroli", {
-        method: "POST",
-        headers: Object.assign(
-          { Accept: "application/json" },
-          getToken() ? { Authorization: "Bearer " + getToken() } : {},
-        ),
-        body: form,
-        signal: controller.signal,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const err = new Error(
-          (data && data.message) || "Gagal menyimpan laporan patroli.",
-        );
-        err.status = res.status;
-        err.data = data;
-        throw err;
+      const headers = {
+        Accept: "application/json"
+      };
+
+      const token = getToken();
+      if (token) {
+        headers.Authorization = "Bearer " + token;
       }
+
+      const response = await fetch(
+        API_CONFIG.BASE_URL + "/laporan-patroli/" +
+          encodeURIComponent(laporanId) + "/foto",
+        {
+          method: "POST",
+          headers,
+          body: form,
+          signal: controller.signal
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const error = new Error(
+          data.message || "Gagal mengunggah foto patroli."
+        );
+        error.status = response.status;
+        throw error;
+      }
+
       return data;
-    } catch (e) {
-      if (e.name === "AbortError")
-        throw new Error("Waktu upload habis. Coba dengan foto lebih kecil.");
-      throw e;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Upload foto terlalu lama. Coba lagi.");
+      }
+      throw error;
     } finally {
       clearTimeout(timer);
     }
@@ -724,17 +822,17 @@ const EOfficeAPI = (() => {
   }
 
   /* ============================================
-     ENDPOINT PEGAWAI (scope: user pemilik token —
+     ENDPOINT PEGAWAI (scope: user pemilik token â€”
      server memfilter data sesuai pegawai login)
      KONTRAK (LIVE), semua butuh token:
-       GET /api/surat-saya        — item: bentuk surat pegawai (jenis, sifat, status, iso, label{dot}, ...)
-       GET /api/tugas-saya        — item: bentuk tugas pegawai (judul, status{text}, selesai, ...)
-       GET /api/tugas-saya/{id}   — detail + checklist, lampiran, aktivitas (seperti /tugas/{id})
-       GET /api/disposisi-saya    — item: disposisi untuk pegawai
-       GET /api/dokumen-saya      — item: dokumen pegawai
-       GET /api/arsip-saya        — item: arsip pegawai (bentuk sama seperti /arsip)
-       GET /api/jadwal-saya       — { "hariIni": "...", "agenda": [...] } (seperti /jadwal)
-       GET /api/notifikasi-saya   — item: bentuk sama seperti /notifikasi
+       GET /api/surat-saya        â€” item: bentuk surat pegawai (jenis, sifat, status, iso, label{dot}, ...)
+       GET /api/tugas-saya        â€” item: bentuk tugas pegawai (judul, status{text}, selesai, ...)
+       GET /api/tugas-saya/{id}   â€” detail + checklist, lampiran, aktivitas (seperti /tugas/{id})
+       GET /api/disposisi-saya    â€” item: disposisi untuk pegawai
+       GET /api/dokumen-saya      â€” item: dokumen pegawai
+       GET /api/arsip-saya        â€” item: arsip pegawai (bentuk sama seperti /arsip)
+       GET /api/jadwal-saya       â€” { "hariIni": "...", "agenda": [...] } (seperti /jadwal)
+       GET /api/notifikasi-saya   â€” item: bentuk sama seperti /notifikasi
      ============================================ */
 
   async function getSuratSaya() {
@@ -894,26 +992,26 @@ const EOfficeAPI = (() => {
                     "unit": "...", "unitSub": "...", "unitGroup": "...",
                     "status": "AKTIF|NONAKTIF|MENUNGGU", "lastLogin": "...", "online": false } ]
 
-       POST /api/users — tambah pengguna (bisa juga live-mode buatan admin)
+       POST /api/users â€” tambah pengguna (bisa juga live-mode buatan admin)
        Body   : { "nama": "...", "nip": "...", "username": "...", "email": "...",
                   "role": "admin|kepala-seksi|pegawai", "unit": "...", "kata_sandi": "..." }
        Balasan: objek pengguna baru
 
        DELETE /api/users/{id}
 
-       GET /api/registrations — antrean pendaftar (hasil POST /register)
+       GET /api/registrations â€” antrean pendaftar (hasil POST /register)
        Balasan: [ { "id": "...", "nama": "...", "idAtauEmail": "...", "role": "...",
                     "status": "menunggu-verifikasi|aktif|ditolak", "daftarPada": "ISO-8601" } ]
 
        PUT /api/registrations/{id}/status
        Body   : { "status": "aktif"|"ditolak" }
 
-       POST /api/surat-masuk — input surat masuk oleh admin
+       POST /api/surat-masuk â€” input surat masuk oleh admin
        Body   : { "nomor": "...", "asal": "...", "tanggal": "2026-10-27",
                   "perihal": "...", "instruksi": "...", "lampiran": [...] }
        Balasan: objek surat masuk baru (bentuk sama seperti GET /api/surat-masuk)
 
-       GET /api/dashboard/admin — agregat dashboard admin
+       GET /api/dashboard/admin â€” agregat dashboard admin
        Balasan: { "stats": [...], "chartTabs": [...], "chartData": [...],
                   "auditTrail": [...], "health": [...] }
      ============================================ */
@@ -965,8 +1063,8 @@ const EOfficeAPI = (() => {
   /* ============================================
      BACKUP (admin)
      KONTRAK (LIVE):
-       GET  /api/backup     — { "stats": [...], "modules": [...], "history": [...] }
-       POST /api/backup/run — jalankan backup manual,
+       GET  /api/backup     â€” { "stats": [...], "modules": [...], "history": [...] }
+       POST /api/backup/run â€” jalankan backup manual,
                               balasan: objek riwayat backup baru
      ============================================ */
 
@@ -981,8 +1079,8 @@ const EOfficeAPI = (() => {
   /* ============================================
      EXPORT DATA (admin)
      KONTRAK (LIVE):
-       GET  /api/export  — { "stats": [...], "exports": [...], "reports": [...] }
-       POST /api/export  — Body: { "jenis": "...", "format": "PDF|XLSX|CSV" }
+       GET  /api/export  â€” { "stats": [...], "exports": [...], "reports": [...] }
+       POST /api/export  â€” Body: { "jenis": "...", "format": "PDF|XLSX|CSV" }
                            Balasan: objek laporan baru berstatus "Diproses"
      ============================================ */
 
@@ -1000,7 +1098,7 @@ const EOfficeAPI = (() => {
        GET /api/admin/profil
        Balasan: { "nama": "...", "jabatan": "...", "email": "...", "telepon": "...",
                   "akses": [...], "aktivitas": [...], "loginInfo": {...} }
-       PUT /api/admin/profil — Body: { "nama", "email", "telepon" }
+       PUT /api/admin/profil â€” Body: { "nama", "email", "telepon" }
      ============================================ */
 
   async function getAdminProfil() {
@@ -1180,6 +1278,8 @@ const EOfficeAPI = (() => {
     },
     getLaporanPatroliDetail: getLaporanPatroliDetail,
     createLaporanPatroli: createLaporanPatroli,
+    uploadFotoPatroli: uploadFotoPatroli,
+    getFotoPatroli: getFotoPatroli,
     register: register,
     getResortsPublic: getResortsPublic,
     requestPasswordOtp: requestPasswordOtp,

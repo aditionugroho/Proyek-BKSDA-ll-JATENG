@@ -988,6 +988,20 @@ $routes->group(
     }
 );
 
+// GET FOTO LAPORAN PATROLI (TERAUTENTIKASI)
+$routes->get(
+    'api/laporan-patroli/foto/(:num)',
+    'Api\LaporanPatroliController::tampilFoto/$1',
+    ['filter' => 'role:admin,kepala_seksi,staf']
+);
+
+// GET DAFTAR LAPORAN PATROLI
+$routes->get(
+    'api/laporan-patroli',
+    'Api\LaporanPatroliController::index',
+    ['filter' => 'role:admin,kepala_seksi,staf']
+);
+
 // LAPORAN PATROLI
 $routes->group('api/laporan-patroli', [
     'filter' => 'role:admin,staf',
