@@ -114,9 +114,19 @@ document.addEventListener("keydown", (e) => {
 
 /* ===== VALIDASI ===== */
 function setError(id, show) {
-  document.getElementById("wrap-" + id).classList.toggle("is-error", show);
-  document.getElementById(id + "-error").hidden = !show;
+  const input = document.getElementById("pt-" + id);
+  const error = document.getElementById("pt-" + id + "-error");
+
+  if (input) {
+    input.classList.toggle("pt-invalid", show);
+    input.setAttribute("aria-invalid", String(show));
+  }
+
+  if (error) {
+    error.hidden = !show;
+  }
 }
+
 ["tanggal", "resort"].forEach((id) => {
   document.getElementById("pt-" + id).addEventListener("change", () => setError(id, false));
 });
@@ -165,12 +175,70 @@ async function muatRiwayat() {
     .join("");
 }
 
-/* Klik badge foto -> galeri lightbox sederhana */
-document.getElementById("pt-tbody").addEventListener("click", (e) => {
+/* Klik badge foto -> ambil foto privat dan tampilkan lightbox */
+let urlFotoRiwayat = null;
+let sedangMemuatFoto = false;
+
+function bersihkanUrlFotoRiwayat() {
+  if (urlFotoRiwayat) {
+    URL.revokeObjectURL(urlFotoRiwayat);
+    urlFotoRiwayat = null;
+  }
+}
+
+document.getElementById("pt-tbody").addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-galeri]");
-  if (!btn) return;
-  const l = riwayat.find((x) => String(x.id) === btn.dataset.galeri);
-  if (l && l.foto && l.foto.length) bukaLightbox(l.foto[0]);
+  if (!btn || sedangMemuatFoto) return;
+
+  const laporan = riwayat.find(
+    (item) => String(item.id) === btn.dataset.galeri
+  );
+
+  if (!laporan || !laporan.foto || !laporan.foto.length) return;
+
+  const live = window.EOfficeAPI && EOfficeAPI.config.LIVE;
+
+  if (!live) {
+    bukaLightbox(laporan.foto[0]);
+    return;
+  }
+
+  sedangMemuatFoto = true;
+
+  try {
+    const blob = await EOfficeAPI.getFotoPatroli(laporan.foto[0]);
+    const urlBaru = URL.createObjectURL(blob);
+
+    bersihkanUrlFotoRiwayat();
+    urlFotoRiwayat = urlBaru;
+
+    bukaLightbox(urlFotoRiwayat);
+  } catch (error) {
+    console.error("Gagal menampilkan foto patroli:", error);
+    showToast(error.message || "Gagal membuka foto patroli.");
+  } finally {
+    sedangMemuatFoto = false;
+  }
+});
+
+function tutupFotoRiwayat() {
+  const lightbox = document.getElementById("pt-lightbox");
+
+  if (lightbox.hidden) {
+    document.getElementById("pt-lightbox-img").removeAttribute("src");
+    bersihkanUrlFotoRiwayat();
+  }
+}
+
+document.getElementById("pt-lightbox")
+  .addEventListener("click", () => {
+    setTimeout(tutupFotoRiwayat, 0);
+  });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    setTimeout(tutupFotoRiwayat, 0);
+  }
 });
 
 /* ===== PETUGAS DARI SESI (untuk info & filter mock) ===== */
@@ -184,6 +252,8 @@ function petugasSaya() {
 }
 
 /* ===== SUBMIT ===== */
+let laporanPending = null;
+
 document.getElementById("pt-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -198,43 +268,143 @@ document.getElementById("pt-form").addEventListener("submit", async (e) => {
   if (!valid) return;
 
   const btn = document.getElementById("pt-submit");
+  const live = window.EOfficeAPI && EOfficeAPI.config.LIVE;
+
   btn.disabled = true;
   btn.textContent = "Mengirim...";
 
   try {
-    const live = window.EOfficeAPI && EOfficeAPI.config.LIVE;
-    await EOfficeAPI.createLaporanPatroli({
-      tanggal,
-      resort,
-      catatan,
-      foto: live ? fotoList.map((f) => f.file) : fotoList.map((f) => f.url)
-    });
+    if (!live) {
+      await EOfficeAPI.createLaporanPatroli({
+        tanggal,
+        resort,
+        catatan,
+        foto: fotoList.map(f => f.url)
+      });
+    } else {
+      if (!laporanPending) {
+        const hasil = await EOfficeAPI.createLaporanPatroli({
+          tanggal,
+          resort,
+          catatan,
+          lokasi: resort
+        });
 
-    showToast("Laporan patroli terkirim");
+        const laporanId = Number(hasil?.data?.id);
 
-    // Pemicu notif: KS diberi tahu ada laporan patroli baru (mock)
-    tambahNotif("ks", {
-      kategori: "Patroli",
-      judul: "Laporan patroli baru",
-      teks: `${petugasSaya()} mengirim laporan patroli Resort ${resort} (${fotoList.length} foto).`,
-      meta: `Tanggal patroli: ${new Date(tanggal).toLocaleDateString("id-ID")}`,
-      badges: [{ text: "PATROLI", tone: "green" }],
-      aksi: { label: "Tinjau", href: "../kepala-seksi/patroli.html", style: "green" }
-    });
+        if (!Number.isInteger(laporanId) || laporanId < 1) {
+          throw new Error("Laporan tersimpan tetapi ID tidak ditemukan. Periksa riwayat sebelum mencoba lagi.");
+        }
+
+        laporanPending = {
+          id: laporanId,
+          tanggal,
+          resort,
+          catatan,
+          sisaFoto: fotoList.map(f => f.file)
+        };
+      } else if (
+        laporanPending.tanggal !== tanggal ||
+        laporanPending.resort !== resort ||
+        laporanPending.catatan !== catatan
+      ) {
+        throw new Error("Selesaikan upload laporan sebelumnya sebelum mengubah formulir.");
+      }
+
+      while (laporanPending.sisaFoto.length > 0) {
+        const file = laporanPending.sisaFoto[0];
+        await EOfficeAPI.uploadFotoPatroli(laporanPending.id, file);
+        laporanPending.sisaFoto.shift();
+      }
+
+      laporanPending = null;
+    }
+
+    showToast("Laporan patroli berhasil dikirim.");
 
     document.getElementById("pt-form").reset();
     fotoList = [];
     renderFoto();
-    ["tanggal", "resort", "catatan"].forEach((id) => setError(id, false));
-    muatRiwayat();
+    ["tanggal", "resort", "catatan"].forEach(id => setError(id, false));
+
+    if (live) {
+      await muatResortPatroli();
+    }
+
+    await muatRiwayat();
   } catch (err) {
-    showToast((err && err.message) || "Gagal mengirim laporan. Periksa koneksi lalu coba lagi.");
+    if (laporanPending) {
+      showToast(
+        "Laporan sudah tersimpan (ID " + laporanPending.id +
+        "). Upload foto belum selesai. Klik Kirim lagi untuk melanjutkan."
+      );
+    } else {
+      showToast(
+        (err && err.message) || "Gagal mengirim laporan."
+      );
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = "Kirim Laporan Patroli";
   }
 });
 
+/* ===== RESORT DARI BACKEND ===== */
+async function muatResortPatroli() {
+  const select = document.getElementById("pt-resort");
+
+  if (!window.EOfficeAPI || !EOfficeAPI.config.LIVE) {
+    return;
+  }
+
+  select.disabled = true;
+  select.replaceChildren(new Option("Memuat resort...", ""));
+
+  try {
+    const response = await EOfficeAPI.getResortsPublic();
+    const resorts = Array.isArray(response)
+      ? response
+      : Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+    const profil = await EOfficeAPI.getProfil();
+    const user = profil?.data ?? profil;
+    const role = user?.role;
+    const resortId = Number(user?.resort_id);
+
+    select.replaceChildren(
+      new Option("Pilih wilayah patroli...", "")
+    );
+
+    const pilihan = role === "staf"
+      ? resorts.filter(r => Number(r.id) === resortId)
+      : resorts;
+
+    for (const resort of pilihan) {
+      select.add(
+        new Option(resort.nama, String(resort.id))
+      );
+    }
+
+    if (role === "staf" && pilihan.length === 1) {
+      select.value = String(resortId);
+    }
+
+    if (!pilihan.length) {
+      showToast("Tidak ada resort yang tersedia untuk akun ini.");
+    }
+  } catch (error) {
+    select.replaceChildren(
+      new Option("Gagal memuat resort", "")
+    );
+    showToast("Gagal memuat daftar resort. Muat ulang halaman.");
+  } finally {
+    select.disabled = false;
+  }
+}
+
 /* ===== INIT ===== */
+muatResortPatroli();
 document.getElementById("pt-tanggal").value = new Date().toISOString().slice(0, 10);
 muatRiwayat();
