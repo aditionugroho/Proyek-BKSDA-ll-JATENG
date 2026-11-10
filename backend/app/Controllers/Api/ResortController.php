@@ -21,6 +21,26 @@ class ResortController extends BaseController
     // GET ALL RESORT
     // ==========================================
 
+
+    /**
+     * Daftar resort aktif untuk registrasi publik.
+     * Tidak mengungkap informasi internal.
+     */
+    public function publicIndex()
+    {
+        $data = $this->resorts
+            ->select('id, nama, kode')
+            ->where('status', 1)
+            ->orderBy('nama', 'ASC')
+            ->findAll();
+
+        return $this->respond([
+            'status' => true,
+            'message' => 'Daftar resort aktif.',
+            'data' => $data,
+        ]);
+    }
+
     public function index()
     {
         $search = trim(

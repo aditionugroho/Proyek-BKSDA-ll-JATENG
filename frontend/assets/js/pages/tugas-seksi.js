@@ -51,11 +51,21 @@ function restoreState() {
 }
 
 /* ===== RENDER: stat card (dihitung dari data, bukan hard-coded) ===== */
+
+function normalizeTugasData(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data;
+  }
+  return [];
+}
+
 function renderStats() {
-  const aktif = tugasData.filter((t) => t.status !== "Selesai").length;
-  const review = tugasData.filter((t) => t.status === "Menunggu Review").length;
-  const selesai = tugasData.filter((t) => t.status === "Selesai").length;
-  const terlambat = tugasData.filter((t) => t.status === "Terlambat").length;
+  const aktif = normalizeTugasData(tugasData).filter((t) => t.status !== "Selesai").length;
+  const review = normalizeTugasData(tugasData).filter((t) => t.status === "Menunggu Review").length;
+  const selesai = normalizeTugasData(tugasData).filter((t) => t.status === "Selesai").length;
+  const terlambat = normalizeTugasData(tugasData).filter((t) => t.status === "Terlambat").length;
 
   const stats = [
     { label: "Total Tugas Aktif", value: String(aktif), note: "belum selesai", noteTone: "green", noteIcon: "trendUp", icon: "clipboard", tone: "blue" },
@@ -100,7 +110,7 @@ const STATUS_TONE = {
 function renderTable() {
   const tbody = document.getElementById("ktg-tbody");
 
-  const rows = tugasData.filter((t) => currentFilter === "all" || t.status === currentFilter);
+  const rows = normalizeTugasData(tugasData).filter((t) => currentFilter === "all" || t.status === currentFilter);
 
   if (rows.length === 0) {
     tbody.innerHTML = `<tr class="ktg-empty"><td colspan="7">Tidak ada tugas dengan status ini.</td></tr>`;
@@ -147,7 +157,7 @@ function renderTable() {
 
   /* Footer tabel */
   document.getElementById("ktg-showing").textContent =
-    `Menampilkan 1 - ${rows.length} dari ${tugasData.length} tugas`;
+    `Menampilkan ${rows.length ? 1 : 0} - ${rows.length} dari ${normalizeTugasData(tugasData).length} tugas`;
   document.getElementById("ktg-prev").disabled = true;
   document.getElementById("ktg-next").disabled = true;
   persistState();
