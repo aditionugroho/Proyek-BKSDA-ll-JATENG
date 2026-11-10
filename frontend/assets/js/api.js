@@ -814,6 +814,17 @@ const EOfficeAPI = (() => {
   async function getJadwalSaya() {
     return request("GET", "/jadwal-saya");
   }
+  async function createJadwalSaya(data) {
+    return request("POST", "/jadwal-saya", data);
+  }
+
+  async function updateJadwalSaya(id, data) {
+    return request("PUT", `/jadwal-saya/${id}`, data);
+  }
+
+  async function deleteJadwalSaya(id) {
+    return request("DELETE", `/jadwal-saya/${id}`);
+  }
 
   /* ============================================
      DETAIL PEGAWAI (per-ID)
@@ -1190,6 +1201,9 @@ const EOfficeAPI = (() => {
     getDokumenSaya: getDokumenSaya,
     getArsipSaya: getArsipSaya,
     getJadwalSaya: getJadwalSaya,
+    createJadwalSaya: createJadwalSaya,
+    updateJadwalSaya: updateJadwalSaya,
+    deleteJadwalSaya: deleteJadwalSaya,
     getNotifikasiSaya: getNotifikasiSaya,
     getSuratSayaDetail: getSuratSayaDetail,
     getDisposisiSayaDetail: getDisposisiSayaDetail,

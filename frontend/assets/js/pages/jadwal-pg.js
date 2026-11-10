@@ -245,8 +245,127 @@ document.getElementById("pgj-agenda-list").addEventListener("click", (event) => 
   /* Edit (pribadi) */
   const editBtn = event.target.closest("[data-edit]");
   if (editBtn) {
+    const id = Number(editBtn.dataset.edit);
+    const agenda = jadwalPegawaiData.find(
+      (a) => Number(a.id) === id && a.sumber === "pribadi"
+    );
+
     closeMenus();
-    showToast("Fitur edit agenda menyusul");
+
+    if (!agenda) {
+      showToast("Agenda pribadi tidak ditemukan.");
+      return;
+    }
+
+    const escapeHtml = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+    const normalizeTime = (value) =>
+      String(value ?? "").replace(".", ":").slice(0, 5);
+
+    openModal({
+      title: "Edit Agenda Pribadi",
+      html: `
+        <div class="app-modal-list">
+          <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+            <strong>Judul Agenda *</strong>
+            <input type="text" id="edit-judul" value="${escapeHtml(agenda.judul)}" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px"/>
+          </div>
+
+          <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+            <strong>Tanggal *</strong>
+            <input type="date" id="edit-tanggal" value="${escapeHtml(agenda.tanggal)}" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px"/>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+              <strong>Jam Mulai</strong>
+              <input type="time" id="edit-mulai" value="${escapeHtml(normalizeTime(agenda.jamMulai))}" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px"/>
+            </div>
+            <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+              <strong>Jam Selesai</strong>
+              <input type="time" id="edit-selesai" value="${escapeHtml(normalizeTime(agenda.jamSelesai))}" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px"/>
+            </div>
+          </div>
+
+          <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+            <strong>Lokasi</strong>
+            <input type="text" id="edit-lokasi" value="${escapeHtml(agenda.lokasi)}" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px"/>
+          </div>
+
+          <div class="app-modal-option" style="flex-direction:column;align-items:stretch;gap:6px">
+            <strong>Deskripsi</strong>
+            <textarea id="edit-deskripsi" rows="2" style="width:100%;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px">${escapeHtml(agenda.deskripsi)}</textarea>
+          </div>
+
+          <p id="edit-error" style="display:none;color:#DC2626;font-size:12px"></p>
+        </div>
+      `,
+      confirmLabel: "Simpan Perubahan",
+      cancelLabel: "Batal",
+      onConfirm: async () => {
+        const getValue = (field) =>
+          document.getElementById(field).value.trim();
+
+        const showError = (message) => {
+          const errorEl = document.getElementById("edit-error");
+          errorEl.textContent = message;
+          errorEl.style.display = "block";
+        };
+
+        const payload = {
+          judul: getValue("edit-judul"),
+          tanggal: getValue("edit-tanggal"),
+          jamMulai: getValue("edit-mulai"),
+          jamSelesai: getValue("edit-selesai"),
+          lokasi: getValue("edit-lokasi"),
+          deskripsi: getValue("edit-deskripsi")
+        };
+
+        if (!payload.judul) {
+          showError("Judul agenda wajib diisi.");
+          return false;
+        }
+
+        if (!payload.tanggal) {
+          showError("Tanggal wajib diisi.");
+          return false;
+        }
+
+        if (!payload.jamMulai || !payload.jamSelesai ||
+            payload.jamSelesai <= payload.jamMulai) {
+          showError("Jam selesai harus lebih besar dari jam mulai.");
+          return false;
+        }
+
+        if (!window.EOfficeAPI || !EOfficeAPI.config.LIVE) {
+          showError("Backend belum aktif.");
+          return false;
+        }
+
+        try {
+          await EOfficeAPI.updateJadwalSaya(id, payload);
+
+          jadwalPegawaiData = await loadData();
+
+          selectedIso = payload.tanggal;
+          viewYear = Number(payload.tanggal.slice(0, 4));
+          viewMonth = Number(payload.tanggal.slice(5, 7)) - 1;
+
+          refreshAll();
+          showToast("Agenda pribadi berhasil diperbarui");
+        } catch (error) {
+          console.error("Gagal mengedit agenda:", error);
+          showError(error.message || "Gagal memperbarui agenda.");
+          return false;
+        }
+      }
+    });
+
     return;
   }
 
@@ -261,11 +380,24 @@ document.getElementById("pgj-agenda-list").addEventListener("click", (event) => 
       desc: `Agenda "${agenda.judul}" akan dihapus dari jadwal Anda. Lanjutkan?`,
       confirmLabel: "Ya, Hapus",
       danger: true,
-      onConfirm: () => {
-        const idx = jadwalPegawaiData.indexOf(agenda);
-        if (idx !== -1) jadwalPegawaiData.splice(idx, 1);
-        refreshAll();
-        showToast("Agenda pribadi dihapus");
+      onConfirm: async () => {
+        try {
+          if (!window.EOfficeAPI || !EOfficeAPI.config.LIVE) {
+            showToast("Backend belum aktif. Agenda tidak dihapus.");
+            return false;
+          }
+
+          await EOfficeAPI.deleteJadwalSaya(id);
+
+          jadwalPegawaiData = await loadData();
+          refreshAll();
+
+          showToast("Agenda pribadi berhasil dihapus");
+        } catch (error) {
+          console.error("Gagal menghapus agenda:", error);
+          showToast(error.message || "Gagal menghapus agenda.");
+          return false;
+        }
       }
     });
   }
@@ -316,7 +448,7 @@ document.getElementById("btn-tambah").addEventListener("click", () => {
       </div>`,
     confirmLabel: "Simpan Agenda",
     cancelLabel: "Batal",
-    onConfirm: () => {
+    onConfirm: async () => {
       const judul = document.getElementById("ag-judul").value.trim();
       const tanggal = document.getElementById("ag-tanggal").value;
       const errorEl = document.getElementById("ag-error");
@@ -335,22 +467,45 @@ document.getElementById("btn-tambah").addEventListener("click", () => {
         return false;
       }
 
-      const fmt = (v) => (v ? v.replace(":", ".") : "");
-      jadwalPegawaiData.push({
-        id: Date.now(),
-        tanggal,
-        jamMulai: fmt(document.getElementById("ag-mulai").value) || "08.00",
-        jamSelesai: fmt(document.getElementById("ag-selesai").value) || "09.00",
-        judul,
-        lokasi: document.getElementById("ag-lokasi").value.trim() || "-",
-        deskripsi: document.getElementById("ag-deskripsi").value.trim() || "-",
-        status: "Terjadwal",
-        sumber: "pribadi"
-      });
+      const jamMulai = document.getElementById("ag-mulai").value || "08:00";
+      const jamSelesai = document.getElementById("ag-selesai").value || "09:00";
 
-      selectedIso = tanggal; // langsung tampilkan tanggal baru
-      refreshAll();
-      showToast("Agenda pribadi ditambahkan");
+      if (jamSelesai <= jamMulai) {
+        showError("Jam selesai harus lebih besar dari jam mulai.");
+        return false;
+      }
+
+      if (!window.EOfficeAPI || !EOfficeAPI.config.LIVE) {
+        showError("Backend belum aktif. Agenda tidak disimpan.");
+        return false;
+      }
+
+      const payload = {
+        tanggal,
+        jamMulai,
+        jamSelesai,
+        judul,
+        lokasi: document.getElementById("ag-lokasi").value.trim(),
+        deskripsi: document.getElementById("ag-deskripsi").value.trim()
+      };
+
+      try {
+        await EOfficeAPI.createJadwalSaya(payload);
+
+        jadwalPegawaiData = await loadData();
+        agendaDates = new Set(jadwalPegawaiData.map((a) => a.tanggal));
+
+        selectedIso = tanggal;
+        viewYear = Number(tanggal.slice(0, 4));
+        viewMonth = Number(tanggal.slice(5, 7)) - 1;
+
+        refreshAll();
+        showToast("Agenda pribadi berhasil disimpan");
+      } catch (error) {
+        console.error("Gagal menyimpan agenda:", error);
+        showError(error.message || "Gagal menyimpan agenda ke server.");
+        return false;
+      }
     }
   });
 });

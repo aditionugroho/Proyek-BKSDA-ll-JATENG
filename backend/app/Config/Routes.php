@@ -1106,3 +1106,42 @@ $routes->group(
 
     }
 );
+
+
+// ==========================================
+// MODUL JADWAL
+// ==========================================
+
+// Agenda seksi: hanya Kepala Seksi dan Admin
+$routes->get(
+    'api/jadwal',
+    'Api\JadwalController::index',
+    ['filter' => 'role:admin,kepala_seksi']
+);
+
+// Agenda pegawai: agenda seksi + agenda pribadi
+$routes->group(
+    'api/jadwal-saya',
+    ['filter' => 'role:admin,kepala_seksi,staf'],
+    static function ($routes) {
+        $routes->get(
+            '',
+            'Api\JadwalController::saya'
+        );
+
+        $routes->post(
+            '',
+            'Api\JadwalController::create'
+        );
+
+        $routes->put(
+            '(:num)',
+            'Api\JadwalController::update/$1'
+        );
+
+        $routes->delete(
+            '(:num)',
+            'Api\JadwalController::delete/$1'
+        );
+    }
+);
