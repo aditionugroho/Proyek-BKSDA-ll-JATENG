@@ -168,6 +168,90 @@ class LaporanPatroliController extends BaseController
             ->setBody(file_get_contents($filePath));
     }
 
+    /**
+     * PUT /api/laporan-patroli/{id}/status
+     * Kepala Seksi menandai laporan patroli sebagai Direview.
+     */
+    public function reviewStatus($id)
+    {
+        $userId = $this->getAuthenticatedUserId();
+
+        if (!$userId) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Pengguna tidak terautentikasi.',
+            ], 401);
+        }
+
+        $user = (new UserModel())
+            ->where('id', $userId)
+            ->where('status', 1)
+            ->first();
+
+        if (!$user) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akun tidak aktif.',
+            ], 401);
+        }
+
+        if ($user['role'] !== 'kepala_seksi') {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Hanya Kepala Seksi yang dapat mereview laporan.',
+            ], 403);
+        }
+
+        $payload = $this->request->getJSON(true);
+
+        if (!is_array($payload) ||
+            ($payload['status'] ?? null) !== 'Direview') {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Status tidak valid.',
+            ], 422);
+        }
+
+        $model = new LaporanPatroliModel();
+        $laporan = $model->find((int) $id);
+
+        if (!$laporan) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Laporan patroli tidak ditemukan.',
+            ], 404);
+        }
+
+        if ($laporan['status'] === 'Direview') {
+            return $this->respond([
+                'status' => true,
+                'message' => 'Laporan sudah direview.',
+                'data' => [
+                    'id' => (int) $id,
+                    'status' => 'Direview',
+                ],
+            ], 200);
+        }
+
+        if (!$model->update((int) $id, [
+            'status' => 'Direview',
+        ])) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Gagal memperbarui status laporan.',
+            ], 500);
+        }
+
+        return $this->respond([
+            'status' => true,
+            'message' => 'Laporan patroli berhasil direview.',
+            'data' => [
+                'id' => (int) $id,
+                'status' => 'Direview',
+            ],
+        ], 200);
+    }
+
     public function index()
     {
         $userId = $this->getAuthenticatedUserId();

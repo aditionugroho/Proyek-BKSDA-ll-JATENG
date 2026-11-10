@@ -988,6 +988,13 @@ $routes->group(
     }
 );
 
+// PUT STATUS REVIEW LAPORAN PATROLI (KEPALA SEKSI)
+$routes->put(
+    'api/laporan-patroli/(:num)/status',
+    'Api\LaporanPatroliController::reviewStatus/$1',
+    ['filter' => 'role:kepala_seksi']
+);
+
 // GET FOTO LAPORAN PATROLI (TERAUTENTIKASI)
 $routes->get(
     'api/laporan-patroli/foto/(:num)',
