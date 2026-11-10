@@ -86,17 +86,65 @@ function render() {
     .join("");
 }
 
+/* Kelola URL foto privat agar tidak tertinggal di memori. */
+let galeriAktif = 0;
+let fotoUrls = [];
+
+function bersihkanFoto() {
+  galeriAktif++;
+  for (const url of fotoUrls) URL.revokeObjectURL(url);
+  fotoUrls = [];
+  const lightbox = document.getElementById("pt-lightbox");
+  if (lightbox) lightbox.hidden = true;
+}
+
+async function muatFotoPatroli(generasi) {
+  const images = document.querySelectorAll(
+    ".app-modal-backdrop.is-open .pt-galeri-item img"
+  );
+
+  const live = Boolean(window.EOfficeAPI && EOfficeAPI.config.LIVE);
+
+  for (const img of images) {
+    if (generasi !== galeriAktif) return;
+
+    const fotoId = img.dataset.fotoId;
+
+    if (!live) {
+      if (fotoId) img.src = fotoId;
+      continue;
+    }
+
+    try {
+      const blob = await EOfficeAPI.getFotoPatroli(fotoId);
+
+      if (generasi !== galeriAktif || !img.isConnected) return;
+
+      const url = URL.createObjectURL(blob);
+      fotoUrls.push(url);
+      img.src = url;
+    } catch (error) {
+      console.error("Gagal memuat foto patroli:", error);
+      if (generasi === galeriAktif && img.isConnected) {
+        img.alt = "Foto gagal dimuat";
+      }
+    }
+  }
+}
 /* ===== DETAIL (modal + galeri) ===== */
 function bukaDetail(id) {
   const l = daftar.find((x) => String(x.id) === String(id));
   if (!l) return;
 
+  // Hentikan pemuatan lama dan lepaskan URL foto sebelumnya.
+  bersihkanFoto();
+
   const galeri = l.foto && l.foto.length
     ? `<p class="pt-label" style="margin-top:14px">Foto Dokumentasi (${l.foto.length})</p>
        <div class="pt-galeri">
-         ${l.foto.map((src, i) => `
+         ${l.foto.map((fotoId, i) => `
            <button type="button" class="pt-galeri-item" data-foto="${i}" title="Perbesar foto ${i + 1}">
-             <img src="${src}" alt="Foto patroli ${i + 1}" />
+             <img data-foto-id="${fotoId}" alt="Foto patroli ${i + 1}" />
            </button>`).join("")}
        </div>`
     : `<p class="pt-sub" style="margin-top:12px">Tidak ada foto dilampirkan.</p>`;
@@ -132,10 +180,24 @@ function bukaDetail(id) {
     confirmLabel: "Tandai Direview",
     onConfirm: () => {
       if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        EOfficeAPI.request("PUT", "/laporan-patroli/" + l.id + "/status", { status: "Direview" })
-          .then(() => { l.status = "Direview"; render(); showToast("Laporan ditandai direview"); })
-          .catch(() => showToast("Gagal memperbarui status"));
-        return;
+        return EOfficeAPI.request(
+          "PUT",
+          "/laporan-patroli/" + encodeURIComponent(l.id) + "/status",
+          { status: "Direview" }
+        ).then((response) => {
+          if (response && response.status === false) {
+            throw new Error(response.message || "Review gagal.");
+          }
+
+          l.status = "Direview";
+          render();
+          showToast("Laporan berhasil direview");
+          return true;
+        }).catch((error) => {
+          console.error("Review laporan patroli gagal:", error);
+          showToast("Gagal memperbarui status laporan");
+          return false;
+        });
       }
       // MOCK: persist ke localStorage agar bertahan antar-refresh
       try {
@@ -163,13 +225,23 @@ function bukaDetail(id) {
     }
   });
 
-  /* Lightbox galeri — didelegasikan setelah modal dirender */
+  pantauPenutupanModal();
+  const generasi = ++galeriAktif;
+  muatFotoPatroli(generasi);
+
   setTimeout(() => {
-    document.querySelectorAll(".pt-galeri-item").forEach((btn) => {
+    if (generasi !== galeriAktif) return;
+
+    document.querySelectorAll(
+      ".app-modal-backdrop.is-open .pt-galeri-item"
+    ).forEach((btn) => {
       btn.addEventListener("click", () => {
-        const idx = Number(btn.dataset.foto);
-        document.getElementById("pt-lightbox-img").src = l.foto[idx];
-        document.getElementById("pt-lightbox").hidden = false;
+        const img = btn.querySelector("img");
+        if (!img || !img.src) return;
+
+        const lightbox = document.getElementById("pt-lightbox");
+        document.getElementById("pt-lightbox-img").src = img.src;
+        lightbox.hidden = false;
       });
     });
   }, 50);
@@ -180,6 +252,28 @@ document.getElementById("pt-tbody").addEventListener("click", (e) => {
   if (row) bukaDetail(row.dataset.id);
 });
 
+/* Bersihkan Blob URL ketika modal ditutup. */
+let observerModalTerpasang = false;
+
+function pantauPenutupanModal() {
+  if (observerModalTerpasang) return;
+
+  const modal = document.querySelector(".app-modal-backdrop");
+  if (!modal) return;
+
+  const observer = new MutationObserver(() => {
+    if (!modal.classList.contains("is-open")) {
+      bersihkanFoto();
+    }
+  });
+
+  observer.observe(modal, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+
+  observerModalTerpasang = true;
+}
 /* ===== LIGHTBOX ===== */
 document.getElementById("pt-lightbox").addEventListener("click", (e) => {
   if (e.target.id !== "pt-lightbox-img") e.currentTarget.hidden = true;
