@@ -14,9 +14,24 @@ const STATE_KEY = "tugas-seksi-ks";
 let tugasData = [];
 
 async function loadData() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getTugas();
+  if (window.EOfficeAPI?.config?.LIVE) {
+    const response = await EOfficeAPI.getTugas();
+
+    const valid =
+      Array.isArray(response) ||
+      Array.isArray(response?.data) ||
+      Array.isArray(response?.data?.data);
+
+    if (!valid || response?.status === false) {
+      throw new Error(
+        response?.message ||
+        "Format respons API tugas tidak valid."
+      );
+    }
+
+    return response;
   }
+
   return TUGAS_MOCK;
 }
 
@@ -50,6 +65,25 @@ function restoreState() {
   );
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+function safeTaskId(value) {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function safeProgress(value) {
+  const progress = Number(value);
+  if (!Number.isFinite(progress)) return 0;
+  return Math.min(100, Math.max(0, progress));
+}
 /* ===== RENDER: stat card (dihitung dari data, bukan hard-coded) ===== */
 
 function normalizeTugasData(response) {
@@ -117,37 +151,40 @@ function renderTable() {
   } else {
     tbody.innerHTML = rows
       .map((t) => {
-        const tone = progressTone(t);
+        const taskId = safeTaskId(t.id);
+        const progress = safeProgress(t.progress);
+        const tone = progressTone({ ...t, progress });
         const statusTone = STATUS_TONE[t.status] || "gray";
         return `
         <tr>
           <td>
-            <a href="detail-tugas.html?id=${t.id}" class="ktg-judul">${t.judul}</a>
-            <span class="ktg-kode">${t.kode}</span>
+            ${taskId === null ? `<span class="ktg-judul">${escapeHtml(t.judul)}</span>` : `<a href="detail-tugas.html?id=${taskId}" class="ktg-judul">${escapeHtml(t.judul)}</a>`}
+            <span class="ktg-kode">${escapeHtml(t.kode)}</span>
           </td>
           <td>
             <div class="ktg-pic">
-              <span class="ktg-avatar${t.avatarTone === "red" ? " ktg-avatar--red" : ""}">${t.avatar}</span>
-              <span class="ktg-pic-name">${t.pic}</span>
+              <span class="ktg-avatar${t.avatarTone === "red" ? " ktg-avatar--red" : ""}">${escapeHtml(t.avatar)}</span>
+              <span class="ktg-pic-name">${escapeHtml(t.pic)}</span>
             </div>
           </td>
-          <td><span class="ktg-badge ktg-badge--${t.prioritas === "TINGGI" ? "red" : "gray"}">${t.prioritas}</span></td>
-          <td><span class="ktg-deadline${t.lewatDeadline ? " ktg-deadline--lewat" : ""}">${t.deadline}</span></td>
+          <td><span class="ktg-badge ktg-badge--${t.prioritas === "TINGGI" ? "red" : "gray"}">${escapeHtml(t.prioritas)}</span></td>
+          <td><span class="ktg-deadline${t.lewatDeadline ? " ktg-deadline--lewat" : ""}">${escapeHtml(t.deadline)}</span></td>
           <td>
             <div class="ktg-progress">
-              <div class="ktg-progress-bar ktg-progress-bar--${tone}"><span style="width:${t.progress}%"></span></div>
-              <span class="ktg-progress-label">${t.progress}%</span>
+              <div class="ktg-progress-bar ktg-progress-bar--${tone}"><span style="width:${progress}%"></span></div>
+              <span class="ktg-progress-label">${progress}%</span>
             </div>
           </td>
-          <td><span class="ktg-badge ktg-badge--${statusTone}"><span class="dot"></span>${t.status}</span></td>
+          <td><span class="ktg-badge ktg-badge--${statusTone}"><span class="dot"></span>${escapeHtml(t.status)}</span></td>
           <td>
             <div class="ktg-action">
-              <button type="button" class="ktg-menu-btn" data-menu="${t.id}" aria-label="Menu tugas" title="Menu tugas">${ICONS.dots}</button>
-              <div class="ktg-dropdown" id="menu-${t.id}">
-                <a href="detail-tugas.html?id=${t.id}">${ICONS.eye}Lihat Detail</a>
+              ${taskId === null ? "" : `
+              <button type="button" class="ktg-menu-btn" data-menu="${taskId}" aria-label="Menu tugas" title="Menu tugas">${ICONS.dots}</button>
+              <div class="ktg-dropdown" id="menu-${taskId}">
+                <a href="detail-tugas.html?id=${taskId}">${ICONS.eye}Lihat Detail</a>
                 <button type="button" data-soon="Edit">${ICONS.edit}Edit</button>
                 <button type="button" class="ktg-dd--danger" data-soon="Hapus">${ICONS.trash}Hapus</button>
-              </div>
+              </div>`}
             </div>
           </td>
         </tr>`;

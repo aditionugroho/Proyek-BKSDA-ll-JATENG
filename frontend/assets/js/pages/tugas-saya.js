@@ -16,13 +16,51 @@ let tugasSayaData = [];
 function extractData(response) {
   if (response?.status !== true || !Array.isArray(response.data)) {
     throw new Error(
-      response?.message || "Format respons disposisi tidak valid.",
+      response?.message || "Format respons tugas tidak valid.",
     );
   }
 
   return response.data;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function safeTaskId(value) {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function safeProgress(value) {
+  const progress = Number(value);
+  if (!Number.isFinite(progress)) return 0;
+  return Math.min(100, Math.max(0, progress));
+}
+function safeTone(value) {
+  const allowed = ["gray", "green", "red", "amber", "blue", "orange"];
+  return allowed.includes(value) ? value : "gray";
+}
+
+function safeProgressColor(value) {
+  const allowed = [
+    "#22c55e",
+    "#f59e0b",
+    "#ef4444",
+    "#3b82f6",
+    "#2563eb",
+    "#94a3b8"
+  ];
+
+  const color = String(value ?? "").toLowerCase();
+  return allowed.includes(color) ? color : "#94a3b8";
+}
 function formatTanggal(value) {
   if (!value) return "-";
 
@@ -136,28 +174,32 @@ function renderTable() {
   } else {
     tbody.innerHTML = rows
       .map(
-        (t) => `
+        (t) => {
+          const taskId = safeTaskId(t.id);
+          const progress = safeProgress(t.progress);
+          return `
         <tr${t.selesai ? ' class="pgt-row-done"' : ""}>
           <td>
-            <a href="detail-tugas.html?id=${encodeURIComponent(t.id)}" class="pgt-nama">${t.judul}</a>
-            <span class="pgt-deskripsi">${t.deskripsi}</span>
+            ${taskId === null ? `<span class="pgt-nama">${escapeHtml(t.judul)}</span>` : `<a href="detail-tugas.html?id=${taskId}" class="pgt-nama">${escapeHtml(t.judul)}</a>`}
+            <span class="pgt-deskripsi">${escapeHtml(t.deskripsi)}</span>
           </td>
           <td>
             <div class="pgt-pemberi">
-              <span class="pgt-avatar">${t.pemberi.inisial}</span>
-              <span class="pgt-pemberi-nama">${t.pemberi.nama}</span>
+              <span class="pgt-avatar">${escapeHtml(t.pemberi.inisial)}</span>
+              <span class="pgt-pemberi-nama">${escapeHtml(t.pemberi.nama)}</span>
             </div>
           </td>
-          <td><span class="pgt-prio pgt-prio--${t.prioritas.tone}">${t.prioritas.text}</span></td>
-          <td><span class="pgt-deadline">${ICONS.calendar}${t.deadline}</span></td>
+          <td><span class="pgt-prio pgt-prio--${safeTone(t.prioritas.tone)}">${escapeHtml(t.prioritas.text)}</span></td>
+          <td><span class="pgt-deadline">${ICONS.calendar}${escapeHtml(t.deadline)}</span></td>
           <td>
             <div class="pgt-progress">
-              <div class="pgt-progress-bar"><span style="width:${t.progress}%; background:${t.progressColor}"></span></div>
-              <span class="pgt-progress-label">${t.progress}%</span>
+              <div class="pgt-progress-bar"><span style="width:${progress}%; background:${safeProgressColor(t.progressColor)}"></span></div>
+              <span class="pgt-progress-label">${progress}%</span>
             </div>
           </td>
-          <td><span class="pgt-status pgt-status--${t.status.tone}">${t.status.text}</span></td>
-        </tr>`,
+          <td><span class="pgt-status pgt-status--${safeTone(t.status.tone)}">${escapeHtml(t.status.text)}</span></td>
+        </tr>`;
+        },
       )
       .join("");
   }

@@ -16,7 +16,24 @@ let agendaDates = new Set();
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     const res = await EOfficeAPI.getJadwal();
-    todayIso = res.hariIni || todayIso;
+
+    if (
+      !res ||
+      res.status === false ||
+      !Array.isArray(res.agenda)
+    ) {
+      throw new Error(res?.message || "Format respons API jadwal tidak valid.");
+    }
+
+    if (
+      typeof res.hariIni !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(res.hariIni) ||
+      Number.isNaN(new Date(res.hariIni).getTime())
+    ) {
+      throw new Error("Tanggal hariIni dari API tidak valid.");
+    }
+
+    todayIso = res.hariIni;
     return res.agenda;
   }
   return JADWAL_MOCK;
@@ -111,6 +128,15 @@ const STATUS_TONE = {
   Dibatalkan: "gray"
 };
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
 function renderAgenda() {
   const dateLabel = document.getElementById("kj-agenda-date");
   const list = document.getElementById("kj-agenda-list");
@@ -130,19 +156,19 @@ function renderAgenda() {
       (a) => `
       <div class="kj-agenda-item">
         <div class="kj-agenda-time">
-          <span>${a.jamMulai}</span>
-          <span>${a.jamSelesai}</span>
+          <span>${escapeHtml(a.jamMulai)}</span>
+          <span>${escapeHtml(a.jamSelesai)}</span>
         </div>
         <div class="kj-agenda-line"></div>
         <div class="kj-agenda-body">
           <div class="kj-agenda-top">
-            <p class="kj-agenda-title">${a.judul}</p>
-            <span class="kj-badge kj-badge--${STATUS_TONE[a.status] || "gray"}">${a.status}</span>
+            <p class="kj-agenda-title">${escapeHtml(a.judul)}</p>
+            <span class="kj-badge kj-badge--${STATUS_TONE[a.status] || "gray"}">${escapeHtml(a.status)}</span>
           </div>
-          <span class="kj-agenda-place">${ICONS.pin}${a.lokasi}</span>
-          <p class="kj-agenda-desc">${a.deskripsi}</p>
+          <span class="kj-agenda-place">${ICONS.pin}${escapeHtml(a.lokasi)}</span>
+          <p class="kj-agenda-desc">${escapeHtml(a.deskripsi)}</p>
         </div>
-        <button type="button" class="kj-menu-btn" title="Menu agenda" aria-label="Menu ${a.judul}">${ICONS.dots}</button>
+        <button type="button" class="kj-menu-btn" title="Menu agenda" aria-label="Menu ${escapeHtml(a.judul)}">${ICONS.dots}</button>
       </div>`
     )
     .join("");

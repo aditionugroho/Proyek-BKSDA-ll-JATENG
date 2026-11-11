@@ -104,6 +104,15 @@ const FILE_ICON =
 const TRASH_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
 function renderFiles() {
   const list = document.getElementById("bt-file-list");
   list.innerHTML = files
@@ -111,8 +120,8 @@ function renderFiles() {
       (name, i) => `
       <div class="bt-file-item">
         ${FILE_ICON}
-        <span class="bt-file-name">${name}</span>
-        <button type="button" class="bt-file-remove" data-remove="${i}" title="Hapus lampiran" aria-label="Hapus ${name}">${TRASH_ICON}</button>
+        <span class="bt-file-name">${escapeHtml(name)}</span>
+        <button type="button" class="bt-file-remove" data-remove="${i}" title="Hapus lampiran" aria-label="Hapus ${escapeHtml(name)}">${TRASH_ICON}</button>
       </div>`
     )
     .join("");
@@ -170,7 +179,18 @@ function isFormDirty() {
 }
 
 /* ===== SUBMIT ===== */
+let isSubmitting = false;
+
+function setSubmitting(value) {
+  isSubmitting = value;
+  const submitButton = form.querySelector('[type="submit"]');
+  if (submitButton) submitButton.disabled = value;
+}
 form.addEventListener("submit", (event) => {
+  if (isSubmitting) {
+    event.preventDefault();
+    return;
+  }
   event.preventDefault();
 
   let valid = true;
@@ -203,6 +223,7 @@ form.addEventListener("submit", (event) => {
 
 if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     // LIVE: kode & atribut lain dibuat server
+    setSubmitting(true);
     EOfficeAPI.createTugas({
       judul: judulInput.value.trim(),
       deskripsi: deskripsiInput.value.trim(),
@@ -212,7 +233,11 @@ if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
       lampiran: files.slice()
     })
       .then(sukses)
-      .catch(() => showToast("Gagal membuat tugas. Periksa koneksi lalu coba lagi."));
+      .catch((error) => {
+        console.error("Gagal membuat tugas:", error);
+        showToast("Gagal membuat tugas. Periksa koneksi lalu coba lagi.");
+        setSubmitting(false);
+      });
     return;
   }
 

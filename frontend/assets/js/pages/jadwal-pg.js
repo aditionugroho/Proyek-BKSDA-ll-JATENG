@@ -14,6 +14,15 @@ let jadwalPegawaiData = [];
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     const res = await EOfficeAPI.getJadwalSaya();
+
+    if (
+      !res ||
+      res.status === false ||
+      !Array.isArray(res.agenda)
+    ) {
+      throw new Error(res?.message || "Format respons API jadwal pegawai tidak valid.");
+    }
+
     return res.agenda;
   }
   return JADWAL_PG_MOCK;
@@ -121,6 +130,20 @@ const STATUS_TONE = {
   Dibatalkan: "gray"
 };
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function safeAgendaId(value) {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
 function renderAgenda() {
   const d = new Date(selectedIso);
   document.getElementById("pgj-agenda-date").textContent =
@@ -138,35 +161,37 @@ function renderAgenda() {
 
   listEl.innerHTML = items
     .map((a) => {
-      const menuItems =
+      const agendaId = safeAgendaId(a.id);
+      const menuItems = agendaId === null ? "" :
         a.sumber === "pribadi"
           ? `
-            <button type="button" data-edit="${a.id}">${ICONS.edit}Edit</button>
-            <button type="button" class="pgj-dd--danger" data-hapus="${a.id}">${ICONS.trash}Hapus</button>`
-          : `<button type="button" data-readonly="${a.id}">${ICONS.eye}Lihat Detail</button>`;
+            <button type="button" data-edit="${agendaId}">${ICONS.edit}Edit</button>
+            <button type="button" class="pgj-dd--danger" data-hapus="${agendaId}">${ICONS.trash}Hapus</button>`
+          : `<button type="button" data-readonly="${agendaId}">${ICONS.eye}Lihat Detail</button>`;
 
       return `
       <div class="pgj-agenda-item">
         <div class="pgj-agenda-time">
-          <span>${a.jamMulai}</span>
-          <span>${a.jamSelesai}</span>
+          <span>${escapeHtml(a.jamMulai)}</span>
+          <span>${escapeHtml(a.jamSelesai)}</span>
         </div>
         <div class="pgj-agenda-line"></div>
         <div class="pgj-agenda-body">
           <div class="pgj-agenda-top">
-            <p class="pgj-agenda-title">${a.judul}</p>
-            <span class="pgj-badge pgj-badge--${STATUS_TONE[a.status] || "gray"}">${a.status}</span>
+            <p class="pgj-agenda-title">${escapeHtml(a.judul)}</p>
+            <span class="pgj-badge pgj-badge--${STATUS_TONE[a.status] || "gray"}">${escapeHtml(a.status)}</span>
           </div>
-          <span class="pgj-agenda-place">${ICONS.pin}${a.lokasi}</span>
-          <p class="pgj-agenda-desc">${a.deskripsi}</p>
+          <span class="pgj-agenda-place">${ICONS.pin}${escapeHtml(a.lokasi)}</span>
+          <p class="pgj-agenda-desc">${escapeHtml(a.deskripsi)}</p>
           <span class="pgj-chip${a.sumber === "pribadi" ? " pgj-chip--personal" : ""}">${
             a.sumber === "pribadi" ? "Agenda Pribadi" : "Dari Jadwal Seksi"
           }</span>
         </div>
+        ${agendaId === null ? "" : `
         <div class="pgj-menu-wrap">
-          <button type="button" class="pgj-menu-btn" data-menu="${a.id}" title="Menu agenda" aria-label="Menu ${a.judul}">${ICONS.dots}</button>
-          <div class="pgj-dropdown" id="menu-${a.id}">${menuItems}</div>
-        </div>
+          <button type="button" class="pgj-menu-btn" data-menu="${agendaId}" title="Menu agenda" aria-label="Menu ${escapeHtml(a.judul)}">${ICONS.dots}</button>
+          <div class="pgj-dropdown" id="menu-${agendaId}">${menuItems}</div>
+        </div>`}
       </div>`;
     })
     .join("");
@@ -491,20 +516,26 @@ document.getElementById("btn-tambah").addEventListener("click", () => {
 
       try {
         await EOfficeAPI.createJadwalSaya(payload);
+      } catch (error) {
+        console.error("Gagal menyimpan agenda:", error);
+        showError(error.message || "Gagal menyimpan agenda ke server.");
+        return false;
+      }
 
-        jadwalPegawaiData = await loadData();
-        agendaDates = new Set(jadwalPegawaiData.map((a) => a.tanggal));
+      showToast("Agenda pribadi berhasil disimpan");
 
+      try {
+        const updatedData = await loadData();
+
+        jadwalPegawaiData = updatedData;
         selectedIso = tanggal;
         viewYear = Number(tanggal.slice(0, 4));
         viewMonth = Number(tanggal.slice(5, 7)) - 1;
 
         refreshAll();
-        showToast("Agenda pribadi berhasil disimpan");
       } catch (error) {
-        console.error("Gagal menyimpan agenda:", error);
-        showError(error.message || "Gagal menyimpan agenda ke server.");
-        return false;
+        console.error("Agenda tersimpan, tetapi refresh gagal:", error);
+        showToast("Agenda tersimpan, tetapi daftar belum berhasil diperbarui. Muat ulang halaman.");
       }
     }
   });
