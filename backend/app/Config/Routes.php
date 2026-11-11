@@ -1166,3 +1166,11 @@ $routes->group(
         );
     }
 );
+
+
+// EXPORT DATA ADMIN
+$routes->group('api/export', ['filter' => 'role:admin'], static function ($routes) {
+    $routes->get('', 'Api\ExportController::index');
+    $routes->post('', 'Api\ExportController::create');
+    $routes->get('(:num)/download', 'Api\ExportController::download/$1');
+});
