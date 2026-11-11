@@ -106,6 +106,75 @@ function addInfoRow(container, label, value) {
   container.appendChild(row);
 }
 
+function formatWaktuAktivitas(value) {
+  if (!value) return "Waktu tidak tersedia";
+
+  const text = String(value).trim();
+  const match = text.match(
+    /^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})/
+  );
+
+  if (!match) return text;
+
+  const [, year, month, day, hour, minute] = match;
+
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
+function renderAktivitasTugas(items) {
+  const container = el("dt-aktivitas");
+  if (!container) return;
+
+  container.replaceChildren();
+
+  if (!items.length) {
+    container.textContent = "Belum ada aktivitas untuk tugas ini.";
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("div");
+    row.className = "dt-timeline-item";
+
+    const title = document.createElement("strong");
+    title.textContent = String(
+      item.nama || "Pengguna"
+    ) + " - " + String(item.jenis || "Aktivitas");
+
+    const description = document.createElement("p");
+    description.textContent = String(item.keterangan || "");
+
+    const time = document.createElement("small");
+    time.textContent = formatWaktuAktivitas(item.created_at);
+
+    row.append(title, description, time);
+    container.appendChild(row);
+  }
+}
+
+async function loadAktivitasTugas(id) {
+  setText("dt-aktivitas", "Memuat riwayat aktivitas...");
+
+  try {
+    const response = await EOfficeAPI.getAktivitasTugas(id);
+
+    if (response?.status !== true ||
+        !Array.isArray(response.data)) {
+      throw new Error(
+        response?.message || "Format aktivitas tidak valid."
+      );
+    }
+
+    renderAktivitasTugas(response.data);
+  } catch (error) {
+    console.error("Gagal memuat aktivitas tugas:", error);
+    setText(
+      "dt-aktivitas",
+      "Riwayat aktivitas gagal dimuat. Silakan muat ulang halaman."
+    );
+  }
+}
+
 function render() {
   if (!tugas) return;
 
@@ -142,11 +211,6 @@ function render() {
   setText(
     "dt-lampiran",
     "Belum ada lampiran hasil yang tersimpan."
-  );
-
-  setText(
-    "dt-aktivitas",
-    "Riwayat aktivitas tugas belum tersedia pada API."
   );
 
   const info = el("dt-info");
@@ -260,6 +324,7 @@ async function prosesReview(action) {
 
     tugas = await fetchDetail(tugas.id);
     render();
+    await loadAktivitasTugas(tugas.id);
 
     showToast(
       approving
@@ -324,6 +389,7 @@ async function init() {
     }
 
     render();
+    await loadAktivitasTugas(id);
   } catch (error) {
     console.error("Detail tugas gagal dimuat:", error);
 

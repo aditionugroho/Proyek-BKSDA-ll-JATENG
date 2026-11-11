@@ -115,26 +115,43 @@ function escapeHtml(value) {
 }
 function renderFiles() {
   const list = document.getElementById("bt-file-list");
-  list.innerHTML = files
-    .map(
-      (name, i) => `
-      <div class="bt-file-item">
-        ${FILE_ICON}
-        <span class="bt-file-name">${escapeHtml(name)}</span>
-        <button type="button" class="bt-file-remove" data-remove="${i}" title="Hapus lampiran" aria-label="Hapus ${escapeHtml(name)}">${TRASH_ICON}</button>
-      </div>`
-    )
-    .join("");
+  list.innerHTML = files.map((file, i) => `
+    <div class="bt-file-item">
+      ${FILE_ICON}
+      <span class="bt-file-name">${escapeHtml(file.name)}</span>
+      <button type="button" class="bt-file-remove"
+        data-remove="${i}" title="Hapus lampiran">
+        ${TRASH_ICON}
+      </button>
+    </div>
+  `).join("");
 }
 
 function addFiles(fileList) {
-  Array.from(fileList).forEach((f) => {
-    if (f.size > 10 * 1024 * 1024) {
-      showToast(`Berkas ${f.name} melebihi 10MB`);
+  const allowed = new Set(["pdf", "jpg", "jpeg", "png"]);
+
+  Array.from(fileList).forEach(file => {
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    if (!allowed.has(ext)) {
+      showToast("Format file harus PDF, JPG, atau PNG.");
       return;
     }
-    files.push(f.name);
+
+    if (!file.size || file.size > 10 * 1024 * 1024) {
+      showToast("Ukuran file maksimal 10 MB.");
+      return;
+    }
+
+    const duplicate = files.some(f =>
+      f.name === file.name &&
+      f.size === file.size &&
+      f.lastModified === file.lastModified
+    );
+
+    if (!duplicate) files.push(file);
   });
+
   renderFiles();
 }
 
@@ -178,6 +195,42 @@ function isFormDirty() {
   );
 }
 
+async function uploadLampiranTugas(taskId, file) {
+  const token =
+    sessionStorage.getItem("eoffice_token") ||
+    localStorage.getItem("eoffice_token");
+
+  if (!token) throw new Error("Token login tidak ditemukan.");
+
+  const base = window.EOfficeAPI.config.BASE_URL;
+
+  const form = new FormData();
+  form.append("file", file, file.name);
+
+  const response = await fetch(
+    base.replace(/\/$/, "") +
+      "/tugas/" + encodeURIComponent(taskId) + "/lampiran",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: form
+    }
+  );
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok || result?.status !== true) {
+    throw new Error(
+      result?.message || "Upload gagal (HTTP " + response.status + ")"
+    );
+  }
+
+  return result;
+}
+
 /* ===== SUBMIT ===== */
 let isSubmitting = false;
 
@@ -214,30 +267,62 @@ form.addEventListener("submit", (event) => {
   };
 
 
-  if (files.length > 0 && window.EOfficeAPI?.config?.LIVE) {
-    showToast(
-      "Lampiran tugas belum didukung API. Hapus lampiran sebelum menyimpan."
-    );
-    return;
-  }
-
-if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    // LIVE: kode & atribut lain dibuat server
+  if (window.EOfficeAPI?.config?.LIVE) {
     setSubmitting(true);
-    EOfficeAPI.createTugas({
+
+    const payload = {
       judul: judulInput.value.trim(),
       deskripsi: deskripsiInput.value.trim(),
       assigned_to: Number(pic),
       prioritas: prioritas === "Tinggi" ? "TINGGI" : "NORMAL",
-      deadline: deadlineRaw || null,
-      lampiran: files.slice()
-    })
-      .then(sukses)
-      .catch((error) => {
+      deadline: deadlineRaw || null
+    };
+
+    EOfficeAPI.createTugas(payload)
+      .then(async response => {
+        if (response?.status !== true) {
+          throw new Error(response?.message || "Gagal membuat tugas.");
+        }
+
+        const taskId = Number(response?.data?.id);
+
+        if (!Number.isSafeInteger(taskId) || taskId <= 0) {
+          showToast(
+            "Tugas tersimpan, tetapi ID tidak ditemukan. " +
+            "Periksa daftar tugas sebelum mencoba lagi."
+          );
+          setSubmitting(false);
+          return;
+        }
+
+        const failed = [];
+
+        for (const file of files) {
+          try {
+            await uploadLampiranTugas(taskId, file);
+          } catch (error) {
+            console.error("Upload gagal:", file.name, error);
+            failed.push(file.name);
+          }
+        }
+
+        if (failed.length > 0) {
+          showToast(
+            "Tugas berhasil dibuat, tetapi " + failed.length +
+            " lampiran gagal diunggah. Periksa detail tugas."
+          );
+          setSubmitting(false);
+          return;
+        }
+
+        sukses();
+      })
+      .catch(error => {
         console.error("Gagal membuat tugas:", error);
-        showToast("Gagal membuat tugas. Periksa koneksi lalu coba lagi.");
+        showToast(error.message || "Gagal membuat tugas.");
         setSubmitting(false);
       });
+
     return;
   }
 
