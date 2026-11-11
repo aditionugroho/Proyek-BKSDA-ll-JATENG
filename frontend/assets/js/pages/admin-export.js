@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    EXPORT DATA & LAPORAN (ADMIN) â€” E-Office SKSDA
    Stat, kartu pilih data, filter tabel,
    modal format export, toast
@@ -204,21 +204,32 @@ document.getElementById("btn-refresh").addEventListener("click", () => {
   document.getElementById("sync-text").textContent =
     `Data sinkron terakhir: ${pad(now.getDate())} ${bulan[now.getMonth()]} ${now.getFullYear()}, ${pad(now.getHours())}:${pad(now.getMinutes())} WIB`;
   renderTable();
-  showToast("Data laporan disegarkan");
+  showToast("Memuat data terbaru...");
 });
 
-/* Unduh (demo) */
-tbody.addEventListener("click", (event) => {
+/* Unduh ulang laporan */
+tbody.addEventListener("click", async (event) => {
   const btn = event.target.closest("[data-download]");
   if (!btn) return;
-  const row = REPORTS.find((r) => String(r.id) === btn.dataset.download);
-  showToast(row && row.status === "Diproses" ? "Laporan masih diproses" : `Mengunduh: ${row.nama}.${row.format.toLowerCase()}`);
+
+  btn.disabled = true;
+
+  try {
+    await EOfficeAPI.downloadExport(btn.dataset.download);
+    showToast("File berhasil diunduh.");
+  } catch (e) {
+    showToast(e.message || "Gagal mengunduh laporan.");
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 /* ===== MODAL EXPORT ===== */
 const backdrop = document.getElementById("modal-backdrop");
 const modalTitle = document.getElementById("modal-title");
 let pendingExport = null;
+
+
 
 document.getElementById("pick-grid").addEventListener("click", (event) => {
   const btn = event.target.closest("[data-export]");
@@ -243,17 +254,17 @@ document.addEventListener("keydown", (event) => {
 });
 
 /* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
-let STATS = STATS_MOCK;
-let EXPORTS = EXPORTS_MOCK;
-let REPORTS = REPORTS_MOCK;
+let STATS = [];
+let EXPORTS = [];
+let REPORTS = [];
 
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     const res = await EOfficeAPI.getExport();
     return {
-      stats: res.stats || STATS_MOCK,
-      exports: res.exports || EXPORTS_MOCK,
-      reports: res.reports || REPORTS_MOCK
+      stats: res.stats || [],
+      exports: res.exports || [],
+      reports: res.reports || []
     };
   }
   return { stats: STATS_MOCK, exports: EXPORTS_MOCK, reports: REPORTS_MOCK };
@@ -267,6 +278,8 @@ async function muatUlang() {
     REPORTS = res.reports;
   } catch (e) {
     console.error("Gagal memuat data export:", e);
+    STATS = []; EXPORTS = []; REPORTS = [];
+    showToast('Gagal memuat data: ' + e.message);
   }
   renderStats();
   renderPickCards();
@@ -280,13 +293,13 @@ document.getElementById("modal-generate").addEventListener("click", () => {
   const format = document.querySelector('input[name="format"]:checked').value;
 
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    EOfficeAPI.createExport({ jenis: pendingExport.title, format: format })
+    EOfficeAPI.createExport({ jenis: pendingExport.id, format: format })
       .then(() => {
         closeModal();
-        showToast("Export sedang diproses...");
+        showToast("File berhasil diunduh.");
         return muatUlang();
       })
-      .catch(() => showToast("Gagal membuat export. Periksa koneksi lalu coba lagi."));
+      .catch((e) => showToast(e.message || "Gagal membuat export."));
     return;
   }
 
@@ -298,7 +311,7 @@ document.getElementById("modal-generate").addEventListener("click", () => {
   REPORTS.unshift({
     id: Date.now(),
     nama: `Export ${pendingExport.title} ${tanggalLabel}`,
-    jenis: pendingExport.title,
+    jenis: pendingExport.id,
     periode: tanggalLabel,
     format,
     oleh: "Admin Sistem",
@@ -315,7 +328,7 @@ document.getElementById("modal-generate").addEventListener("click", () => {
   renderTable();
 
   closeModal();
-  showToast("Export sedang diproses...");
+  showToast("File berhasil diunduh.");
 });
 
 /* ===== Inisialisasi: muat data dulu, baru render ===== */

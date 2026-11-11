@@ -1091,11 +1091,71 @@ const EOfficeAPI = (() => {
     return request("GET", "/export");
   }
 
-  async function createExport(payload) {
-    return request("POST", "/export", payload);
+  async function downloadExportResponse(response, fallbackName) {
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || "Export gagal (HTTP " + response.status + ")");
+    }
+
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    const filename = match ? match[1].replace(/[\\/]/g, "_") : fallbackName;
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+    return { success: true, filename };
   }
 
-  /* ============================================
+  async function createExport(payload) {
+    const token = getToken();
+
+    if (!token) throw new Error("Silakan login kembali.");
+
+    const response = await fetch(API_CONFIG.BASE_URL + "/export", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "*/*",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(payload)
+    });
+
+    return downloadExportResponse(
+      response,
+      "export_" + payload.jenis + "." + payload.format.toLowerCase()
+    );
+  }
+
+  async function downloadExport(id) {
+    const token = getToken();
+
+    if (!token) throw new Error("Silakan login kembali.");
+
+    const response = await fetch(
+      API_CONFIG.BASE_URL + "/export/" + encodeURIComponent(id) + "/download",
+      {
+        headers: {
+          "Accept": "*/*",
+          "Authorization": "Bearer " + token
+        }
+      }
+    );
+
+    return downloadExportResponse(response, "export_" + id);
+  }
+/* ============================================
      PROFIL ADMIN
      KONTRAK (LIVE):
        GET /api/admin/profil
@@ -1326,6 +1386,7 @@ const EOfficeAPI = (() => {
     runBackup: runBackup,
     getExport: getExport,
     createExport: createExport,
+    downloadExport: downloadExport,
     getAdminProfil: getAdminProfil,
     updateAdminProfil: updateAdminProfil,
     getNotifikasiAdmin: getNotifikasiAdmin,
