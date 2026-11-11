@@ -226,44 +226,12 @@ function renderProgress() {
 }
 
 function tampilkanFiturBelumTersedia() {
-  // Jangan memberikan kesan bahwa upload,
-  // chat, dan review sudah tersimpan di server.
-
-  const upload = $("pgdt-upload-link");
-  if (upload) {
-    upload.disabled = true;
-    upload.title = "Upload file belum terintegrasi";
-    upload.style.display = "none";
-  }
-
-  const fileInput = $("pgdt-file-input");
-  if (fileInput) fileInput.disabled = true;
-
-  const fileArea = $("pgdt-files");
-  if (fileArea) {
-    fileArea.textContent =
-      "Belum ada lampiran. Fitur lampiran belum terintegrasi.";
-  }
-
-  const chat = $("pgdt-chat");
-  if (chat) {
-    chat.textContent =
-      "Diskusi tugas belum tersedia pada API saat ini.";
-  }
-
-  const komentar = $("pgdt-chat-text");
-  if (komentar) {
-    komentar.disabled = true;
-    komentar.placeholder = "Diskusi belum tersedia";
-  }
-
-  const kirim = $("pgdt-chat-send");
-  if (kirim) {
-    kirim.disabled = true;
-    kirim.title = "Diskusi belum terintegrasi";
-  }
+  // Upload, komentar, aktivitas, dan checklist
+  // dikelola oleh komponen LIVE masing-masing.
+  // Jangan menonaktifkan kontrol milik komponen tersebut.
 
   const edit = $("btn-edit");
+
   if (edit) {
     edit.disabled = true;
     edit.title = "Edit tugas belum tersedia";
@@ -277,15 +245,7 @@ function tampilkanFiturBelumTersedia() {
       "Progress 100% otomatis dikirim untuk review.";
     review.textContent = "Review Otomatis pada 100%";
   }
-
-  const timeline = $("pgdt-timeline");
-
-  if (timeline) {
-    timeline.textContent =
-      "Riwayat aktivitas tugas belum tersedia pada API.";
-  }
 }
-
 async function simpanProgress() {
   if (!tugas || sedangMenyimpan) return;
 

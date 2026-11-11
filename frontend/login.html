@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -13,6 +13,11 @@
   <meta name="description" content="Masuk ke portal E-Office SKSDA Wilayah II Pemalang." />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/pages/login.css" />
+<style>
+  #session-banner[hidden] {
+    display: none !important;
+  }
+</style>
 </head>
 <body>
 
@@ -133,7 +138,8 @@
     (function() {
       let s = null;
       try { s = JSON.parse(sessionStorage.getItem("eoffice_session") || localStorage.getItem("eoffice_session") || "null"); } catch (e) {}
-      if (s && s.role) {
+      const hasToken = Boolean(localStorage.getItem("eoffice_token"));
+      if (s && s.role && (!EOfficeAPI.config.LIVE || hasToken)) {
         const b = document.getElementById("session-banner");
         b.hidden = false;
         b.querySelector("[data-banner-role]").textContent = ROLE_LABEL[s.role] || s.role;
@@ -271,8 +277,21 @@ targetStorage.setItem(
 // Masuk ke dashboard sesuai role
 location.href = ROLE_DEST[finalRole];
         })
-        .catch(function () {
-          showAlert("danger", "login.errorServer", "Tidak dapat menghubungi server. Coba beberapa saat lagi.");
+        .catch(function (err) {
+          let message = "Tidak dapat menghubungi server. Coba beberapa saat lagi.";
+
+          if (err && err.status === 429) {
+            message = "Terlalu banyak percobaan login. Tunggu 15 menit sebelum mencoba kembali.";
+          } else if (err && err.status === 403) {
+            message = err.message || "Akun tidak memiliki izin untuk masuk.";
+          } else if (err && err.status >= 500) {
+            message = "Server mengalami gangguan. Coba kembali nanti.";
+          } else if (err && err.message) {
+            message = err.message;
+          }
+
+          showAlert("danger", "login.errorServer", message);
+          alertBox.querySelector("span").textContent = message;
           alertBox.classList.add("show");
           resetBtn();
         });
