@@ -235,21 +235,114 @@ function renderLetters(surat) {
     `).join("");
 }
 
+async function loadTodaySchedule() {
+  const container = $("ksd-schedule");
+  if (!container) return;
+
+  container.textContent = "Memuat jadwal hari ini...";
+
+  try {
+    const response = await request("/jadwal");
+
+    if (
+      response?.status !== true ||
+      !Array.isArray(response.agenda) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(response.hariIni ?? "")
+    ) {
+      throw new Error("Format respons jadwal tidak valid.");
+    }
+
+    const agenda = response.agenda
+      .filter((item) => item.tanggal === response.hariIni)
+      .sort((a, b) =>
+        String(a.jamMulai ?? "").localeCompare(
+          String(b.jamMulai ?? "")
+        )
+      );
+
+    if (agenda.length === 0) {
+      container.textContent = "Tidak ada jadwal hari ini.";
+      return;
+    }
+
+    container.innerHTML = agenda.map((item) => `
+      <div class="ksd-schedule-item">
+        <strong>${escapeHTML(item.judul)}</strong>
+        <div>
+          ${escapeHTML(item.jamMulai || "-")}
+          -
+          ${escapeHTML(item.jamSelesai || "-")}
+        </div>
+        <small>${escapeHTML(item.lokasi || "Lokasi belum ditentukan")}</small>
+      </div>
+    `).join("");
+
+  } catch (error) {
+    console.error("Gagal memuat jadwal:", error);
+    container.textContent = "Jadwal gagal dimuat.";
+  }
+}
+async function loadTaskProgress() {
+  const container = $("ksd-progress");
+  if (!container) return;
+
+  container.textContent = "Memuat progres pekerjaan...";
+
+  try {
+    const result = await getList("/tugas");
+    const tasks = result.items;
+
+    if (!Array.isArray(tasks)) {
+      throw new Error("Format data tugas tidak valid.");
+    }
+
+    if (tasks.length === 0) {
+      container.textContent = "Belum ada tugas yang tercatat.";
+      return;
+    }
+
+    const total = tasks.length;
+    const completed = tasks.filter(
+      (task) => task.status === "Selesai"
+    ).length;
+
+    const inProgress = tasks.filter(
+      (task) => task.status === "Berjalan"
+    ).length;
+
+    const waitingReview = tasks.filter(
+      (task) => task.status === "Menunggu Review"
+    ).length;
+
+    const average = Math.round(
+      tasks.reduce((sum, task) => {
+        const value = Number(task.progress ?? 0);
+        return sum + Math.min(100, Math.max(0, value || 0));
+      }, 0) / total
+    );
+
+    container.innerHTML = `
+      <div class="ksd-task-summary">
+        <p><strong>Total Tugas:</strong> ${number(total)}</p>
+        <p><strong>Selesai:</strong> ${number(completed)}</p>
+        <p><strong>Berjalan:</strong> ${number(inProgress)}</p>
+        <p><strong>Menunggu Review:</strong> ${number(waitingReview)}</p>
+        <p><strong>Rata-rata Progres:</strong> ${average}%</p>
+        <div style="height:10px;background:#e5e7eb;border-radius:8px;overflow:hidden">
+          <div style="width:${average}%;height:100%;background:#2563eb"></div>
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error("Gagal memuat progres pekerjaan:", error);
+    container.textContent = "Progres pekerjaan gagal dimuat.";
+  }
+}
 function hideUnintegrated() {
   // Belum ada endpoint dashboard khusus
   // untuk jadwal dan progress pekerjaan.
-  const schedule = $("ksd-schedule");
-  const progress = $("ksd-progress");
-
-  if (schedule) {
-    schedule.textContent =
-      "Jadwal belum terhubung ke API.";
-  }
-
-  if (progress) {
-    progress.textContent =
-      "Progress pekerjaan belum terhubung ke API.";
-  }
+  // Progres pekerjaan dimuat melalui loadTaskProgress().
 
   // Hindari tombol tambah jadwal
   // yang belum memiliki integrasi.
@@ -269,6 +362,8 @@ async function initDashboardKS() {
   setText("ksd-letters", "Memuat surat...");
 
   hideUnintegrated();
+  loadTodaySchedule();
+  loadTaskProgress();
 
   try {
     const [surat, disposisi] =
