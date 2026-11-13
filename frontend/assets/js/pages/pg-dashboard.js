@@ -38,7 +38,7 @@ function getSession() {
 
 function verifyRole() {
   const session = getSession();
-  const token = localStorage.getItem("eoffice_token");
+  const token = (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
 
   if (!token || session?.role !== "pegawai") {
     location.replace("../../login.html");

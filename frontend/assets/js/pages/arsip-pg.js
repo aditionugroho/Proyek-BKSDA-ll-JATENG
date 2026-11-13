@@ -441,7 +441,7 @@ function renderPagination(total, start, count, pageCount) {
 async function downloadArsip(id) {
   if (!Number.isSafeInteger(id) || id < 1) return;
 
-  const token = localStorage.getItem("eoffice_token");
+  const token = (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
 
   if (!token) {
     showToast("Sesi habis. Silakan login ulang.");

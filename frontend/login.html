@@ -17,6 +17,26 @@
   #session-banner[hidden] {
     display: none !important;
   }
+  .remember-row {
+    margin: 2px 0 14px;
+  }
+
+  .remember-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+  }
+
+  .remember-label input {
+    width: 15px;
+    height: 15px;
+    accent-color: #2563eb;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -100,6 +120,12 @@
             </select>
           </div>
 
+          <div class="remember-row">
+  <label class="remember-label" for="remember">
+    <input type="checkbox" id="remember" name="remember" />
+    <span>Ingat saya di perangkat ini</span>
+  </label>
+</div>
           <button type="submit" class="submit-btn" id="login-btn">
             <span id="login-btn-text" data-i18n="login.submit">Masuk ke Portal</span>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -138,7 +164,7 @@
     (function() {
       let s = null;
       try { s = JSON.parse(sessionStorage.getItem("eoffice_session") || localStorage.getItem("eoffice_session") || "null"); } catch (e) {}
-      const hasToken = Boolean(localStorage.getItem("eoffice_token"));
+      const hasToken = Boolean(sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
       if (s && s.role && (!EOfficeAPI.config.LIVE || hasToken)) {
         const b = document.getElementById("session-banner");
         b.hidden = false;
@@ -273,6 +299,14 @@ targetStorage.setItem(
   "eoffice_session",
   JSON.stringify(session)
 );
+
+// Sesuaikan token dengan pilihan Remember Me
+if (EOfficeAPI.config.LIVE && res.token) {
+  EOfficeAPI.setToken(
+    res.token,
+    Boolean(remember && remember.checked)
+  );
+}
 
 // Masuk ke dashboard sesuai role
 location.href = ROLE_DEST[finalRole];

@@ -97,7 +97,7 @@
   =========================== */
 
   function getToken() {
-    return localStorage.getItem("eoffice_token");
+    return (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
   }
 
   function getSession() {

@@ -69,7 +69,7 @@ function readSession() {
 
 function verifyRole() {
   const session = readSession();
-  const token = localStorage.getItem("eoffice_token");
+  const token = (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
 
   if (!token || session?.role !== "kepala-seksi") {
     location.replace("../../login.html");

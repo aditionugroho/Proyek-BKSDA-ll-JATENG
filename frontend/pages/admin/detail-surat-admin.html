@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -62,19 +62,39 @@
   <script type="module">
     import { SURAT_TERAKHIR_MOCK } from "../../assets/js/pages/admin-input-surat.js";
 
-    async function loadDetail(id) {
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        const list = await EOfficeAPI.getSuratTerbaru();
-        return list.find((x) => x.id === id) || list[0];
+    async function loadDetail(id, jenis) {
+      const list =
+        window.EOfficeAPI && EOfficeAPI.config.LIVE
+          ? await EOfficeAPI.getSuratTerbaru()
+          : SURAT_TERAKHIR_MOCK;
+
+      const surat = list.find(
+        (x) =>
+          Number(x.id) === id &&
+          String(x.jenis).toUpperCase() === jenis
+      );
+
+      if (!surat) {
+        throw new Error("Surat tidak ditemukan.");
       }
-      return SURAT_TERAKHIR_MOCK.find((x) => x.id === id) || SURAT_TERAKHIR_MOCK[0];
+
+      return surat;
     }
 
     async function init() {
-      const id = Number(new URLSearchParams(location.search).get("id"));
+      const params = new URLSearchParams(location.search);
+      const id = Number(params.get("id"));
+      const jenis = String(params.get("jenis") || "").toUpperCase();
+
+      if (!Number.isSafeInteger(id) || id < 1 ||
+          !["MASUK", "KELUAR"].includes(jenis)) {
+        document.getElementById("dg-title").textContent =
+          "Parameter detail surat tidak valid";
+        return;
+      }
       let d;
       try {
-        d = await loadDetail(id);
+        d = await loadDetail(id, jenis);
       } catch (e) {
         document.getElementById("dg-title").textContent = "Gagal memuat detail surat";
         return;
@@ -103,6 +123,128 @@
             <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
           </div>`)
         .join("");
+
+      // Lampiran tersedia untuk Surat Masuk dan Surat Keluar.
+      const jenisSurat = String(d.jenis || "").toUpperCase();
+      const hasAttachment = Boolean(d.file_path || d.raw?.file_path);
+
+      if (["MASUK", "KELUAR"].includes(jenisSurat) && hasAttachment) {
+        const container = document.createElement("div");
+        container.id = "dg-attachment-actions";
+        container.style.cssText =
+          "display:flex;gap:12px;flex-wrap:wrap;margin-top:24px";
+
+        const previewButton = document.createElement("button");
+        previewButton.type = "button";
+        previewButton.textContent = "Lihat Lampiran";
+        previewButton.className = "dg-attachment-btn";
+        previewButton.style.cssText =
+          "padding:12px 18px;border:0;border-radius:8px;" +
+          "background:#2563eb;color:white;cursor:pointer";
+
+        const downloadButton = document.createElement("button");
+        downloadButton.type = "button";
+        downloadButton.textContent = "Unduh Lampiran";
+        downloadButton.className = "dg-attachment-btn";
+        downloadButton.style.cssText =
+          "padding:12px 18px;border:1px solid #2563eb;" +
+          "border-radius:8px;background:white;color:#2563eb;cursor:pointer";
+
+        async function handleAttachment(download) {
+          const buttons = [previewButton, downloadButton];
+
+          buttons.forEach(button => button.disabled = true);
+
+          try {
+            if (!window.EOfficeAPI ||
+                typeof EOfficeAPI.downloadLampiranSuratMasuk !== "function") {
+              throw new Error("API lampiran belum tersedia.");
+            }
+
+            const token =
+              sessionStorage.getItem("eoffice_token") ||
+              localStorage.getItem("eoffice_token");
+
+            if (!token) {
+              throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");
+            }
+
+            const baseUrl = EOfficeAPI.config.BASE_URL;
+
+            const response = await fetch(
+              `${baseUrl}/${d.jenis === "KELUAR" ? "surat-keluar" : "surat-masuk"}/${encodeURIComponent(d.id)}/file`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            );
+
+            if (!response.ok) {
+              let message = `Gagal mengambil lampiran (HTTP ${response.status}).`;
+
+              try {
+                const errorData = await response.json();
+                message = errorData.message || message;
+              } catch (_) {}
+
+              throw new Error(message);
+            }
+
+            const blob = await response.blob();
+
+            if (!blob.size) {
+              throw new Error("File lampiran kosong.");
+            }
+
+            if (blob.type.includes("application/json")) {
+              throw new Error("Server mengembalikan JSON, bukan file lampiran.");
+            }
+
+            const url = URL.createObjectURL(blob);
+
+            if (download) {
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.download =
+                String(d.file_path).split(/[\\/]/).pop() ||
+                `lampiran-surat-${d.id}`;
+              document.body.appendChild(anchor);
+              anchor.click();
+              anchor.remove();
+
+              setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } else {
+              const opened = window.open(url, "_blank");
+
+              if (!opened) {
+                URL.revokeObjectURL(url);
+                throw new Error("Popup diblokir browser. Izinkan popup.");
+              }
+
+              setTimeout(() => URL.revokeObjectURL(url), 60000);
+            }
+          } catch (error) {
+            console.error("Gagal mengakses lampiran:", error);
+            alert(error.message || "Gagal mengakses lampiran.");
+          } finally {
+            buttons.forEach(button => button.disabled = false);
+          }
+        }
+
+        previewButton.addEventListener("click", () => {
+          handleAttachment(false);
+        });
+
+        downloadButton.addEventListener("click", () => {
+          handleAttachment(true);
+        });
+
+        container.append(previewButton, downloadButton);
+
+        document.getElementById("dg-info").after(container);
+      }
 
       document.title = `${d.perihal} - E-Office SKSDA`;
     }
