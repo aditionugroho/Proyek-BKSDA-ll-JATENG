@@ -198,7 +198,7 @@ function renderProgress() {
 
     info.textContent =
       "Progress pekerjaan: " + nilai +
-      "%. Checklist sub-tugas belum tersedia.";
+      "%. Checklist pekerjaan dikelola melalui panel checklist.";
 
     info.style.fontSize = "13px";
     info.style.color = "#64748B";

@@ -124,7 +124,7 @@ function getSession() {
 
 function checkAdmin() {
   const session = getSession();
-  const token = localStorage.getItem("eoffice_token");
+  const token = (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
 
   if (!token || session?.role !== "admin") {
     location.replace("../../login.html");

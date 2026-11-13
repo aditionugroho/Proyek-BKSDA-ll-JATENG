@@ -204,7 +204,7 @@ function render() {
 
   setText(
     "dt-checklist",
-    "Checklist pekerjaan belum terintegrasi. " +
+    "Checklist pekerjaan sedang dimuat dari server. " +
     "Progress keseluruhan diambil dari database."
   );
 
@@ -237,7 +237,7 @@ function render() {
 
   const dapatReview =
     tugas.status === "Menunggu Review" &&
-    tugas.progress === 100;
+    Number(tugas.progress) === 100;
 
   const approve = el("btn-review");
   const revise = el("btn-revisi-tugas");
@@ -270,9 +270,9 @@ async function prosesReview(action) {
 
   if (
     tugas.status !== "Menunggu Review" ||
-    tugas.progress !== 100
+    Number(tugas.progress) !== 100
   ) {
-    showToast("Tugas belum siap untuk review.");
+    window.alert("Tugas belum siap direview. Status: " + tugas.status + ", progress: " + tugas.progress + "%. Syarat: Menunggu Review dan 100%.");
     return;
   }
 

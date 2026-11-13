@@ -66,7 +66,7 @@ function renderTable(data) {
           <td><span class="cell-tanggal">${s.tanggal}</span></td>
           <td><span class="badge badge-status--registered">${s.status}</span></td>
           <td class="th-actions">
-            <button type="button" class="detail-btn" data-id="${s.id}">Lihat Detail</button>
+            <button type="button" class="detail-btn" data-id="${s.id}" data-jenis="${s.jenis}">Lihat Detail</button>
           </td>
         </tr>`
       )
@@ -77,7 +77,7 @@ function renderTable(data) {
 }
 
 /* ===== SEARCH: filter client-side (nomor / pengirim / perihal) ===== */
-document.getElementById("table-search").addEventListener("input", (event) => {
+document.getElementById("table-search")?.addEventListener("input", (event) => {
   const q = event.target.value.trim().toLowerCase();
   const filtered = suratTerakhir.filter((s) =>
     [s.nomor, s.pihak, s.perihal].some((f) => f.toLowerCase().includes(q))
@@ -86,16 +86,31 @@ document.getElementById("table-search").addEventListener("input", (event) => {
 });
 
 /* ===== AKSI: Lihat Detail → halaman detail (placeholder) ===== */
-document.getElementById("surat-tbody").addEventListener("click", (event) => {
+document.getElementById("surat-tbody")?.addEventListener("click", (event) => {
   const btn = event.target.closest(".detail-btn");
   if (!btn) return;
-  const surat = suratTerakhir.find((s) => String(s.id) === btn.dataset.id);
-  window.location.href = `${DETAIL_URL}?id=${surat.id}`;
+  const surat = suratTerakhir.find(
+  (s) =>
+    String(s.id) === btn.dataset.id &&
+    String(s.jenis).toUpperCase() === btn.dataset.jenis
+);
+
+if (!surat) return;
+  const params = new URLSearchParams({
+  id: String(surat.id),
+  jenis: String(surat.jenis)
+});
+
+window.location.href = `${DETAIL_URL}?${params.toString()}`;
 });
 
 /* ===== Inisialisasi: muat data dulu, baru render ===== */
 async function init() {
   const tbody = document.getElementById("surat-tbody");
+
+  // Halaman detail tidak memiliki tabel surat.
+  if (!tbody) return;
+
   tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Memuat data surat...</td></tr>`;
 
   try {

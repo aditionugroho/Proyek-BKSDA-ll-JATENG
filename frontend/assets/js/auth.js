@@ -48,7 +48,7 @@ export function checkAuth(requiredRole) {
     : true;
 
   const hasToken = Boolean(
-    window.localStorage.getItem("eoffice_token")
+    (window.sessionStorage.getItem("eoffice_token") || window.localStorage.getItem("eoffice_token"))
   );
 
   if (

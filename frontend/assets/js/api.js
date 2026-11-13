@@ -16,10 +16,7 @@
 
 const API_CONFIG = {
   LIVE: true,
-  BASE_URL:
-    window.location.hostname === "localhost"
-      ? "http://127.0.0.1:8081/api"
-      : "http://127.0.0.1:8080/api",
+  BASE_URL: "http://127.0.0.1:8080/api",
   TIMEOUT_MS: 10000,
 };
 
@@ -29,12 +26,21 @@ const EOfficeAPI = (() => {
   /* ---------- PENYIMPANAN TOKEN ---------- */
 
   function getToken() {
-    return window.localStorage.getItem(TOKEN_KEY) || "";
+    return window.sessionStorage.getItem(TOKEN_KEY) ||
+      window.localStorage.getItem(TOKEN_KEY) || "";
   }
 
-  function setToken(token) {
-    if (token) window.localStorage.setItem(TOKEN_KEY, token);
-    else window.localStorage.removeItem(TOKEN_KEY);
+  function setToken(token, remember = true) {
+    window.sessionStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(TOKEN_KEY);
+
+    if (token) {
+      const storage = remember
+        ? window.localStorage
+        : window.sessionStorage;
+
+      storage.setItem(TOKEN_KEY, token);
+    }
   }
 
   /* ---------- CORE: satu fungsi fetch untuk semua endpoint ---------- */
@@ -187,7 +193,7 @@ const EOfficeAPI = (() => {
         throw new Error("Role akun tidak dikenali.");
       }
 
-      setToken(result.token);
+      setToken(result.token, false);
 
       return {
         status: "ok",
@@ -1060,7 +1066,47 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function getSuratTerbaru() {
-    return request("GET", "/surat-terbaru");
+    const [masukResponse, keluarResponse] = await Promise.all([
+      request("GET", "/surat-masuk"),
+      request("GET", "/surat-keluar")
+    ]);
+
+    function extractRows(response) {
+      if (Array.isArray(response)) return response;
+      if (Array.isArray(response?.data)) return response.data;
+      if (Array.isArray(response?.data?.data)) return response.data.data;
+      return [];
+    }
+
+    const masuk = extractRows(masukResponse).map((item) => ({
+      id: item.id,
+      nomor: item.no_surat || item.nomor || "-",
+      jenis: "MASUK",
+      file_path: item.file_path || null,
+      pihak: item.asal || "-",
+      perihal: item.perihal || "-",
+      tanggal: item.tanggal || item.created_at || "",
+      status: item.status || "Terdaftar",
+      created_at: item.created_at || item.tanggal || "",
+      raw: item
+    }));
+
+    const keluar = extractRows(keluarResponse).map((item) => ({
+      id: item.id,
+      nomor: item.no_surat || item.nomor || "-",
+      jenis: "KELUAR",
+      file_path: item.file_path || null,
+      pihak: item.tujuan || item.penerima || "-",
+      perihal: item.perihal || "-",
+      tanggal: item.tanggal || item.created_at || "",
+      status: item.status || "Terdaftar",
+      created_at: item.created_at || item.tanggal || "",
+      raw: item
+    }));
+
+    return [...masuk, ...keluar].sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
   }
 
   /* ============================================
@@ -1307,6 +1353,7 @@ const EOfficeAPI = (() => {
   return {
     config: API_CONFIG,
     getToken: getToken,
+    setToken: setToken,
     login: login,
     logout: logout,
     getSuratMasuk: getSuratMasuk,

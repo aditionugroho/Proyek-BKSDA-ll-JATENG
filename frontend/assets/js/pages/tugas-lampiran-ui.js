@@ -53,7 +53,7 @@ function apiBase() {
 }
 
 function token() {
-  const value = localStorage.getItem("eoffice_token");
+  const value = (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
 
   if (!value) {
     throw new Error("Sesi login tidak ditemukan. Login ulang.");

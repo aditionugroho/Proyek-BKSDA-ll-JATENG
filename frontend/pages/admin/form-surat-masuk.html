@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -70,7 +70,7 @@
             <label class="form-label" for="nomor-agenda">Nomor Agenda <span class="req">*</span></label>
             <div class="input-wrap has-icon">
               <span class="input-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg></span>
-              <input type="text" id="nomor-agenda" name="nomor-agenda" readonly />
+              <input type="text" id="nomor-agenda" name="nomor-agenda" required />
             </div>
             <p class="form-hint">Nomor urut pencatatan agenda balai.</p>
           </div>
@@ -84,6 +84,19 @@
             </div>
             <p class="form-hint">Sesuai dengan kepala surat pengirim eksternal.</p>
             <p class="form-error" id="nomor-surat-error" hidden>Wajib diisi</p>
+          </div>
+
+          <!-- Resort tujuan surat -->
+          <div class="form-field">
+            <label class="form-label" for="resort-surat">
+              Resort <span class="req">*</span>
+            </label>
+            <div class="input-wrap">
+              <select id="resort-surat" name="resort-surat" required>
+                <option value="">Memuat daftar resort...</option>
+              </select>
+            </div>
+            <p class="form-error" id="resort-surat-error" hidden>Wajib memilih resort</p>
           </div>
 
           <!-- Tanggal Surat -->
@@ -210,7 +223,7 @@
 
         <!-- Daftar lampiran -->
         <div class="attachment-section">
-          <h3 class="attachment-title">File Terlampir (<span id="attachment-count">1</span>)</h3>
+          <h3 class="attachment-title">File Terlampir (<span id="attachment-count">0</span>)</h3>
           <div id="attachment-list"></div>
         </div>
       </section>

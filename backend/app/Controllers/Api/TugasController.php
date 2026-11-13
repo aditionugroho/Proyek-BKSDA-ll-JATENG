@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Models\AuthTokenModel;
+use App\Models\NotifikasiModel;
 use App\Models\TugasModel;
 use App\Models\UserModel;
 use CodeIgniter\API\ResponseTrait;
@@ -298,6 +299,29 @@ class TugasController extends BaseController
             ], 500);
         }
 
+        // NOTIFIKASI TUGAS BARU
+        // Tugas tetap tersimpan jika pengiriman notifikasi gagal.
+        try {
+            $notificationId = (new NotifikasiModel())->insert([
+                'user_id' => (int) $stafId,
+                'pesan' => 'Anda mendapat tugas baru: ' . $judul,
+                'tipe' => 'tugas',
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            if ($notificationId === false) {
+                log_message(
+                    'error',
+                    'Gagal membuat notifikasi tugas ID ' . $id
+                );
+            }
+        } catch (\Throwable $e) {
+            log_message(
+                'error',
+                'Notifikasi tugas ID ' . $id . ': ' . $e->getMessage()
+            );
+        }
         return $this->respond([
             'status' => true,
             'message' => 'Tugas berhasil dibuat.',
