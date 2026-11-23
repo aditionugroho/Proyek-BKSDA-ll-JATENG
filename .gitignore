@@ -2,3 +2,13 @@
 # Backup hasil pengeditan
 *.bak
 *.backup-*
+/.env
+
+# Konfigurasi rahasia dan backup lokal
+.env
+.env.*
+!.env.example
+*.bak
+*.bak-*
+*.backup
+*.backup-*

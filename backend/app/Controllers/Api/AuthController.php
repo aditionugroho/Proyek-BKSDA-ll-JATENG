@@ -222,13 +222,29 @@ public function register()
             ], 429);
         }
 
-        $user =
-            $this->userModel
-                ->where(
-                    'username',
-                    $username
-                )
-                ->first();
+// Cari berdasarkan username terlebih dahulu
+$user = $this->userModel
+    ->where('username', $username)
+    ->first();
+
+// Jika username tidak ditemukan, cari berdasarkan nama
+if (!$user) {
+    $matchingUsers = $this->userModel
+        ->where('name', $username)
+        ->findAll();
+
+    // Nama yang digunakan lebih dari satu akun
+    if (count($matchingUsers) > 1) {
+        return $this->respond([
+            'status' => false,
+            'message' => 'Nama pengguna digunakan oleh beberapa akun. Silakan login menggunakan username.',
+        ], 409);
+    }
+
+    // Gunakan akun jika nama hanya ditemukan satu kali
+    $user = $matchingUsers[0] ?? null;
+}
+
 
         if (
             !$user ||
