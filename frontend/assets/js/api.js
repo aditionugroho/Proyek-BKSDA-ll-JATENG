@@ -16,7 +16,7 @@
 
 const API_CONFIG = {
   LIVE: true,
-  BASE_URL: "http://127.0.0.1:8080/api",
+  BASE_URL: "/api",
   TIMEOUT_MS: 10000,
 };
 

@@ -23,7 +23,7 @@
   const ALLOWED_EXTENSIONS = ["pdf", "docx", "jpg", "jpeg", "png"];
 
   const API_BASE =
-    window.EOfficeAPI?.config?.BASE_URL || "http://127.0.0.1:8080/api";
+    window.EOfficeAPI?.config?.BASE_URL || "/api";
 
   const form = $("form-surat");
   const fileInput = $("file-input");
