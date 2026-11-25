@@ -33,7 +33,82 @@ $routes->options(
 |--------------------------------------------------------------------------
 */
 
-$routes->get('/', 'Home::index');
+$routes->get('/', 'Pages::index');
+
+
+/*
+|--------------------------------------------------------------------------
+| HALAMAN WEB (VIEW STATIS)
+|--------------------------------------------------------------------------
+| Halaman frontend hasil migrasi dari folder frontend/.
+| Autentikasi tetap ditangani auth.js di sisi klien dan
+| filter role pada endpoint API di bawah.
+*/
+
+$routes->get('login', 'Pages::login');
+$routes->get('registrasi', 'Pages::registrasi');
+$routes->get('lupa-password', 'Pages::lupaPassword');
+$routes->get('pencarian', 'Pages::pencarian');
+
+$routes->group('admin', static function ($routes) {
+    $routes->get('backup-data', 'Admin::backupData');
+    $routes->get('dashboard', 'Admin::dashboard');
+    $routes->get('data-pengguna', 'Admin::dataPengguna');
+    $routes->get('detail-surat-admin', 'Admin::detailSuratAdmin');
+    $routes->get('edit-profil-admin', 'Admin::editProfilAdmin');
+    $routes->get('export-data', 'Admin::exportData');
+    $routes->get('form-surat-keluar', 'Admin::formSuratKeluar');
+    $routes->get('form-surat-masuk', 'Admin::formSuratMasuk');
+    $routes->get('input-surat', 'Admin::inputSurat');
+    $routes->get('notifikasi', 'Admin::notifikasi');
+    $routes->get('panduan-input-surat', 'Admin::panduanInputSurat');
+    $routes->get('pengumuman', 'Admin::pengumuman');
+    $routes->get('profil-admin', 'Admin::profilAdmin');
+    $routes->get('tambah-pengguna', 'Admin::tambahPengguna');
+});
+
+$routes->group('kepala-seksi', static function ($routes) {
+    $routes->get('arsip', 'KepalaSeksi::arsip');
+    $routes->get('buat-tugas', 'KepalaSeksi::buatTugas');
+    $routes->get('dashboard', 'KepalaSeksi::dashboard');
+    $routes->get('detail-arsip', 'KepalaSeksi::detailArsip');
+    $routes->get('detail-surat-keluar', 'KepalaSeksi::detailSuratKeluar');
+    $routes->get('detail-surat-masuk', 'KepalaSeksi::detailSuratMasuk');
+    $routes->get('detail-tugas', 'KepalaSeksi::detailTugas');
+    $routes->get('direktori-staf', 'KepalaSeksi::direktoriStaf');
+    $routes->get('disposisi', 'KepalaSeksi::disposisi');
+    $routes->get('jadwal', 'KepalaSeksi::jadwal');
+    $routes->get('laporan', 'KepalaSeksi::laporan');
+    $routes->get('notifikasi', 'KepalaSeksi::notifikasi');
+    $routes->get('patroli', 'KepalaSeksi::patroli');
+    $routes->get('pengaturan', 'KepalaSeksi::pengaturan');
+    $routes->get('profil', 'KepalaSeksi::profil');
+    $routes->get('surat-keluar', 'KepalaSeksi::suratKeluar');
+    $routes->get('surat-masuk', 'KepalaSeksi::suratMasuk');
+    $routes->get('tugas-seksi', 'KepalaSeksi::tugasSeksi');
+});
+
+$routes->group('pegawai', static function ($routes) {
+    $routes->get('arsip', 'Pegawai::arsip');
+    $routes->get('buat-surat', 'Pegawai::buatSurat');
+    $routes->get('buat-dokumen', 'Pegawai::buatDokumen');
+    $routes->get('dashboard', 'Pegawai::dashboard');
+    $routes->get('detail-arsip', 'Pegawai::detailArsip');
+    $routes->get('detail-disposisi', 'Pegawai::detailDisposisi');
+    $routes->get('detail-dokumen', 'Pegawai::detailDokumen');
+    $routes->get('detail-surat', 'Pegawai::detailSurat');
+    $routes->get('detail-tugas', 'Pegawai::detailTugas');
+    $routes->get('disposisi-saya', 'Pegawai::disposisiSaya');
+    $routes->get('dokumen-saya', 'Pegawai::dokumenSaya');
+    $routes->get('jadwal', 'Pegawai::jadwal');
+    $routes->get('laporan-patroli', 'Pegawai::laporanPatroli');
+    $routes->get('notifikasi', 'Pegawai::notifikasi');
+    $routes->get('pengaturan', 'Pegawai::pengaturan');
+    $routes->get('preview-surat', 'Pegawai::previewSurat');
+    $routes->get('profil', 'Pegawai::profil');
+    $routes->get('surat', 'Pegawai::surat');
+    $routes->get('tugas-saya', 'Pegawai::tugasSaya');
+});
 
 
 /*
@@ -1174,3 +1249,25 @@ $routes->group('api/export', ['filter' => 'role:admin'], static function ($route
     $routes->post('', 'Api\ExportController::create');
     $routes->get('(:num)/download', 'Api\ExportController::download/$1');
 });
+
+
+// ==========================================
+// DOKUMEN PRIBADI PEGAWAI
+// ==========================================
+
+// Daftar, detail, dan pembuatan dokumen milik user login.
+$routes->group(
+    'api/dokumen-saya',
+    ['filter' => 'role:admin,kepala_seksi,staf'],
+    static function ($routes) {
+        $routes->get('', 'Api\DokumenController::index');
+        $routes->get('(:num)', 'Api\DokumenController::show/$1');
+        $routes->get('(:num)/file', 'Api\DokumenController::file/$1');
+        $routes->post('', 'Api\DokumenController::create');
+        $routes->post('(:num)', 'Api\DokumenController::update/$1');
+        $routes->put('(:num)', 'Api\DokumenController::update/$1');
+        $routes->patch('(:num)', 'Api\DokumenController::update/$1');
+        $routes->patch('(:num)/kirim', 'Api\DokumenController::kirim/$1');
+        $routes->delete('(:num)', 'Api\DokumenController::delete/$1');
+    }
+);

@@ -1,0 +1,138 @@
+<?= $this->extend('layouts/pegawai') ?>
+
+<?= $this->section('title') ?>
+Profil Pegawai - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/pg-profil.css') ?>" />
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<h1 class="pgpr-title">Profil Pegawai</h1>
+
+    <!-- ===== GRID DUA KOLOM ===== -->
+    <section class="pgpr-grid">
+
+      <!-- ===== KIRI: card profil ===== -->
+      <div class="pgpr-profile-card">
+        <span class="pgpr-avatar" id="pgpr-avatar">?</span>
+        <h2 class="pgpr-nama" id="pgpr-nama">Memuat profil...</h2>
+        <p class="pgpr-nip" id="pgpr-nip">?</p>
+
+        <div class="pgpr-profile-actions">
+          <button type="button" class="pgpr-btn pgpr-btn--primary pgpr-btn--block" id="btn-edit">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 0 1 3 3L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            <span id="btn-edit-label">Edit Profil</span>
+          </button>
+          <button type="button" class="pgpr-btn pgpr-btn--ghost pgpr-btn--block" id="btn-batal-edit" hidden>Batal</button>
+          <button type="button" class="pgpr-btn pgpr-btn--outline pgpr-btn--block" id="btn-password">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            Ganti Password
+          </button>
+          <button type="button" class="pgpr-btn pgpr-btn--cancel pgpr-btn--block" id="btn-logout">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== KANAN ===== -->
+      <div class="pgpr-right">
+
+        <!-- Card informasi jabatan -->
+        <div class="pgpr-card">
+          <div class="pgpr-card-head">
+            <div class="pgpr-card-head-left">
+              <span class="pgpr-card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              </span>
+              <h2 class="pgpr-card-title">Informasi Jabatan</h2>
+            </div>
+          </div>
+
+          <div class="pgpr-jabatan-grid">
+            <div class="pgpr-jabatan-field">
+              <p class="pgpr-label">Jabatan</p>
+              <div class="pgpr-value-box" id="pgpr-jabatan">?</div>
+            </div>
+            <div class="pgpr-jabatan-field">
+              <p class="pgpr-label">Seksi / Unit Kerja</p>
+              <div class="pgpr-value-box" id="pgpr-unit">?</div>
+            </div>
+            <div class="pgpr-jabatan-field">
+              <p class="pgpr-label">Golongan / Ruang</p>
+              <div class="pgpr-value-box" id="pgpr-golongan">?</div>
+            </div>
+            <div class="pgpr-jabatan-field">
+              <p class="pgpr-label">Status Akun</p>
+              <div class="pgpr-value-box pgpr-value-box--badge">
+                <span class="pgpr-pns-pill" id="pgpr-status">?</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Baris 2 card sejajar -->
+        <div class="pgpr-row-2">
+
+          <!-- Card kontak -->
+          <div class="pgpr-card">
+            <div class="pgpr-card-head">
+              <div class="pgpr-card-head-left">
+                <span class="pgpr-card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <h2 class="pgpr-card-title">Kontak</h2>
+              </div>
+            </div>
+
+            <div class="pgpr-kontak-field">
+              <p class="pgpr-label">Email Resmi</p>
+              <div class="pgpr-kontak-row">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <input type="email" id="pgpr-email" data-editable readonly />
+              </div>
+              <p class="pgpr-error" id="pgpr-email-error" hidden>Format email tidak valid</p>
+            </div>
+
+            <div class="pgpr-kontak-field">
+              <p class="pgpr-label">Nomor Telepon / WhatsApp</p>
+              <div class="pgpr-kontak-row">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                <input type="tel" id="pgpr-telepon" data-editable readonly />
+              </div>
+            </div>
+          </div>
+
+          <!-- Card ringkasan aktivitas -->
+          <div class="pgpr-card">
+            <div class="pgpr-card-head">
+              <div class="pgpr-card-head-left">
+                <span class="pgpr-card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                </span>
+                <h2 class="pgpr-card-title">Ringkasan Aktivitas (Bulan Ini)</h2>
+              </div>
+            </div>
+
+            <div class="pgpr-aktivitas-grid">
+              <div class="pgpr-aktivitas-box">
+                <span class="pgpr-aktivitas-angka">?</span>
+                <span class="pgpr-aktivitas-label">Tugas Selesai</span>
+              </div>
+              <div class="pgpr-aktivitas-box">
+                <span class="pgpr-aktivitas-angka">?</span>
+                <span class="pgpr-aktivitas-label">Disposisi Masuk</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module" src="<?= base_url('assets/js/pages/profil-pg.js') ?>"></script>
+<?= $this->endSection() ?>

@@ -1,0 +1,104 @@
+<?= $this->extend('layouts/kepala-seksi') ?>
+
+<?= $this->section('title') ?>
+Direktori Staf - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/ks-staf.css') ?>" />
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- ===== 1. HEADER ===== -->
+    <nav class="st-breadcrumb" aria-label="Breadcrumb">
+      <a href="<?= base_url('kepala-seksi/dashboard') ?>">Dashboard</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="st-breadcrumb-current">Direktori Staf</span>
+    </nav>
+
+    <section class="st-head">
+      <div>
+        <h1 class="st-title">Direktori Staf</h1>
+        <p class="st-desc">Kelola dan pantau kinerja serta beban tugas staf pelaksana seksi.</p>
+      </div>
+      <div class="st-head-actions">
+        <button type="button" class="st-btn st-btn--outline" id="btn-sinkron">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Sinkron Data
+        </button>
+        <a href="<?= base_url('kepala-seksi/buat-tugas') ?>" class="st-btn st-btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Beri Tugas
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 2. STAT CARD (render via JS) ===== -->
+    <section class="st-stats" id="st-stats" aria-label="Ringkasan staf"></section>
+
+    <!-- ===== 3. CARD UTAMA ===== -->
+    <section class="st-card">
+
+      <!-- Baris filter -->
+      <div class="st-filters">
+        <div class="st-search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" id="st-search" placeholder="Cari nama staf, NIP, atau jabatan..." aria-label="Cari staf" />
+        </div>
+        <select id="st-status" class="st-select" aria-label="Filter status">
+          <option value="all">Semua Status</option>
+          <option value="AKTIF">Aktif</option>
+          <option value="CUTI">Cuti</option>
+        </select>
+        <select id="st-jabatan" class="st-select" aria-label="Filter jabatan">
+          <option value="all">Semua Jabatan</option>
+        </select>
+        <button type="button" class="st-reset" id="st-reset">&#10227; Reset</button>
+
+        <div class="st-filters-right">
+          <span class="st-count" id="st-count">8 dari 12 staf</span>
+          <div class="st-toggle" role="tablist" aria-label="Mode tampilan">
+            <button type="button" class="st-toggle-pill is-active" data-mode="tabel">Tabel</button>
+            <button type="button" class="st-toggle-pill" data-mode="grid">Grid</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="st-table-scroll" id="st-table-wrap">
+        <table class="st-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Foto &amp; Nama Staf</th>
+              <th>NIP</th>
+              <th>Jabatan</th>
+              <th>Kontak</th>
+              <th>Tugas Aktif</th>
+              <th>Status</th>
+              <th class="th-actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="st-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Grid kartu staf -->
+      <div class="st-grid" id="st-grid" hidden></div>
+
+      <!-- Footer -->
+      <div class="st-foot">
+        <span class="st-showing" id="st-showing">Menampilkan 1-8 dari 12 staf seksi</span>
+        <div class="st-pagination">
+          <button type="button" class="st-page-nav" id="st-prev" disabled>&#8249; Sebelumnya</button>
+          <button type="button" class="st-page-num is-active" data-page="1">1</button>
+          <button type="button" class="st-page-num" data-page="2">2</button>
+          <button type="button" class="st-page-nav" id="st-next">Selanjutnya &#8250;</button>
+        </div>
+      </div>
+    </section>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module" src="<?= base_url('assets/js/pages/direktori-staf.js') ?>"></script>
+<?= $this->endSection() ?>
