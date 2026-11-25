@@ -1,60 +1,3 @@
-﻿/* ============================================
-   BACKUP DATA (ADMIN) â€” E-Office SKSDA
-   Stat, modul, riwayat (tab state), backup
-   manual simulasi, detail interaktif
-   ============================================ */
-
-/* ===== MOCK DATA ===== */
-
-/* Stat card */
-const STATS_MOCK = [
-  { label: "Backup Terakhir", value: "13 Sep 2026", badge: "Berhasil", sub: "03:00 WIB", icon: "calendar", tone: "blue" },
-  { label: "Status Backup", value: "Normal", sub: "Sistem Backup Aktif", dot: true, icon: "checkCircle", tone: "green" },
-  { label: "Ukuran Terakhir", value: "2.4 GB", sub: "Full Backup Harian", icon: "box", tone: "blue" },
-  { label: "Total Cadangan", value: "28 Snapshot", sub: "Tersimpan di Cloud SKSDA", icon: "database", tone: "blue" },
-  { label: "Kapasitas Disk", value: "64%", sub: "1.28 / 2.0 TB", progress: 64, icon: "disk", tone: "blue" }
-];
-
-/* Modul backup 2x2 */
-const MODULES_MOCK = [
-  { icon: "database", name: "Database", desc: "PostgreSQL 15 (Cluster Jateng)", time: "13 Sep 2026, 03:00 WIB" },
-  { icon: "file", name: "Dokumen Surat", desc: "Arsip digital PDF & Lampiran (1.8 TB)", time: "13 Sep 2026, 03:00 WIB" },
-  { icon: "users", name: "Data Pengguna", desc: "148 akun pengguna & hak akses", time: "13 Sep 2026, 03:00 WIB" },
-  { icon: "activity", name: "Audit Trail", desc: "2,840 log aktivitas administrasi", time: "13 Sep 2026, 03:00 WIB" }
-];
-
-/* Riwayat backup */
-const HISTORY_MOCK = [
-  {
-    id: "BKP-2026-09-13-0300", tanggal: "13 Sep 2026", waktu: "03:00 WIB",
-    jenis: "Scheduled", size: "2.4 GB", status: "Berhasil", oleh: "System (Cron)",
-    durasi: "08 menit 42 detik", eksekutor: "System (Automated)"
-  },
-  {
-    id: "BKP-2026-09-12-0300", tanggal: "12 Sep 2026", waktu: "03:00 WIB",
-    jenis: "Scheduled", size: "2.3 GB", status: "Berhasil", oleh: "System (Cron)",
-    durasi: "08 menit 10 detik", eksekutor: "System (Automated)"
-  },
-  {
-    id: "BKP-2026-09-11-0300", tanggal: "11 Sep 2026", waktu: "03:00 WIB",
-    jenis: "Scheduled", size: "2.3 GB", status: "Berhasil", oleh: "System (Cron)",
-    durasi: "07 menit 58 detik", eksekutor: "System (Automated)"
-  },
-  {
-    id: "BKP-2026-09-10-1430", tanggal: "10 Sep 2026", waktu: "14:30 WIB",
-    jenis: "Manual", size: "2.3 GB", status: "Berhasil", oleh: "Admin Sistem",
-    durasi: "09 menit 15 detik", eksekutor: "Admin Sistem (Manual)"
-  }
-];
-
-/* Baris gagal untuk tab Error */
-const ERROR_ROW = {
-  id: "BKP-2026-09-09-0300", tanggal: "09 Sep 2026", waktu: "03:00 WIB",
-  jenis: "Scheduled", size: "2.3 GB", status: "Gagal", oleh: "System (Cron)",
-  durasi: "02 menit 05 detik", eksekutor: "System (Automated)"
-};
-
-/* ===== IKON SVG INLINE ===== */
 const ICONS = {
   calendar: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
   checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
@@ -103,26 +46,8 @@ function renderStats() {
   }).join("");
 }
 
-/* ===== RENDER: grid modul 2x2 ===== */
-function renderModules() {
-  document.getElementById("module-grid").innerHTML = MODULES.map((m) => `
-    <article class="module-card">
-      <div class="module-head">
-        <span class="module-icon">${ICONS[m.icon]}</span>
-        <p class="module-name">${m.name}</p>
-        <span class="module-badge">NORMAL</span>
-      </div>
-      <p class="module-desc">${m.desc}</p>
-      <div class="module-foot">
-        <span class="module-foot-check">${ICONS.check}Terbackup</span>
-        <span class="module-foot-time">${m.time}</span>
-      </div>
-    </article>`).join("");
-}
-
 /* ===== RENDER: tabel riwayat (per mode) ===== */
 const tbody = document.getElementById("history-tbody");
-let currentMode = "normal";
 
 const JENIS_CLASS = { Scheduled: "badge--blue", Manual: "badge--yellow" };
 const STATUS_CLASS = { Berhasil: "badge--green", Gagal: "badge--red" };
@@ -130,22 +55,20 @@ const STATUS_CLASS = { Berhasil: "badge--green", Gagal: "badge--red" };
 function rowHtml(row) {
   return `
     <tr>
-      <td><span class="cell-id">${ICONS.list}${row.id}</span></td>
+      <td><span class="cell-id">${ICONS.list}${escapeHtml(row.id)}</span></td>
       <td>
-        <span class="cell-date">${row.tanggal}</span>
-        <span class="cell-time">${row.waktu}</span>
+        <span class="cell-date">${escapeHtml(row.tanggal)}</span>
+        <span class="cell-time">${escapeHtml(row.waktu)}</span>
       </td>
-      <td><span class="badge ${JENIS_CLASS[row.jenis]}">${row.jenis}</span></td>
-      <td><span class="cell-size">${row.size}</span></td>
-      <td><span class="badge ${STATUS_CLASS[row.status]}">${row.status}</span></td>
-      <td><span class="cell-by">${row.oleh}</span></td>
-      <td class="th-actions"><button type="button" class="detail-btn" data-id="${row.id}">Lihat Detail</button></td>
+      <td><span class="badge ${JENIS_CLASS[row.jenis]}">${escapeHtml(row.jenis)}</span></td>
+      <td><span class="cell-size">${escapeHtml(row.size)}</span></td>
+      <td><span class="badge ${STATUS_CLASS[row.status]}">${escapeHtml(row.status)}</span></td>
+      <td><span class="cell-by">${escapeHtml(row.oleh)}</span></td>
+      <td class="th-actions"><button type="button" class="detail-btn" data-id="${escapeHtml(row.id)}">Lihat Detail</button></td>
     </tr>`;
 }
 
 function renderHistory(mode) {
-  currentMode = mode;
-
   if (mode === "loading") {
     // Skeleton rows animasi
     tbody.innerHTML = Array.from({ length: 4 })
@@ -170,24 +93,19 @@ function renderHistory(mode) {
     return;
   }
 
-  const rows = mode === "error" ? [ERROR_ROW] : HISTORY;
+  if (mode === "error") {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Gagal memuat riwayat backup.</td></tr>';
+    return;
+  }
+  const rows = HISTORY;
   tbody.innerHTML = rows.map(rowHtml).join("");
 }
-
-/* Tab pill mengganti isi tabel */
-document.getElementById("tab-pills").addEventListener("click", (event) => {
-  const btn = event.target.closest(".tab-pill");
-  if (!btn) return;
-  document.querySelectorAll(".tab-pill").forEach((t) => t.classList.remove("is-active"));
-  btn.classList.add("is-active");
-  renderHistory(btn.dataset.mode);
-});
 
 /* ===== LIHAT DETAIL â†’ isi panel kanan ===== */
 function fillDetail(row) {
   document.getElementById("d-id").textContent = row.id;
   document.getElementById("d-tipe").textContent = row.jenis;
-  document.getElementById("d-waktu").textContent = `${row.tanggal}, ${row.waktu}`;
+  document.getElementById("d-waktu").textContent = `${escapeHtml(row.tanggal)}, ${escapeHtml(row.waktu)}`;
   document.getElementById("d-durasi").textContent = row.durasi;
   document.getElementById("d-ukuran").textContent = row.size;
   document.getElementById("d-eksekutor").textContent = row.eksekutor;
@@ -205,100 +123,69 @@ function fillDetail(row) {
 tbody.addEventListener("click", (event) => {
   const btn = event.target.closest(".detail-btn");
   if (!btn) return;
-  const row = [...HISTORY, ERROR_ROW].find((r) => r.id === btn.dataset.id);
+  const row = HISTORY.find((r) => r.id === btn.dataset.id);
   if (row) fillDetail(row);
 });
 
-/* ===== TOMBOL BACKUP SEKARANG ===== */
 const backupBtn = document.getElementById("btn-backup");
-const BACKUP_IDLE = `${ICONS.cloud} + Backup Sekarang`;
+const idleLabel = backupBtn.innerHTML;
+let STATS = [];
+let HISTORY = [];
 
-backupBtn.addEventListener("click", () => {
-  backupBtn.disabled = true;
-  backupBtn.innerHTML = `<span class="spinner"></span> Memproses...`;
-
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    // LIVE: server menjalankan backup, riwayat diambil ulang
-    EOfficeAPI.runBackup()
-      .then(() => EOfficeAPI.getBackup())
-      .then((res) => {
-        HISTORY = res.history || HISTORY_MOCK;
-        renderHistory("normal");
-        backupBtn.disabled = false;
-        backupBtn.innerHTML = BACKUP_IDLE;
-        showToast("Backup manual selesai");
-      })
-      .catch(() => {
-        backupBtn.disabled = false;
-        backupBtn.innerHTML = BACKUP_IDLE;
-        showToast("Backup gagal. Periksa koneksi lalu coba lagi.");
-      });
-    return;
-  }
-
-  setTimeout(() => {
-    // Buat baris riwayat baru (Manual, Berhasil)
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, "0");
-    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
-    const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-    const tanggalLabel = `${pad(now.getDate())} ${bulan[now.getMonth()]} ${now.getFullYear()}`;
-    const waktuLabel = `${pad(now.getHours())}:${pad(now.getMinutes())} WIB`;
-
-    HISTORY.unshift({
-      id: `BKP-${stamp}`,
-      tanggal: tanggalLabel,
-      waktu: waktuLabel,
-      jenis: "Manual",
-      size: "2.4 GB",
-      status: "Berhasil",
-      oleh: "Admin Sistem",
-      durasi: "08 menit 51 detik",
-      eksekutor: "Admin Sistem (Manual)"
-    });
-    HISTORY.pop(); // jaga tetap 4 snapshot terakhir
-
-    // Kembali ke tab Normal agar baris baru terlihat
-    document.querySelectorAll(".tab-pill").forEach((t) => t.classList.remove("is-active"));
-    document.querySelector('.tab-pill[data-mode="normal"]').classList.add("is-active");
-    renderHistory("normal");
-
-    backupBtn.disabled = false;
-    backupBtn.innerHTML = BACKUP_IDLE;
-    showToast("Backup manual selesai");
-  }, 3000);
-});
-
-/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
-let STATS = STATS_MOCK;
-let MODULES = MODULES_MOCK;
-let HISTORY = HISTORY_MOCK;
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+}
 
 async function loadData() {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    const res = await EOfficeAPI.getBackup();
-    return {
-      stats: res.stats || STATS_MOCK,
-      modules: res.modules || MODULES_MOCK,
-      history: res.history || HISTORY_MOCK
-    };
+  const response = await window.EOfficeAPI.getBackup();
+  if (response?.status !== true || !Array.isArray(response.data)) {
+    throw new Error(response?.message || "Format riwayat backup tidak valid.");
   }
-  return { stats: STATS_MOCK, modules: MODULES_MOCK, history: HISTORY_MOCK };
-}
-
-/* ===== Inisialisasi: muat data dulu, baru render ===== */
-async function init() {
-  try {
-    const res = await loadData();
-    STATS = res.stats;
-    MODULES = res.modules;
-    HISTORY = res.history;
-  } catch (e) {
-    console.error("Gagal memuat data backup:", e);
-  }
+  HISTORY = response.data.map((backup) => ({
+    id: String(backup.filename),
+    tanggal: backup.created_at || "?",
+    waktu: "",
+    jenis: "Database",
+    size: Number.isFinite(Number(backup.size)) ? `${Number(backup.size).toLocaleString("id-ID")} byte` : "?",
+    status: "Berhasil",
+    oleh: "?",
+    durasi: "?",
+    eksekutor: "?",
+  }));
+  STATS = [{ label: "Total Cadangan", value: HISTORY.length, sub: "Backup database", icon: "database", tone: "blue" }];
   renderStats();
-  renderModules();
-  renderHistory("normal");
+  renderHistory(HISTORY.length ? "normal" : "empty");
+  const detail = document.getElementById("detail-card");
+  detail.hidden = HISTORY.length === 0;
+  if (HISTORY.length) fillDetail(HISTORY[0]);
 }
 
-init();
+backupBtn.addEventListener("click", async () => {
+  backupBtn.disabled = true;
+  backupBtn.textContent = "Memproses...";
+  try {
+    const response = await window.EOfficeAPI.runBackup();
+    if (response?.status !== true || !response.data?.filename) {
+      throw new Error(response?.message || "Server belum mengonfirmasi pembuatan backup.");
+    }
+    try {
+      await loadData();
+      showToast("Backup manual selesai.");
+    } catch {
+      showToast("Backup dibuat, tetapi riwayat gagal dimuat ulang.");
+    }
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    backupBtn.disabled = false;
+    backupBtn.innerHTML = idleLabel;
+  }
+});
+
+renderHistory("loading");
+loadData().catch((error) => {
+  renderHistory("error");
+  showToast(error.message);
+});

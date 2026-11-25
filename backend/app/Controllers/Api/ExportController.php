@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
+use App\Models\SuratKeluarModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -20,7 +21,7 @@ class ExportController extends BaseController
         ],
         'keluar' => [
             'table' => 'surat_keluar',
-            'columns' => ['id','no_agenda','no_surat','tanggal','tujuan','perihal','klasifikasi','resort_id','created_at'],
+            'columns' => ['id','no_agenda','no_surat','tanggal','tujuan','perihal','klasifikasi','status','resort_id','created_at'],
             'title' => 'Surat Keluar',
             'icon' => 'send'
         ],
@@ -84,7 +85,11 @@ class ExportController extends BaseController
         $exports = [];
 
         foreach (self::SOURCES as $key => $source) {
-            $count = $db->table($source['table'])->countAllResults();
+            $builder = $db->table($source['table']);
+            if ($key === 'keluar') {
+                $builder->where('status !=', SuratKeluarModel::DRAFT);
+            }
+            $count = $builder->countAllResults();
 
             $stats[] = [
                 'label' => $source['title'],
@@ -150,7 +155,11 @@ class ExportController extends BaseController
         $lastId = 0;
 
         do {
-            $batch = $db->table($source['table'])
+            $builder = $db->table($source['table']);
+            if ($jenis === 'keluar') {
+                $builder->where('status !=', SuratKeluarModel::DRAFT);
+            }
+            $batch = $builder
                 ->select(implode(', ', $columns))
                 ->where('id >', $lastId)
                 ->orderBy('id', 'ASC')

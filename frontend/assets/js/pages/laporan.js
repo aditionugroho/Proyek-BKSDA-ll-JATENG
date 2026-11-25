@@ -4,88 +4,63 @@
    periode, simulasi kosong, unduh & cetak
    ============================================ */
 
-import { laporanData as LAPORAN_MOCK } from "../data/laporan.js";
 import { showToast } from "../components/toast.js";
 
-/* ===== DATA: diisi loadLaporan() â€” API saat LIVE, mock saat belum ===== */
 let laporanData = null;
+let trData = null;
+const fields = [
+  ["surat_masuk", "Surat Masuk", "inbox", "blue"],
+  ["surat_keluar", "Surat Keluar", "send", "blue"],
+  ["disposisi_selesai", "Disposisi Selesai", "check", "green"],
+  ["tugas_selesai", "Tugas Selesai", "clipboard", "purple"],
+];
 
 async function loadLaporan(periode) {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getLaporan(periode);
+  const response = await window.EOfficeAPI.getLaporan(periode);
+  const data = response?.data;
+  if (response?.status !== true || data?.periode !== periode || !data?.ringkasan) {
+    throw new Error(response?.message || "Format laporan tidak valid.");
   }
-  return LAPORAN_MOCK[periode] || null;
+  return {
+    label: periode,
+    updatedAt: new Date().toLocaleString("id-ID"),
+    stats: fields.map(([key, label, icon, tone]) => ({
+      label, icon, tone, value: Number(data.ringkasan[key]) || 0, sub: periode,
+    })),
+    progress: [],
+    aktivitas: [],
+  };
 }
 
-/* ===== TARGET VS REALISASI TRIWULAN =====
-   Data per resort (dan agregat "semua"): { anggaran: [...], kinerja: [...] }
-   tiap array berisi 4 item { tw, target, realisasi } dalam persen. */
-const TARGET_REALISASI_MOCK = {
-  semua: {
-    anggaran: [
-      { tw: "TW I", target: 100, realisasi: 91 },
-      { tw: "TW II", target: 100, realisasi: 87 },
-      { tw: "TW III", target: 100, realisasi: 58 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ],
-    kinerja: [
-      { tw: "TW I", target: 100, realisasi: 95 },
-      { tw: "TW II", target: 100, realisasi: 90 },
-      { tw: "TW III", target: 100, realisasi: 62 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ]
-  },
-  Cilacap: {
-    anggaran: [
-      { tw: "TW I", target: 100, realisasi: 94 },
-      { tw: "TW II", target: 100, realisasi: 89 },
-      { tw: "TW III", target: 100, realisasi: 61 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ],
-    kinerja: [
-      { tw: "TW I", target: 100, realisasi: 97 },
-      { tw: "TW II", target: 100, realisasi: 92 },
-      { tw: "TW III", target: 100, realisasi: 66 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ]
-  },
-  Wonosobo: {
-    anggaran: [
-      { tw: "TW I", target: 100, realisasi: 88 },
-      { tw: "TW II", target: 100, realisasi: 84 },
-      { tw: "TW III", target: 100, realisasi: 55 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ],
-    kinerja: [
-      { tw: "TW I", target: 100, realisasi: 93 },
-      { tw: "TW II", target: 100, realisasi: 88 },
-      { tw: "TW III", target: 100, realisasi: 59 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ]
-  },
-  Pemalang: {
-    anggaran: [
-      { tw: "TW I", target: 100, realisasi: 92 },
-      { tw: "TW II", target: 100, realisasi: 88 },
-      { tw: "TW III", target: 100, realisasi: 57 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ],
-    kinerja: [
-      { tw: "TW I", target: 100, realisasi: 96 },
-      { tw: "TW II", target: 100, realisasi: 91 },
-      { tw: "TW III", target: 100, realisasi: 60 },
-      { tw: "TW IV", target: 100, realisasi: 0 }
-    ]
-  }
-};
-
-let trData = null; // data triwulan resort aktif
-
 async function loadTargetRealisasi(tahun, resort) {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getTargetRealisasi(tahun, resort);
+  const response = await window.EOfficeAPI.getTargetRealisasi(tahun, resort === "semua" ? "" : resort);
+  if (response?.status !== true || !Array.isArray(response.data)) {
+    throw new Error(response?.message || "Format realisasi anggaran tidak valid.");
   }
-  return TARGET_REALISASI_MOCK[resort] || TARGET_REALISASI_MOCK.semua;
+  const quarters = new Map();
+  for (const row of response.data) {
+    const quarter = Number(row.triwulan);
+    if (quarter < 1 || quarter > 4) continue;
+    const sum = quarters.get(quarter) || { budget: 0, actual: 0 };
+    sum.budget += Number(row.pagu_anggaran) || 0;
+    sum.actual += Number(row.nilai_realisasi) || 0;
+    quarters.set(quarter, sum);
+  }
+  return { anggaran: [...quarters].sort(([a], [b]) => a - b).map(([quarter, sum]) => ({
+    tw: "TW " + ["I", "II", "III", "IV"][quarter - 1],
+    target: 100,
+    realisasi: sum.budget > 0 ? Math.round(sum.actual / sum.budget * 100) : 0,
+  })), kinerja: [] };
+}
+
+async function loadResorts() {
+  const response = await window.EOfficeAPI.request("GET", "/public/resorts");
+  if (response?.status !== true || !Array.isArray(response.data)) {
+    throw new Error(response?.message || "Daftar resort tidak tersedia.");
+  }
+  const select = document.getElementById("tr-resort");
+  select.replaceChildren(new Option("Semua Resort", "semua"),
+    ...response.data.map((row) => new Option(row.nama, row.id)));
 }
 
 /* Warna bar realisasi: hijau tidak dipakai â€” biru >=80, amber 60-79, merah <60 */
@@ -104,6 +79,12 @@ function renderTargetRealisasi() {
 
   const semua = trData ? trData[metrik] : [];
   const rows = triwulan === "all" ? semua : semua.filter((r) => r.tw === triwulan);
+
+  if (!rows.length) {
+    chart.textContent = trData ? "Belum ada realisasi anggaran untuk filter ini." : "Data realisasi anggaran tidak tersedia.";
+    foot.textContent = "";
+    return;
+  }
 
   chart.innerHTML = rows.map((r) => {
     const tercapai = r.realisasi >= r.target;
@@ -127,11 +108,11 @@ function renderTargetRealisasi() {
   }).join("");
 
   const metrikLabel = metrik === "anggaran" ? "realisasi anggaran" : "capaian kinerja";
-  const resortLabel = resort === "semua" ? "seluruh resort" : `Resort ${resort}`;
+  const resortLabel = document.getElementById("tr-resort").selectedOptions[0]?.textContent || "Seluruh Resort";
   const twLabel = triwulan === "all" ? "rata-rata setahun" : triwulan;
   const rata = rows.length ? Math.round(rows.reduce((s, r) => s + r.realisasi, 0) / rows.length) : 0;
   foot.textContent = triwulan === "all"
-    ? `Rata-rata ${metrikLabel} ${resortLabel} tahun ini: ${rata}%. Triwulan berjalan dihitung, triwulan yang belum berjalan tampil 0%.`
+    ? `Rata-rata ${metrikLabel} ${resortLabel} tahun ini: ${rata}%. Dihitung dari triwulan yang memiliki data tercatat.`
     : `${twLabel}: ${metrikLabel} ${resortLabel} sebesar ${rows.length ? rows[0].realisasi : 0}% dari target. Bar biru = realisasi, bar abu = target.`;
 }
 
@@ -160,7 +141,20 @@ const ICONS = {
 };
 
 /* ===== STATE ===== */
-let currentKey = "2026-09";
+const now = new Date();
+const yearFilter = document.getElementById("lp-tahun");
+const monthFilter = document.getElementById("lp-bulan");
+const year = now.getFullYear();
+yearFilter.replaceChildren(...Array.from({ length: Math.max(1, year - 2026 + 1) }, (_, index) => {
+  const value = String(year - index);
+  return new Option(value, value);
+}));
+const monthFormat = new Intl.DateTimeFormat("id-ID", { month: "long" });
+monthFilter.replaceChildren(...Array.from({ length: 12 }, (_, index) => new Option(
+  monthFormat.format(new Date(2026, index, 1)), String(index + 1).padStart(2, "0"),
+)));
+monthFilter.value = String(now.getMonth() + 1).padStart(2, "0");
+let currentKey = `${yearFilter.value}-${monthFilter.value}`;
 
 /* ===== PERIODE AKTIF (laporanData = objek periode yang sedang dimuat) ===== */
 function getPeriod() {
@@ -219,6 +213,7 @@ function renderProgress() {
     return;
   }
 
+  if (!period.progress.length) { wrap.textContent = "Rincian progres belum tersedia untuk periode ini."; return; }
   wrap.innerHTML = period.progress
     .map(
       (p) => `
@@ -245,6 +240,7 @@ function renderAktivitas() {
     return;
   }
 
+  if (!period.aktivitas.length) { tbody.innerHTML = '<tr><td colspan="2">Rincian aktivitas belum tersedia untuk periode ini.</td></tr>'; return; }
   tbody.innerHTML = period.aktivitas
     .map(
       (a) => `
@@ -289,12 +285,17 @@ document.getElementById("btn-tampilkan").addEventListener("click", async () => {
   refreshTargetRealisasi(); // tahun bisa berubah -> muat ulang diagram triwulan
 });
 
+function escapeHtml(value) {
+  const element = document.createElement("span");
+  element.textContent = value;
+  return element.innerHTML;
+}
+
 /* ===== UNDUH PDF TRIWULAN (lembar cetak resmi per resort & triwulan) ===== */
 document.getElementById("btn-pdf-tr").addEventListener("click", () => {
   if (!trData) return showToast("Data belum termuat");
 
-  const resortVal = document.getElementById("tr-resort").value;
-  const resortLabel = resortVal === "semua" ? "Seluruh Resort" : `Resort ${resortVal}`;
+  const resortLabel = escapeHtml(document.getElementById("tr-resort").selectedOptions[0]?.textContent || "Seluruh Resort");
   const twVal = document.getElementById("tr-triwulan").value;
   const tahun = document.getElementById("lp-tahun").value;
 
@@ -332,7 +333,6 @@ document.getElementById("btn-pdf-tr").addEventListener("click", () => {
       <p>Dicetak: ${new Date().toLocaleString("id-ID")}</p>
     </div>
     ${buatBagian("A. Realisasi Anggaran", trData.anggaran)}
-    ${buatBagian("B. Capaian Kinerja", trData.kinerja)}
     <div class="prt-ttd">
       <p>Semarang, ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
       <p>Mengetahui,</p>
@@ -351,8 +351,20 @@ document.getElementById("tr-triwulan").addEventListener("change", renderTargetRe
 document.getElementById("tr-resort").addEventListener("change", refreshTargetRealisasi);
 
 /* ===== EVENT: unduh & cetak ===== */
-document.getElementById("btn-pdf").addEventListener("click", () => showToast("PDF sedang disiapkan..."));
-document.getElementById("btn-excel").addEventListener("click", () => showToast("Berkas Excel sedang disiapkan..."));
+document.getElementById("btn-pdf").addEventListener("click", () => {
+  if (!laporanData) return showToast("Data laporan belum tersedia.");
+  window.print();
+});
+document.getElementById("btn-excel").addEventListener("click", () => {
+  if (!laporanData) return showToast("Data laporan belum tersedia.");
+  const csv = ["Metrik,Jumlah", ...laporanData.stats.map(({label, value}) => `${label},${value}`)].join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `laporan-${laporanData.label}.csv`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+});
 document.getElementById("btn-print-link").addEventListener("click", () => window.print());
 document.getElementById("btn-cetak").addEventListener("click", () => window.print());
 
@@ -364,6 +376,7 @@ async function init() {
     laporanData = null;
   }
   renderLaporan();
+  await loadResorts().catch((error) => showToast(error.message));
   refreshTargetRealisasi();
 }
 

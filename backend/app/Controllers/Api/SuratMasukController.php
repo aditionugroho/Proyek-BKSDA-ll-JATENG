@@ -4,8 +4,10 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Libraries\ResortAccessPolicy;
+use App\Libraries\SuratAttachmentPath;
 use App\Models\ResortModel;
 use App\Models\ActivityLogModel;
+use App\Models\ArsipModel;
 use App\Models\AuthTokenModel;
 use App\Models\DisposisiModel;
 use App\Models\NotifikasiModel;
@@ -908,9 +910,8 @@ class SuratMasukController extends BaseController
             ], 404);
         }
 
-        $filePath = WRITEPATH . 'uploads/' . $surat['file_path'];
-
-        if (!is_file($filePath)) {
+        $attachment = SuratAttachmentPath::resolve('surat_masuk', $surat['file_path']);
+        if ($attachment['status'] !== 'valid') {
             return $this->respond([
                 'status' => false,
                 'message' => 'File tidak ditemukan di server.',
@@ -923,138 +924,14 @@ class SuratMasukController extends BaseController
             'Mengunduh lampiran surat masuk.'
         );
 
-        return $this->response->download($filePath, null);
+        return $this->response->download($attachment['path'], null);
     }
 
     // ==========================================
     // PREVIEW FILE SURAT MASUK
     // ==========================================
 
-public function previewFile($id = null)
-{
-        if ($id !== null && ctype_digit((string) $id)) {
-            $denied = $this->guardDocumentAccess($id);
-            if ($denied !== null) {
-                return $denied;
-            }
-        }
-
-    if (!$id || !ctype_digit((string) $id)) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'ID surat masuk tidak valid.',
-        ], 400);
-    }
-
-    $surat = $this->suratModel->find($id);
-
-    if (!$surat) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Surat masuk tidak ditemukan.',
-        ], 404);
-    }
-
-    if (empty($surat['file_path'])) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Surat belum memiliki lampiran.',
-        ], 404);
-    }
-
-    $relativePath = str_replace(
-        '\\',
-        '/',
-        (string) $surat['file_path']
-    );
-
-    // Pastikan path berasal dari folder surat masuk.
-    if (!preg_match(
-        '#^surat_masuk/[A-Za-z0-9._-]+$#D',
-        $relativePath
-    )) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Path lampiran tidak valid.',
-        ], 404);
-    }
-
-    $extension = strtolower(
-        pathinfo($relativePath, PATHINFO_EXTENSION)
-    );
-
-    $allowedMimes = [
-        'pdf'  => 'application/pdf',
-        'jpg'  => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'png'  => 'image/png',
-    ];
-
-    if (!isset($allowedMimes[$extension])) {
-        return $this->respond([
-            'status' => false,
-            'message' =>
-                'Preview hanya mendukung PDF, JPG/JPEG, dan PNG.',
-        ], 415);
-    }
-
-    $uploadDir = realpath(
-        WRITEPATH . 'uploads/surat_masuk'
-    );
-
-    $filePath = realpath(
-        WRITEPATH . 'uploads/' . $relativePath
-    );
-
-    // Cegah akses file di luar folder upload.
-    if (
-        $uploadDir === false ||
-        $filePath === false ||
-        !is_file($filePath) ||
-        !str_starts_with(
-            $filePath,
-            $uploadDir . DIRECTORY_SEPARATOR
-        )
-    ) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'File tidak ditemukan di server.',
-        ], 404);
-    }
-
-    // Periksa tipe file sebenarnya.
-    $actualMime = (new \finfo(FILEINFO_MIME_TYPE))
-        ->file($filePath);
-
-    if ($actualMime !== $allowedMimes[$extension]) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Tipe isi file tidak valid untuk preview.',
-        ], 415);
-    }
-
-    $this->logActivity(
-        'preview_file',
-        (int) $id,
-        'Melihat preview surat masuk.'
-    );
-
-    return $this->response
-        ->download($filePath, null, true)
-        ->inline()
-        ->setHeader('Content-Type', $actualMime)
-        ->setHeader('X-Content-Type-Options', 'nosniff')
-        ->setHeader(
-            'Cache-Control',
-            'private, no-store, max-age=0'
-        );
-}
-
-    // ==========================================
-    // DELETE SURAT MASUK
-    // ==========================================
-
-    public function delete($id = null)
+    public function previewFile($id = null)
     {
         if ($id !== null && ctype_digit((string) $id)) {
             $denied = $this->guardDocumentAccess($id);
@@ -1079,40 +956,163 @@ public function previewFile($id = null)
             ], 404);
         }
 
-        // Tidak boleh hapus surat yang sudah didisposisi.
-        if ($this->sudahDidisposisi((int) $id)) {
+        if (empty($surat['file_path'])) {
             return $this->respond([
                 'status' => false,
-                'message' =>
-                    'Surat tidak dapat dihapus karena sudah memiliki disposisi.',
-            ], 409);
+                'message' => 'Surat belum memiliki lampiran.',
+            ], 404);
         }
 
-        if (!$this->suratModel->delete($id)) {
+        $attachment = SuratAttachmentPath::resolve('surat_masuk', $surat['file_path']);
+        if ($attachment['status'] !== 'valid') {
             return $this->respond([
                 'status' => false,
-                'message' => 'Gagal menghapus surat masuk.',
-            ], 500);
+                'message' => 'File tidak ditemukan di server.',
+            ], 404);
         }
 
-        // Hapus file lampiran.
-        if (!empty($surat['file_path'])) {
-            $filePath = WRITEPATH . 'uploads/' . $surat['file_path'];
+        $filePath = $attachment['path'];
+        $extension = strtolower(pathinfo($attachment['name'], PATHINFO_EXTENSION));
+        $allowedMimes = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+        ];
+        if (!isset($allowedMimes[$extension])) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Preview hanya mendukung PDF, JPG/JPEG, dan PNG.',
+            ], 415);
+        }
 
-            if (is_file($filePath)) {
-                unlink($filePath);
-            }
+        // Periksa tipe file sebenarnya.
+        $actualMime = (new \finfo(FILEINFO_MIME_TYPE))
+            ->file($filePath);
+
+        if ($actualMime !== $allowedMimes[$extension]) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Tipe isi file tidak valid untuk preview.',
+            ], 415);
         }
 
         $this->logActivity(
-            'delete',
+            'preview_file',
             (int) $id,
-            'Menghapus surat masuk nomor agenda ' . $surat['no_agenda']
+            'Melihat preview surat masuk.'
         );
+
+        return $this->response
+            ->download($filePath, null, true)
+            ->inline()
+            ->setHeader('Content-Type', $actualMime)
+            ->setHeader('X-Content-Type-Options', 'nosniff')
+            ->setHeader(
+                'Cache-Control',
+                'private, no-store, max-age=0'
+            );
+    }
+
+    // ==========================================
+    // DELETE SURAT MASUK
+    // ==========================================
+
+    public function delete($id = null)
+    {
+        if ($id !== null && ctype_digit((string) $id)) {
+            $denied = $this->guardDocumentAccess($id);
+            if ($denied !== null) {
+                return $denied;
+            }
+        }
+
+        if (!$id || !ctype_digit((string) $id)) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'ID surat masuk tidak valid.',
+            ], 400);
+        }
+
+        $db = db_connect();
+        try {
+            if (!$db->transBegin()) {
+                throw new \RuntimeException('Gagal memulai transaksi penghapusan.');
+            }
+            // Upload dan pembuatan disposisi mengunci baris yang sama.
+            $surat = $db->query(
+                'SELECT no_agenda, file_path FROM surat_masuk WHERE id = ? FOR UPDATE',
+                [(int) $id]
+            )->getRowArray();
+            if ($surat === null) {
+                $db->transRollback();
+                return $this->respond(['status' => false, 'message' => 'Surat masuk tidak ditemukan.'], 404);
+            }
+            if ((new ArsipModel())->findReferenceForUpdate('surat_masuk', (int) $id) !== null) {
+                $db->transRollback();
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Surat masuk masih digunakan oleh arsip dan tidak dapat dihapus.',
+                ], 409);
+            }
+            if ($this->sudahDidisposisi((int) $id)) {
+                $db->transRollback();
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Surat tidak dapat dihapus karena sudah memiliki disposisi.',
+                ], 409);
+            }
+            if (!$this->suratModel->delete($id) || $db->affectedRows() !== 1
+                || !$db->transStatus() || !$db->transCommit()) {
+                throw new \RuntimeException('Database tidak mengonfirmasi penghapusan.');
+            }
+        } catch (\Throwable $error) {
+            $db->transRollback();
+            log_message('error', 'Penghapusan record surat masuk {id} gagal: {type}', [
+                'id' => $id, 'type' => get_class($error),
+            ]);
+            return $this->respond(['status' => false, 'message' => 'Gagal menghapus surat masuk.'], 500);
+        }
+
+        $cleanup = $this->cleanupDeletedAttachment($surat['file_path'], (int) $id);
+        try {
+            $this->logActivity('delete', (int) $id, 'Menghapus surat masuk nomor agenda ' . $surat['no_agenda']);
+        } catch (\Throwable $error) {
+            log_message('error', 'Gagal mencatat aktivitas penghapusan surat masuk {id}: {type}', [
+                'id' => $id, 'type' => get_class($error),
+            ]);
+        }
 
         return $this->respond([
             'status' => true,
-            'message' => 'Surat masuk berhasil dihapus.',
+            'message' => $cleanup === 'pending' || $cleanup === 'unsafe'
+                ? 'Surat masuk berhasil dihapus. Lampiran memerlukan penanganan terpisah.'
+                : 'Surat masuk berhasil dihapus.',
+            'data' => ['attachment_cleanup' => $cleanup],
         ]);
+    }
+
+    private function cleanupDeletedAttachment(?string $relativePath, int $id): string
+    {
+        $attachment = SuratAttachmentPath::resolve('surat_masuk', $relativePath);
+        if ($attachment['status'] === 'unsafe') {
+            log_message('warning', 'Path lampiran surat masuk {id} tidak aman; pembersihan dilewati.', ['id' => $id]);
+        }
+        if ($attachment['status'] !== 'valid') {
+            return $attachment['status'];
+        }
+
+        try {
+            $removed = @unlink($attachment['path']);
+        } catch (\Throwable) {
+            $removed = false;
+        }
+        if (!$removed) {
+            log_message('error', 'Lampiran yatim surat masuk {id}: surat_masuk/{attachment}; pembersihan gagal.', [
+                'id' => $id, 'attachment' => $attachment['name'],
+            ]);
+            return 'pending';
+        }
+        return 'removed';
     }
 }

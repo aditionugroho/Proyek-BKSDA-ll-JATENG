@@ -343,12 +343,13 @@ public function completeRequest(
 
             // Pastikan surat masih ada dan kunci baris
             // selama transaksi berlangsung.
+            $fields = $resourceType === 'surat_keluar' ? 'id, status' : 'id';
             $surat = $db->query(
-                "SELECT id FROM {$resourceType} WHERE id = ? FOR UPDATE",
+                "SELECT {$fields} FROM {$resourceType} WHERE id = ? FOR UPDATE",
                 [$resourceId]
             )->getRowArray();
 
-            if (!$surat) {
+            if (!$surat || ($surat['status'] ?? null) === \App\Models\SuratKeluarModel::SUBMITTED) {
                 $db->transRollback();
                 return false;
             }

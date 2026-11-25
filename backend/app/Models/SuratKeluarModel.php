@@ -6,6 +6,10 @@ use CodeIgniter\Model;
 
 class SuratKeluarModel extends Model
 {
+    public const DRAFT = 'Draft';
+    public const SUBMITTED = 'Diajukan';
+    public const REGISTERED = 'Terdaftar';
+
     protected $table            = 'surat_keluar';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
@@ -21,6 +25,9 @@ class SuratKeluarModel extends Model
         'perihal',
         'klasifikasi',
         'file_path',
+        'isi',
+        'status',
+        'draft_create_key',
     ];
 
     protected $useTimestamps = true;

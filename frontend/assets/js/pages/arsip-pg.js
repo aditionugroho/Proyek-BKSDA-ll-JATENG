@@ -448,7 +448,7 @@ async function downloadArsip(id) {
     return;
   }
 
-  const base = EOfficeAPI.config?.BASE_URL || "/api";
+  const base = EOfficeAPI.config.BASE_URL;
 
   try {
     const response = await fetch(`${base}/arsip/${id}/file`, {

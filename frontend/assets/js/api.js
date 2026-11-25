@@ -109,7 +109,7 @@ const EOfficeAPI = (() => {
     }
   }
 
-  async function request(method, path, body) {
+  async function request(method, path, body, headers) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT_MS);
     try {
@@ -121,15 +121,23 @@ const EOfficeAPI = (() => {
             Accept: "application/json",
           },
           getToken() ? { Authorization: "Bearer " + getToken() } : {},
+          headers,
         ),
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
 
-      const data = await res.json().catch(() => ({}));
+      if (res.status === 204) return {};
+      const data = await res.json().catch((error) => {
+        if (!res.ok) return {};
+        if (error.name !== "SyntaxError") throw error;
+        const invalid = new Error("Server tidak mengembalikan respons JSON yang valid.");
+        invalid.status = res.status;
+        throw invalid;
+      });
       if (!res.ok) {
         const err = new Error(
-          (data && data.message) || "Terjadi kesalahan pada server.",
+          data?.message || `Permintaan gagal (HTTP ${res.status}).`,
         );
         err.status = res.status;
         err.data = data;
@@ -529,47 +537,16 @@ const EOfficeAPI = (() => {
                   "progress": [ { "label": "...", "percent": 85, "color": "#2563EB" } ] }
      ============================================ */
 
-  async function getDashboardKS() {
-    return request("GET", "/dashboard/kepala-seksi");
-  }
-
-  /* ============================================
-     LAPORAN PER PERIODE
-     KONTRAK (LIVE):
-       GET /api/laporan?periode=YYYY-MM  (butuh token)
-       Balasan: { "label": "September 2026", "updatedAt": "30 Sep 2026, 16:45",
-                  "stats": [ { "value": "128", "label": "Surat Masuk", "sub": "...",
-                               "icon": "inbox", "tone": "blue", "badge"?: {...} } ],
-                  "progress": [ { "label": "...", "percent": 76, "color": "#...",
-                                  "dot": "blue", "detail": "...", "detailTone"?: "..." } ],
-                  "aktivitas": [ { "tanggal": "05 Sep 2026", "icon": "mail",
-                                   "html": "..." } ] }
-       Periode kosong -> 404
-     ============================================ */
-
+  // Ringkasan surat, disposisi, dan tugas untuk periode YYYY-MM.
   async function getLaporan(periode) {
-    return request("GET", "/laporan?periode=" + encodeURIComponent(periode));
+    return request("GET", "/laporan/ringkasan?periode=" + encodeURIComponent(periode));
   }
 
-  /* ============================================
-     TARGET VS REALISASI TRIWULAN
-     KONTRAK (LIVE):
-       GET /api/target-realisasi?tahun=2026&resort=Cilacap  (butuh token)
-       resort opsional ("semua" / kosong = agregat seluruh resort)
-       Balasan: { "anggaran": [ { "tw": "TW I", "target": 100, "realisasi": 91 },
-                                { "tw": "TW II", ... }, { "tw": "TW III", ... }, { "tw": "TW IV", ... } ],
-                  "kinerja":  [ bentuk sama ] }
-       (nilai dalam persen; target umumnya 100; triwulan belum berjalan = 0)
-     ============================================ */
-
-  async function getTargetRealisasi(tahun, resort) {
-    const q =
-      "tahun=" +
-      encodeURIComponent(tahun) +
-      (resort && resort !== "semua"
-        ? "&resort=" + encodeURIComponent(resort)
-        : "");
-    return request("GET", "/target-realisasi?" + q);
+  // Data pagu dan realisasi anggaran per tahun, dengan filter resort opsional.
+  async function getTargetRealisasi(tahun, resortId) {
+    const query = new URLSearchParams({ tahun });
+    if (resortId) query.set("resort_id", resortId);
+    return request("GET", "/realisasi-anggaran?" + query);
   }
 
   /* ============================================
@@ -596,10 +573,6 @@ const EOfficeAPI = (() => {
 
   async function getLaporanPatroli() {
     return request("GET", "/laporan-patroli");
-  }
-
-  async function getLaporanPatroliDetail(id) {
-    return request("GET", "/laporan-patroli/" + id);
   }
 
   async function createLaporanPatroli(payload) {
@@ -910,12 +883,11 @@ const EOfficeAPI = (() => {
     return request("GET", "/disposisi");
   }
 
-  async function getDokumenSaya() {
-    return request("GET", "/dokumen-saya");
-  }
-
-  async function getArsipSaya() {
-    return request("GET", "/arsip-saya");
+  async function getDokumenSaya({ page = 1, status = "all", search = "" } = {}) {
+    const params = new URLSearchParams({ page, per_page: 10 });
+    if (status !== "all") params.set("status", status);
+    if (search) params.set("search", search);
+    return request("GET", "/dokumen-saya?" + params);
   }
 
   async function getJadwalSaya() {
@@ -955,11 +927,7 @@ const EOfficeAPI = (() => {
   }
 
   async function getDokumenSayaDetail(id) {
-    return request("GET", "/dokumen-saya/" + id);
-  }
-
-  async function getArsipSayaDetail(id) {
-    return request("GET", "/arsip-saya/" + id);
+    return request("GET", "/dokumen-saya/" + encodeURIComponent(id));
   }
 
   /* ============================================
@@ -969,10 +937,6 @@ const EOfficeAPI = (() => {
        Balasan: { "stats": [...], "prioritas": [...], "disposisi": [...] }
        (struktur mengikuti kartu dashboard pegawai: stats, prioritas, disposisi)
      ============================================ */
-
-  async function getDashboardPegawai() {
-    return request("GET", "/dashboard/pegawai");
-  }
 
   /* ============================================
      BUAT / AJUKAN SURAT KELUAR (pegawai & admin)
@@ -986,8 +950,42 @@ const EOfficeAPI = (() => {
        (nomor kosong -> dibuat otomatis server)
      ============================================ */
 
-  async function createSuratKeluar(payload) {
-    return request("POST", "/surat-keluar", payload);
+  async function createSuratKeluar(payload, key) {
+    return request("POST", "/surat-keluar", payload, key ? { "Idempotency-Key": key } : undefined);
+  }
+
+  async function updateSuratKeluar(id, payload) {
+    return request("PATCH", "/surat-keluar/" + encodeURIComponent(id), payload);
+  }
+
+  async function uploadLampiranSuratKeluar(id, file, key) {
+    const token = getToken();
+    if (!token) throw new Error("Silakan login kembali.");
+    const body = new FormData();
+    body.append("file", file, file.name);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/surat-keluar/${encodeURIComponent(id)}/file`,
+        {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token, "Idempotency-Key": key, Accept: "application/json" },
+          body,
+          signal: controller.signal,
+        },
+      );
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.status !== true) {
+        throw new Error(result?.message || `Gagal mengunggah lampiran (HTTP ${response.status}).`);
+      }
+      return result.data;
+    } catch (error) {
+      if (error.name === "AbortError") throw new Error("Waktu unggah lampiran habis.");
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /* ============================================
@@ -1037,22 +1035,8 @@ const EOfficeAPI = (() => {
     return request("DELETE", "/users/" + id);
   }
 
-  async function getRegistrations() {
-    return request("GET", "/registrations");
-  }
-
-  async function verifyRegistration(id, status) {
-    return request("PUT", "/registrations/" + id + "/status", {
-      status: status,
-    });
-  }
-
   async function createSuratMasuk(payload) {
     return request("POST", "/surat-masuk", payload);
-  }
-
-  async function getDashboardAdmin() {
-    return request("GET", "/dashboard/admin");
   }
 
   /* ============================================
@@ -1072,10 +1056,13 @@ const EOfficeAPI = (() => {
     ]);
 
     function extractRows(response) {
+      if (response?.status === false) {
+        throw new Error(response.message || "Gagal mengambil daftar surat.");
+      }
       if (Array.isArray(response)) return response;
       if (Array.isArray(response?.data)) return response.data;
       if (Array.isArray(response?.data?.data)) return response.data.data;
-      return [];
+      throw new Error("Format daftar surat tidak valid.");
     }
 
     const masuk = extractRows(masukResponse).map((item) => ({
@@ -1113,7 +1100,7 @@ const EOfficeAPI = (() => {
      BACKUP (admin)
      KONTRAK (LIVE):
        GET  /api/backup     â€” { "stats": [...], "modules": [...], "history": [...] }
-       POST /api/backup/run â€” jalankan backup manual,
+       POST /api/backup â€” jalankan backup manual,
                               balasan: objek riwayat backup baru
      ============================================ */
 
@@ -1122,7 +1109,7 @@ const EOfficeAPI = (() => {
   }
 
   async function runBackup() {
-    return request("POST", "/backup/run");
+    return request("POST", "/backup");
   }
 
   /* ============================================
@@ -1221,7 +1208,7 @@ const EOfficeAPI = (() => {
   /* ============================================
      NOTIFIKASI ADMIN
      KONTRAK (LIVE):
-       GET /api/notifikasi-admin
+       GET /api/notifikasi
        Balasan: [ { "id": "...", "kategori": "Sistem|Surat|Registrasi",
                     "icon": "database|mail|alert|megaphone|userPlus",
                     "judul": "...", "teks": "...", "waktu": "ISO-8601",
@@ -1229,7 +1216,7 @@ const EOfficeAPI = (() => {
      ============================================ */
 
   async function getNotifikasiAdmin() {
-    return request("GET", "/notifikasi-admin");
+    return getNotifikasi();
   }
 
   /* ============================================
@@ -1240,40 +1227,6 @@ const EOfficeAPI = (() => {
        (pengiriman OTP via email ditangani alur server; endpoint ini
         dipanggil setelah OTP diverifikasi)
      ============================================ */
-
-  async function lupaPassword(idPengguna, kataSandiBaru) {
-    if (!API_CONFIG.LIVE) {
-      // Mock: perbarui kata sandi di localStorage (perilaku lama)
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          try {
-            const regs = JSON.parse(
-              window.localStorage.getItem("eoffice_registrations") || "[]",
-            );
-            const idx = regs.findIndex(
-              (r) =>
-                String(r.idAtauEmail).toLowerCase() ===
-                String(idPengguna).toLowerCase(),
-            );
-            if (idx >= 0) {
-              regs[idx].kataSandi = kataSandiBaru;
-              window.localStorage.setItem(
-                "eoffice_registrations",
-                JSON.stringify(regs),
-              );
-            }
-          } catch (e) {
-            /* abaikan */
-          }
-          resolve({ status: "ok" });
-        }, 400);
-      });
-    }
-    return request("POST", "/lupa-password", {
-      id_pengguna: idPengguna,
-      kata_sandi_baru: kataSandiBaru,
-    });
-  }
 
   /* ---------- API publik ---------- */
 
@@ -1295,20 +1248,30 @@ const EOfficeAPI = (() => {
 
   // Unduh file surat masuk menggunakan token login.
   async function downloadLampiranSuratMasuk(id) {
+    return downloadLampiranSurat("surat-masuk", id);
+  }
+
+  async function downloadLampiranSuratKeluar(id) {
+    return downloadLampiranSurat("surat-keluar", id);
+  }
+
+  async function downloadLampiranSurat(jenis, id) {
+    const token = getToken();
+    if (!token) throw new Error("Silakan login kembali.");
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(
         API_CONFIG.BASE_URL +
-          "/surat-masuk/" +
+          "/" + jenis + "/" +
           encodeURIComponent(id) +
           "/file",
         {
           method: "GET",
           headers: {
             Accept: "application/octet-stream, application/pdf, */*",
-            Authorization: "Bearer " + getToken(),
+            Authorization: "Bearer " + token,
           },
           signal: controller.signal,
         },
@@ -1320,6 +1283,9 @@ const EOfficeAPI = (() => {
       }
 
       const blob = await response.blob();
+      if (!blob.size || blob.type.includes("application/json") || blob.type.includes("text/html")) {
+        throw new Error("Server tidak mengembalikan file lampiran.");
+      }
 
       let filename = "lampiran-surat-" + id;
 
@@ -1374,19 +1340,20 @@ const EOfficeAPI = (() => {
     getStafTujuan: getStafTujuan,
     getSuratMasukDetail: getSuratMasukDetail,
     downloadLampiranSuratMasuk: downloadLampiranSuratMasuk,
+    downloadLampiranSuratKeluar: downloadLampiranSuratKeluar,
+    uploadLampiranSuratKeluar: uploadLampiranSuratKeluar,
+    updateSuratKeluar: updateSuratKeluar,
     getSuratKeluarDetail: getSuratKeluarDetail,
     getArsipDetail: getArsipDetail,
     getTugasDetail: getTugasDetail,
     reviewTugas: reviewTugas,
     createTugas: createTugas,
-    getDashboardKS: getDashboardKS,
     getLaporan: getLaporan,
     getTargetRealisasi: getTargetRealisasi,
     getLaporanPatroli: function () {
       if (!API_CONFIG.LIVE) return Promise.resolve(mockGetPatroli());
       return getLaporanPatroli();
     },
-    getLaporanPatroliDetail: getLaporanPatroliDetail,
     createLaporanPatroli: createLaporanPatroli,
     uploadFotoPatroli: uploadFotoPatroli,
     getFotoPatroli: getFotoPatroli,
@@ -1409,7 +1376,6 @@ const EOfficeAPI = (() => {
     updateTugasProgress: updateTugasProgress,
     getDisposisiSaya: getDisposisiSaya,
     getDokumenSaya: getDokumenSaya,
-    getArsipSaya: getArsipSaya,
     getJadwalSaya: getJadwalSaya,
     createJadwalSaya: createJadwalSaya,
     updateJadwalSaya: updateJadwalSaya,
@@ -1418,16 +1384,11 @@ const EOfficeAPI = (() => {
     getSuratSayaDetail: getSuratSayaDetail,
     getDisposisiSayaDetail: getDisposisiSayaDetail,
     getDokumenSayaDetail: getDokumenSayaDetail,
-    getArsipSayaDetail: getArsipSayaDetail,
-    getDashboardPegawai: getDashboardPegawai,
     createSuratKeluar: createSuratKeluar,
     getUsers: getUsers,
     createUser: createUser,
     deleteUser: deleteUser,
-    getRegistrations: getRegistrations,
-    verifyRegistration: verifyRegistration,
     createSuratMasuk: createSuratMasuk,
-    getDashboardAdmin: getDashboardAdmin,
     getSuratTerbaru: getSuratTerbaru,
     getBackup: getBackup,
     runBackup: runBackup,
@@ -1437,7 +1398,6 @@ const EOfficeAPI = (() => {
     getAdminProfil: getAdminProfil,
     updateAdminProfil: updateAdminProfil,
     getNotifikasiAdmin: getNotifikasiAdmin,
-    lupaPassword: lupaPassword,
     request: request, // untuk endpoint baru: selalu lewat sini
   };
 })();

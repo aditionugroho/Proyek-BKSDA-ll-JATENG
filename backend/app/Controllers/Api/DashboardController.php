@@ -46,6 +46,9 @@ class DashboardController extends BaseController
         string $tanggalAkhir = ''
     ): int {
         $builder = $this->db->table($table);
+        if ($table === 'surat_keluar') {
+            $builder->where('status !=', 'Draft');
+        }
 
         if ($tanggalMulai !== '') {
             $builder->where(
@@ -161,6 +164,7 @@ class DashboardController extends BaseController
         $totalSuratKeluar =
             $this->db
                 ->table('surat_keluar')
+                ->where('status !=', 'Draft')
                 ->countAllResults();
 
         /*
@@ -371,11 +375,11 @@ class DashboardController extends BaseController
                     MONTH(tanggal) AS bulan,
                     COUNT(*) AS total
                 FROM surat_keluar
-                WHERE YEAR(tanggal) = ?
+                WHERE YEAR(tanggal) = ? AND status != ?
                 GROUP BY MONTH(tanggal)
                 ORDER BY MONTH(tanggal)
                 ',
-                [$year]
+                [$year, 'Draft']
             )->getResultArray();
 
         $masukMap = [];
@@ -489,11 +493,11 @@ class DashboardController extends BaseController
         */
 
         $smWhere = '';
-        $skWhere = '';
+        $skWhere = ' WHERE status != ?';
         $dWhere = '';
         $activityWhere = '';
 
-        $params = [];
+        $params = ['Draft'];
 
         if ($year !== null) {
             $smWhere =
@@ -501,10 +505,9 @@ class DashboardController extends BaseController
 
             $params[] = $year;
 
-            $skWhere =
-                ' WHERE YEAR(tanggal) = ?';
+            $skWhere .= ' AND YEAR(tanggal) = ?';
 
-            $params[] = $year;
+            $params = [$year, 'Draft', $year];
 
             $dWhere =
                 ' WHERE YEAR(created_at) = ?';
@@ -832,6 +835,7 @@ class DashboardController extends BaseController
         $suratKeluarBuilder =
             $this->db
                 ->table('surat_keluar')
+                ->where('status !=', 'Draft')
                 ->where(
                     'created_by',
                     $userId

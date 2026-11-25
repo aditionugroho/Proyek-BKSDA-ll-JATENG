@@ -241,6 +241,17 @@ $routes->delete(
 |--------------------------------------------------------------------------
 */
 
+$routes->post(
+    'api/surat-keluar/extract',
+    'Api\SuratExtractController::extract',
+    ['filter' => 'role:admin,staf']
+);
+
+$routes->group('api/dokumen-saya', ['filter' => 'role:staf'], static function ($routes) {
+    $routes->get('', 'Api\SuratKeluarController::dokumenSaya');
+    $routes->get('(:num)', 'Api\SuratKeluarController::detailDokumenSaya/$1');
+});
+
 $routes->group(
     'api/surat-keluar',
     [
@@ -661,6 +672,8 @@ $routes->group(
         'filter' => 'role:admin,kepala_seksi',
     ],
     static function ($routes) {
+
+        $routes->get('ringkasan', 'Api\LaporanController::ringkasan');
 
         // Laporan Surat Masuk
         $routes->get(

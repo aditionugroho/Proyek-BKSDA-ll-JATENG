@@ -109,9 +109,6 @@
   <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
   <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
   <script>
-    /* ===== Data notifikasi admin (mock + registrasi live) ===== */
-    const READ_KEY = "eoffice_notif_admin_read";
-
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -128,65 +125,11 @@
       return Math.floor(h / 24) + " hari lalu";
     }
 
-    /* Item dari server saat LIVE (diisi init); null = pakai mock */
-    let SERVER_ITEMS = null;
+    let serverItems = [];
+    let loadError = "";
 
     function buildItems() {
-      if (SERVER_ITEMS) return SERVER_ITEMS.slice().sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
-
-      const items = [
-        {
-          id: "sys-backup",
-          kategori: "Sistem",
-          icon: "database",
-          judul: "Backup otomatis berhasil",
-          teks: "Snapshot basis data harian tersimpan di penyimpanan sekunder.",
-          waktu: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
-        },
-        {
-          id: "sys-surat",
-          kategori: "Surat",
-          icon: "mail",
-          judul: "Surat masuk baru terdaftar",
-          teks: "S.501/SKSDA-JT/2026 dari Dinas Kehutanan Jateng menunggu distribusi.",
-          waktu: new Date(Date.now() - 5 * 3600 * 1000).toISOString()
-        },
-        {
-          id: "sys-quota",
-          kategori: "Sistem",
-          icon: "alert",
-          judul: "Kuota penyimpanan arsip 78%",
-          teks: "Pertimbangkan export dan pembersihan arsip lama.",
-          waktu: new Date(Date.now() - 26 * 3600 * 1000).toISOString()
-        },
-        {
-          id: "sys-pengumuman",
-          kategori: "Sistem",
-          icon: "megaphone",
-          judul: "Pengumuman terjadwal terkirim",
-          teks: "Pengumuman rapat koordinasi berhasil dikirim ke 148 pengguna.",
-          waktu: new Date(Date.now() - 30 * 3600 * 1000).toISOString()
-        }
-      ];
-
-      /* Registrasi live dari halaman pendaftaran */
-      try {
-        const regs = JSON.parse(localStorage.getItem("eoffice_registrations") || "[]");
-        regs.slice().reverse().forEach((r, i) => {
-          const status = r.status === "aktif" ? "terverifikasi" : r.status === "ditolak" ? "ditolak" : "menunggu verifikasi";
-          items.push({
-            id: "reg-" + i + "-" + (r.daftarPada || ""),
-            kategori: "Registrasi",
-            icon: "userPlus",
-            judul: "Pendaftar baru: " + r.nama + " (" + status + ")",
-            teks: (r.role === "kepala-seksi" ? "Kepala Seksi" : "Staff") + (r.resort ? " • Resort " + r.resort : "") + " â€¢ " + r.idAtauEmail + " â€” kelola di menu Data Pengguna.",
-            waktu: r.daftarPada || new Date().toISOString(),
-            link: "data-pengguna.html"
-          });
-        });
-      } catch (e) { /* abaikan */ }
-
-      return items.sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
+      return serverItems;
     }
 
     const ICONS = {
@@ -199,21 +142,22 @@
 
     let filter = "all";
     let search = "";
-    let readIds = [];
-    try { readIds = JSON.parse(localStorage.getItem(READ_KEY) || "[]"); } catch (e) {}
-
     function updateStats(items) {
       document.getElementById("nt-total").textContent = items.length;
-      document.getElementById("nt-unread").textContent = items.filter((i) => !readIds.includes(i.id)).length;
+      document.getElementById("nt-unread").textContent = items.filter((i) => !i.read).length;
       document.getElementById("nt-regcount").textContent = items.filter((i) => i.kategori === "Registrasi").length;
     }
 
     function render() {
       const list = document.getElementById("nt-list");
+      if (loadError) {
+        list.textContent = loadError;
+        return;
+      }
       const semua = buildItems();
       updateStats(semua);
       const items = semua.filter((it) => {
-        if (filter === "unread" && readIds.includes(it.id)) return false;
+        if (filter === "unread" && it.read) return false;
         if (filter !== "all" && filter !== "unread" && it.kategori !== filter) return false;
         if (search && !(it.judul + " " + it.teks).toLowerCase().includes(search.toLowerCase())) return false;
         return true;
@@ -225,7 +169,7 @@
       }
 
       list.innerHTML = items.map((it) => {
-        const dibaca = readIds.includes(it.id);
+        const dibaca = it.read;
         const link = it.link ? '<a href="' + it.link + '" class="nt-item-link">Kelola &rarr;</a>' : "";
         return (
           '<article class="nt-item' + (dibaca ? "" : " is-unread") + '" data-id="' + esc(it.id) + '">' +
@@ -240,17 +184,29 @@
         );
       }).join("");
 
-      list.querySelectorAll(".nt-item").forEach((el) => {
-        el.addEventListener("click", function() {
-          const id = this.dataset.id;
-          if (!readIds.includes(id)) {
-            readIds.push(id);
-            localStorage.setItem(READ_KEY, JSON.stringify(readIds));
-            this.classList.remove("is-unread");
+      list.querySelectorAll(".nt-item").forEach((element) => {
+        element.addEventListener("click", async () => {
+          const item = serverItems.find((row) => row.id === element.dataset.id);
+          if (!item || item.read || item.pending) return;
+          item.pending = true;
+          try {
+            const response = await EOfficeAPI.markNotifikasiRead(item.id);
+            if (response?.status !== true) throw new Error(response?.message || "Gagal menandai notifikasi.");
+            item.read = true;
+            render();
+          } catch (error) {
+            announce(error.message);
+          } finally {
+            item.pending = false;
           }
         });
       });
     }
+
+    const notice = document.createElement("p");
+    notice.setAttribute("role", "status");
+    document.getElementById("nt-list").before(notice);
+    function announce(message) { notice.textContent = message; }
 
     document.getElementById("nt-tabs").addEventListener("click", function(e) {
       const btn = e.target.closest(".nt-tab");
@@ -266,20 +222,46 @@
       render();
     });
 
-    document.getElementById("btn-read-all").addEventListener("click", function() {
-      readIds = buildItems().map((it) => it.id);
-      localStorage.setItem(READ_KEY, JSON.stringify(readIds));
-      render();
+    const readAll = document.getElementById("btn-read-all");
+    readAll.disabled = true;
+    readAll.addEventListener("click", async () => {
+      readAll.disabled = true;
+      try {
+        const response = await EOfficeAPI.markAllNotifikasiRead();
+        if (response?.status !== true) throw new Error(response?.message || "Gagal menandai notifikasi.");
+        serverItems.forEach((item) => { item.read = true; });
+        render();
+        announce("Semua notifikasi ditandai dibaca.");
+      } catch (error) {
+        announce(error.message);
+      } finally {
+        readAll.disabled = false;
+      }
     });
 
-    /* ===== Inisialisasi: ambil dari API saat LIVE, mock selainnya ===== */
     (async function init() {
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        try {
-          SERVER_ITEMS = await EOfficeAPI.getNotifikasiAdmin();
-        } catch (e) {
-          SERVER_ITEMS = null; // fallback ke mock
+      try {
+        const response = await EOfficeAPI.getNotifikasiAdmin();
+        if (response?.status !== true || !Array.isArray(response.data)) {
+          throw new Error(response?.message || "Format notifikasi tidak valid.");
         }
+        serverItems = response.data.map((item) => {
+          const type = String(item.tipe || "").toLowerCase();
+          const kategori = type.includes("registrasi") ? "Registrasi"
+            : /surat|disposisi/.test(type) ? "Surat" : "Sistem";
+          return {
+            id: String(item.id),
+            kategori,
+            icon: kategori === "Registrasi" ? "userPlus" : kategori === "Surat" ? "mail" : "alert",
+            judul: item.judul || kategori,
+            teks: item.pesan || "",
+            waktu: item.created_at,
+            read: Number(item.is_read) === 1,
+          };
+        });
+        readAll.disabled = !serverItems.length;
+      } catch (error) {
+        loadError = error.message;
       }
       render();
     })();

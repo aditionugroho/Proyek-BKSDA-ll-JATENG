@@ -69,12 +69,12 @@
 
         <!-- Card aksi -->
         <div class="pgv-card">
-          <button type="button" class="pgb-action pgb-action--primary" id="pgv-ajukan">
+          <button type="button" class="pgb-action pgb-action--primary" id="pgv-ajukan" hidden>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             Ajukan Surat
           </button>
           <div class="pgv-action-row">
-            <a href="buat-surat.html" class="pgb-action">
+            <a href="buat-surat.html" class="pgb-action" id="pgv-edit" hidden>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 0 1 3 3L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
               Edit
             </a>
@@ -91,22 +91,19 @@
           <div class="pgv-kv">
             <div class="pgv-kv-row">
               <span class="pgv-kv-label">Jenis Surat</span>
-              <span class="pgv-kv-value">Surat Undangan Biasa</span>
+              <span class="pgv-kv-value">Surat Keluar</span>
             </div>
             <div class="pgv-kv-row">
               <span class="pgv-kv-label">Pembuat</span>
-              <span class="pgv-kv-value pgv-kv-maker">
-                <span class="pgv-kv-avatar">BS</span>
-                Budi Santoso (Staf TU)
-              </span>
+              <span class="pgv-kv-value" id="pgv-maker">?</span>
             </div>
             <div class="pgv-kv-row">
               <span class="pgv-kv-label">Tanggal Dibuat</span>
-              <span class="pgv-kv-value">24 Okt 2023, 10:30 WIB</span>
+              <span class="pgv-kv-value" id="pgv-created">?</span>
             </div>
             <div class="pgv-kv-row">
               <span class="pgv-kv-label">Status Saat Ini</span>
-              <span class="pgv-status-badge pgs-status-badge--amber">Draft</span>
+              <span class="pgv-status-badge" id="pgv-status">?</span>
             </div>
           </div>
         </div>
@@ -115,20 +112,9 @@
         <div class="pgv-card">
           <div class="pgv-att-head">
             <h2 class="pgv-card-title">Lampiran</h2>
-            <span class="pgv-att-count">1</span>
+            <span class="pgv-att-count" id="pgv-attachment-count">0</span>
           </div>
-          <div class="pgv-att-item">
-            <span class="pgv-att-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-            </span>
-            <div class="pgv-att-info">
-              <span class="pgv-att-name">Jadwal_Rakor_Konservasi.pdf</span>
-              <span class="pgv-att-size">1.2 MB</span>
-            </div>
-            <button type="button" class="pgv-eye" id="pgv-att-eye" title="Pratinjau lampiran" aria-label="Pratinjau lampiran">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </button>
-          </div>
+          <button type="button" id="pgv-att-eye" hidden>Unduh lampiran</button>
         </div>
       </div>
 

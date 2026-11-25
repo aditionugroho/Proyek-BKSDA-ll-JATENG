@@ -5,7 +5,7 @@
    cache hanya dipakai saat offline.
    ============================================ */
 
-const CACHE_NAME = "eoffice-sksda-v1";
+const CACHE_NAME = "eoffice-sksda-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -14,19 +14,28 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+      Promise.all(keys.filter((k) =>
+        k.startsWith("eoffice-sksda-") && k !== CACHE_NAME
+      ).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin ||
+      /^\/api(?:\/|$)/.test(url.pathname) ||
+      event.request.headers.has("Authorization")) return;
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((c) => c.put(event.request, copy)).catch(() => {});
+        if (res.ok) {
+          const copy = res.clone();
+          event.waitUntil(
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, copy)).catch(() => {})
+          );
+        }
         return res;
       })
       .catch(() => caches.match(event.request))

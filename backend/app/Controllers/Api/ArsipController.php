@@ -176,7 +176,11 @@ class ArsipController extends BaseController
                 "surat_keluar.id = arsip.referensi_id
                 AND arsip.jenis = 'surat_keluar'",
                 'left'
-            );
+            )
+            ->groupStart()
+                ->where('surat_masuk.id IS NOT NULL', null, false)
+                ->orWhere('surat_keluar.id IS NOT NULL', null, false)
+            ->groupEnd();
     }
 
     /*
@@ -467,187 +471,79 @@ class ArsipController extends BaseController
 
     public function create()
     {
-        $userId = $this->getCurrentUserId();
-
-        if (!$userId) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'User tidak terautentikasi.',
-            ], 401);
-        }
-
-        $data = $this->request
-            ->getJSON(true);
-
-        if (!$data) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Request harus menggunakan format JSON.',
-            ], 400);
-        }
-
-        $jenis = trim(
-            $data['jenis'] ?? ''
-        );
-
-        $referensiId = (int) (
-            $data['referensi_id'] ?? 0
-        );
-
-        $kategori = trim(
-            $data['kategori'] ?? ''
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI REQUIRED
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            $jenis === '' ||
-            $referensiId <= 0
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Jenis dan referensi surat wajib diisi.',
-            ], 422);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI JENIS
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            !in_array(
-                $jenis,
-                [
-                    'surat_masuk',
-                    'surat_keluar',
-                ],
-                true
-            )
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Jenis arsip harus surat_masuk atau surat_keluar.',
-            ], 422);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | CEK SURAT
-        |--------------------------------------------------------------------------
-        */
-
-        if ($jenis === 'surat_masuk') {
-            $surat = $this->suratMasukModel
-                ->find($referensiId);
-        } else {
-            $surat = $this->suratKeluarModel
-                ->find($referensiId);
-        }
-
-        if (!$surat) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Surat yang akan diarsipkan tidak ditemukan.',
-            ], 404);
-        }
-
         $actor = $this->currentAccessUser();
         if (!$actor) {
             return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
         }
-        if (!ResortAccessPolicy::canAccess(
-            $actor,
-            isset($surat['resort_id']) ? (int) $surat['resort_id'] : null
-        )) {
-            return $this->respond(['status' => false, 'message' => 'Surat tidak ditemukan atau tidak dapat diakses.'], 404);
+
+        try {
+            $data = $this->request->getJSON(true);
+        } catch (\CodeIgniter\HTTP\Exceptions\HTTPException) {
+            $data = null;
+        }
+        if (!is_array($data) || !$data) {
+            return $this->respond(['status' => false, 'message' => 'Request harus menggunakan format JSON.'], 400);
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | CEK DUPLIKAT
-        |--------------------------------------------------------------------------
-        */
-
-        $existing = $this->arsipModel
-            ->where(
-                'jenis',
-                $jenis
-            )
-            ->where(
-                'referensi_id',
-                $referensiId
-            )
-            ->first();
-
-        if ($existing) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Surat tersebut sudah diarsipkan.',
-            ], 409);
+        $jenis = $data['jenis'] ?? '';
+        $reference = $data['referensi_id'] ?? null;
+        $referensiId = (is_int($reference) || is_string($reference))
+            ? filter_var($reference, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : false;
+        $kategori = $data['kategori'] ?? '';
+        if (!in_array($jenis, ['surat_masuk', 'surat_keluar'], true) || $referensiId === false
+            || !is_string($kategori) || mb_strlen(trim($kategori)) > 100) {
+            return $this->respond(['status' => false, 'message' => 'Jenis, referensi surat, atau kategori arsip tidak valid.'], 422);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | INSERT
-        |--------------------------------------------------------------------------
-        */
+        $db = db_connect();
+        try {
+            if (!$db->transBegin()) {
+                throw new \RuntimeException('Gagal memulai transaksi pengarsipan.');
+            }
 
-        $id = $this->arsipModel
-            ->insert([
-                'jenis' =>
-                    $jenis,
+            // Ambil kunci yang sama dengan DELETE pada surat asal.
+            $surat = $db->query(
+                "SELECT resort_id, status FROM {$jenis} WHERE id = ? FOR UPDATE",
+                [$referensiId]
+            )->getRowArray();
+            if (!$surat || ($jenis === 'surat_keluar' && $surat['status'] === SuratKeluarModel::DRAFT)
+                || !ResortAccessPolicy::canAccess($actor, isset($surat['resort_id']) ? (int) $surat['resort_id'] : null)) {
+                $db->transRollback();
+                return $this->respond(['status' => false, 'message' => 'Surat tidak ditemukan atau tidak dapat diakses.'], 404);
+            }
+            if ($this->arsipModel->findReferenceForUpdate($jenis, $referensiId) !== null) {
+                $db->transRollback();
+                return $this->respond(['status' => false, 'message' => 'Surat tersebut sudah diarsipkan.'], 409);
+            }
 
-                'referensi_id' =>
-                    $referensiId,
-
-                'kategori' =>
-                    $kategori !== ''
-                        ? $kategori
-                        : null,
-
-                'tanggal_arsip' =>
-                    date('Y-m-d H:i:s'),
-            ], true);
-
-        if (!$id) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Gagal menambahkan arsip.',
-            ], 500);
+            $archive = [
+                'jenis' => $jenis,
+                'referensi_id' => $referensiId,
+                'kategori' => trim($kategori) !== '' ? trim($kategori) : null,
+                'tanggal_arsip' => date('Y-m-d H:i:s'),
+            ];
+            $id = $this->arsipModel->insert($archive, true);
+            if (!$id || !$db->transStatus() || !$db->transCommit()) {
+                throw new \RuntimeException('Database tidak mengonfirmasi pengarsipan.');
+            }
+        } catch (\Throwable $error) {
+            $db->transRollback();
+            log_message('error', 'Pembuatan arsip gagal: {type}', ['type' => get_class($error)]);
+            return $this->respond(['status' => false, 'message' => 'Gagal menambahkan arsip.'], 500);
         }
 
-        $this->logActivity(
-            'create',
-            (int) $id,
-            'Mengarsipkan ' .
-            $jenis .
-            ' dengan referensi ID ' .
-            $referensiId .
-            '.'
-        );
+        try {
+            $this->logActivity('create', (int) $id, 'Mengarsipkan ' . $jenis . ' dengan referensi ID ' . $referensiId . '.');
+        } catch (\Throwable $error) {
+            log_message('error', 'Gagal mencatat aktivitas pembuatan arsip {id}: {type}', [
+                'id' => $id, 'type' => get_class($error),
+            ]);
+        }
 
         return $this->respondCreated([
             'status' => true,
-            'message' =>
-                'Surat berhasil diarsipkan.',
-
-            'data' =>
-                $this->arsipModel
-                    ->find($id),
+            'message' => 'Surat berhasil diarsipkan.',
+            'data' => ['id' => (int) $id] + $archive,
         ]);
     }
 

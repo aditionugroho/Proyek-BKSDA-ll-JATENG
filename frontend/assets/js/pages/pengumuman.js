@@ -177,8 +177,8 @@ saveBtn.addEventListener("click", () => {
   applyConfigToForm(config);
   showToast(
     config.enabled
-      ? "Pengumuman disimpan & aktif di dashboard pegawai"
-      : "Pengumuman disimpan (status nonaktif)"
+      ? "Pengumuman aktif di browser ini"
+      : "Pengumuman disimpan nonaktif di browser ini"
   );
 });
 
@@ -192,7 +192,7 @@ document.getElementById("pgm-reset").addEventListener("click", () => {
       const config = { ...RUNNING_TEXT_DEFAULT, audience: [...RUNNING_TEXT_DEFAULT.audience], updatedAt: new Date().toISOString() };
       localStorage.setItem("runningText", JSON.stringify(config));
       applyConfigToForm(config);
-      showToast("Pengumuman dikembalikan ke default");
+      showToast("Pengumuman di browser ini dikembalikan ke default");
     }
   });
 });

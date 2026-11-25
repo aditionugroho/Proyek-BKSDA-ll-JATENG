@@ -91,9 +91,9 @@ class SuratExtractController extends BaseController
         $python = ROOTPATH
             . '.venv'
             . DIRECTORY_SEPARATOR
-            . 'Scripts'
+            . (PHP_OS_FAMILY === 'Windows' ? 'Scripts' : 'bin')
             . DIRECTORY_SEPARATOR
-            . 'python.exe';
+            . (PHP_OS_FAMILY === 'Windows' ? 'python.exe' : 'python');
 
         $script = ROOTPATH
             . 'scripts'

@@ -103,7 +103,7 @@
         <span class="nav-name">SKSDA WILAYAH II PEMALANG</span>
         <span class="nav-sub">E-Office</span>
       </span>
-      <a class="nav-home" href="javascript:history.back()">&larr; Kembali</a>
+      <a class="nav-home" href="index.html" id="search-back">&larr; Kembali</a>
     </div>
   </header>
 
@@ -120,11 +120,31 @@
 
   <footer class="foot">&copy; 2026 e-Office SKSDA Jawa Tengah. All rights reserved.</footer>
 
+  <script src="./assets/js/api.js"></script>
   <script type="module">
-    import { SURAT_MASUK } from "./assets/js/data/surat-masuk.js";
-    import { SURAT_KELUAR } from "./assets/js/data/surat-keluar.js";
-    import { stafData } from "./assets/js/data/staf.js";
-    import { TUGAS_SEKSI } from "./assets/js/data/tugas-seksi.js";
+    document.getElementById("search-back").addEventListener("click", (event) => {
+      if (history.length > 1) {
+        event.preventDefault();
+        history.back();
+      }
+    });
+    let latestSearch = 0;
+
+    function getSession() {
+      try {
+        return JSON.parse(sessionStorage.getItem("eoffice_session") || localStorage.getItem("eoffice_session") || "null");
+      } catch {
+        return null;
+      }
+    }
+
+    async function getRows(path) {
+      const response = await window.EOfficeAPI.request("GET", path);
+      if (response?.status !== true || !Array.isArray(response.data)) {
+        throw new Error(response?.message || "Format hasil pencarian tidak valid.");
+      }
+      return response.data;
+    }
 
     const qInput = document.getElementById("q");
     const hasil = document.getElementById("hasil");
@@ -144,7 +164,8 @@
       return String(hay ?? "").toLowerCase().includes(q);
     }
 
-    function cari(q) {
+    async function cari(q) {
+      const sequence = ++latestSearch;
       q = q.trim().toLowerCase();
       if (!q) {
         hasil.innerHTML = '<div class="empty"><p class="empty-title">Mulai mencari</p><p class="empty-text">Ketik nomor surat, perihal, nama staf, NIP, atau judul tugas lalu tekan Cari.</p></div>';
@@ -152,14 +173,60 @@
         return;
       }
 
-      const masuk = SURAT_MASUK.filter((s) => cocok(s.nomor, q) || cocok(s.pengirim, q) || cocok(s.perihal, q));
-      const keluar = SURAT_KELUAR.filter((s) => cocok(s.nomor, q) || cocok(s.pengirim, q) || cocok(s.perihal, q));
-      const staf = stafData.filter((s) => cocok(s.nama, q) || cocok(s.nip, q) || cocok(s.jabatan, q) || cocok(s.golongan, q));
-      const tugas = TUGAS_SEKSI.filter((s) => cocok(s.judul, q) || cocok(s.kode, q) || cocok(s.pic, q));
+      const session = getSession();
+      if (!session || !window.EOfficeAPI.getToken()) {
+        summary.hidden = true;
+        hasil.replaceChildren();
+        const login = document.createElement("a");
+        login.href = "login.html";
+        login.textContent = "Masuk untuk mencari surat, tugas, dan pengguna.";
+        hasil.append(login);
+        return;
+      }
+
+      const role = session.role;
+      const directoryPath = role === "admin" ? "/users" : role === "kepala-seksi" ? "/staf" : null;
+      const query = new URLSearchParams({ search: q, per_page: 50 });
+      hasil.textContent = "Mencari...";
+      summary.hidden = true;
+      let data;
+      try {
+        data = await Promise.all([
+          getRows("/surat-masuk?" + query),
+          getRows("/surat-keluar?" + query),
+          getRows("/tugas"),
+          directoryPath ? getRows(directoryPath) : Promise.resolve([]),
+        ]);
+      } catch (error) {
+        if (sequence === latestSearch) hasil.textContent = error.message || "Pencarian gagal.";
+        return;
+      }
+      if (sequence !== latestSearch) return;
+      const [incoming, outgoing, tasks, employees] = data;
+      const mapLetter = (row, type) => ({
+        nomor: row.no_surat || row.no_agenda || "?",
+        perihal: row.perihal,
+        pengirim: row[type === "masuk" ? "asal" : "tujuan"],
+        tanggal: row.tanggal,
+      });
+      const masuk = incoming.map((row) => mapLetter(row, "masuk"));
+      const keluar = outgoing.map((row) => mapLetter(row, "keluar"));
+      const staf = employees.map((row) => ({
+        nama: row.name || row.nama, nip: row.username || row.nip, jabatan: row.jabatan,
+      })).filter((row) => [row.nama, row.nip, row.jabatan].some((value) => cocok(value, q)));
+      const tugas = tasks.map((row) => ({
+        judul: row.judul, kode: row.kode || row.id, pic: row.assigned_to_name || row.pic,
+      })).filter((row) => [row.judul, row.kode, row.pic].some((value) => cocok(value, q)));
+      const letterBase = role === "admin" ? "pages/admin/input-surat.html" : "pages/pegawai/surat.html";
+      const incomingLink = role === "kepala-seksi" ? "pages/kepala-seksi/surat-masuk.html" : letterBase;
+      const outgoingLink = role === "kepala-seksi" ? "pages/kepala-seksi/surat-keluar.html" : letterBase;
+      const tasksLink = role === "kepala-seksi" ? "pages/kepala-seksi/tugas-seksi.html"
+        : role === "pegawai" ? "pages/pegawai/tugas-saya.html" : null;
+      const directoryLink = role === "admin" ? "pages/admin/data-pengguna.html" : "pages/kepala-seksi/direktori-staf.html";
 
       const total = masuk.length + keluar.length + staf.length + tugas.length;
       summary.hidden = false;
-      summary.innerHTML = 'Ditemukan <strong>' + total + ' hasil</strong> untuk kata kunci "<strong>' + esc(q) + '</strong>".';
+      summary.innerHTML = 'Ditemukan <strong>' + total + ' hasil pada data yang dimuat</strong> untuk kata kunci "<strong>' + esc(q) + '</strong>".';
 
       if (!total) {
         hasil.innerHTML = '<div class="empty"><p class="empty-title">Tidak ada hasil</p><p class="empty-text">Coba kata kunci lain, misalnya nomor surat, nama pengirim, nama staf, atau judul tugas.</p></div>';
@@ -169,7 +236,7 @@
       let html = "";
 
       if (masuk.length) {
-        html += '<section class="group"><div class="group-head"><span class="group-title">Surat Masuk</span><span class="group-count">' + masuk.length + '</span><a class="group-more" href="pages/kepala-seksi/surat-masuk.html">Lihat semua &rarr;</a></div>';
+        html += '<section class="group"><div class="group-head"><span class="group-title">Surat Masuk</span><span class="group-count">' + masuk.length + '</span><a class="group-more" href="' + incomingLink + '">Lihat semua &rarr;</a></div>';
         masuk.slice(0, 5).forEach((s) => {
           html += '<div class="result"><span class="result-icon">SM</span><div class="result-body"><p class="result-title">' + highlight(s.nomor, q) + '</p><p class="result-meta">' + highlight(s.perihal, q) + '</p><p class="result-sub">Pengirim: ' + highlight(s.pengirim, q) + ' &bull; ' + esc(s.tanggal) + '</p></div></div>';
         });
@@ -177,7 +244,7 @@
       }
 
       if (keluar.length) {
-        html += '<section class="group"><div class="group-head"><span class="group-title">Surat Keluar</span><span class="group-count">' + keluar.length + '</span><a class="group-more" href="pages/kepala-seksi/surat-keluar.html">Lihat semua &rarr;</a></div>';
+        html += '<section class="group"><div class="group-head"><span class="group-title">Surat Keluar</span><span class="group-count">' + keluar.length + '</span><a class="group-more" href="' + outgoingLink + '">Lihat semua &rarr;</a></div>';
         keluar.slice(0, 5).forEach((s) => {
           html += '<div class="result"><span class="result-icon green">SK</span><div class="result-body"><p class="result-title">' + highlight(s.nomor, q) + '</p><p class="result-meta">' + highlight(s.perihal, q) + '</p><p class="result-sub">Tujuan/Pengirim: ' + highlight(s.pengirim, q) + ' &bull; ' + esc(s.tanggal) + '</p></div></div>';
         });
@@ -185,7 +252,7 @@
       }
 
       if (tugas.length) {
-        html += '<section class="group"><div class="group-head"><span class="group-title">Tugas Seksi</span><span class="group-count">' + tugas.length + '</span><a class="group-more" href="pages/kepala-seksi/tugas-seksi.html">Lihat semua &rarr;</a></div>';
+        html += '<section class="group"><div class="group-head"><span class="group-title">Tugas Seksi</span><span class="group-count">' + tugas.length + '</span>' + (tasksLink ? '<a class="group-more" href="' + tasksLink + '">Lihat semua &rarr;</a>' : "") + '</div>';
         tugas.slice(0, 5).forEach((s) => {
           html += '<div class="result"><span class="result-icon amber">TG</span><div class="result-body"><p class="result-title">' + highlight(s.judul, q) + '</p><p class="result-meta">' + highlight(s.kode, q) + '</p><p class="result-sub">PIC: ' + highlight(s.pic, q) + '</p></div></div>';
         });
@@ -193,7 +260,7 @@
       }
 
       if (staf.length) {
-        html += '<section class="group"><div class="group-head"><span class="group-title">Staf / Pegawai</span><span class="group-count">' + staf.length + '</span><a class="group-more" href="pages/kepala-seksi/direktori-staf.html">Lihat semua &rarr;</a></div>';
+        html += '<section class="group"><div class="group-head"><span class="group-title">Staf / Pegawai</span><span class="group-count">' + staf.length + '</span><a class="group-more" href="' + directoryLink + '">Lihat semua &rarr;</a></div>';
         staf.slice(0, 5).forEach((s) => {
           html += '<div class="result"><span class="result-icon gray">' + esc((s.nama || "?").split(" ").map((x) => x[0]).slice(0, 2).join("")) + '</span><div class="result-body"><p class="result-title">' + highlight(s.nama, q) + '</p><p class="result-meta">' + esc(s.jabatan || "-") + '</p><p class="result-sub">NIP: ' + highlight(s.nip, q) + '</p></div></div>';
         });

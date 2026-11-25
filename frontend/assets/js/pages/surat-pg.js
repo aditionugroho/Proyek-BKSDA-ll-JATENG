@@ -49,7 +49,7 @@ function mapSurat(s, jenis) {
 
   return {
     id: s.id,
-    jenis,
+    jenis: jenis === "keluar" && status === "Draft" ? "draft" : jenis,
     nomor: String(s.no_surat || s.no_agenda || "Belum ada nomor"),
     pengirim: String(
       jenis === "masuk"
@@ -213,15 +213,15 @@ document.getElementById("btn-filter-lanjutan").addEventListener("click", () => {
 document.getElementById("pgs-tbody").addEventListener("click", (event) => {
   const btn = event.target.closest("[data-preview]");
   if (!btn) return;
-  if (btn.dataset.jenis === "keluar") {
-    showToast("Detail surat keluar pegawai belum terhubung.");
-    return;
+  const id = encodeURIComponent(btn.dataset.preview);
+  const jenis = btn.dataset.jenis;
+  if (jenis === "draft") {
+    location.href = `buat-surat.html?draft_id=${id}`;
+  } else if (jenis === "keluar") {
+    location.href = `preview-surat.html?id=${id}`;
+  } else {
+    location.href = `detail-surat.html?id=${id}&jenis=masuk`;
   }
-  const id = btn.dataset.preview;
-const jenis = btn.dataset.jenis;
-
-window.location.href =
-  `detail-surat.html?id=${encodeURIComponent(id)}&jenis=${encodeURIComponent(jenis)}`;
 });
 
 /* ===== Inisialisasi: muat data dulu, baru render ===== */

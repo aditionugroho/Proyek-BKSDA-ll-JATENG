@@ -1437,16 +1437,8 @@ public function klarifikasi($id = null)
     private function archiveSuratMasukIfNeeded(
         int $suratMasukId
     ): ?int {
-        $existing = $this->arsipModel
-            ->where(
-                'jenis',
-                'surat_masuk'
-            )
-            ->where(
-                'referensi_id',
-                $suratMasukId
-            )
-            ->first();
+        // Penyelesaian disposisi sudah mengunci surat asal melalui UPDATE.
+        $existing = $this->arsipModel->findReferenceForUpdate('surat_masuk', $suratMasukId);
 
         if ($existing) {
             return (int) $existing['id'];

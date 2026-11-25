@@ -40,6 +40,124 @@ PATTERN = re.compile(
 )
 
 
+
+MONTHS_ID = {
+    "januari": 1, "februari": 2, "maret": 3,
+    "april": 4, "mei": 5, "juni": 6,
+    "juli": 7, "agustus": 8, "september": 9,
+    "oktober": 10, "november": 11, "desember": 12,
+}
+
+
+def extract_fields(text: str, nomor_saran=None) -> dict:
+    """Ekstraksi konservatif informasi surat Indonesia."""
+
+    import datetime
+
+    fields = {
+        "no_surat": nomor_saran,
+        "tanggal": None,
+        "tujuan": None,
+        "perihal": None,
+        "isi": None,
+        "klasifikasi": None,
+    }
+
+    if not isinstance(text, str) or not text.strip():
+        return fields
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    normalized = "\n".join(lines)
+
+    # Tanggal Indonesia: 24 November 2026.
+    date_pattern = (
+        r"\b(\d{1,2})\s+"
+        r"(januari|februari|maret|april|mei|juni|juli|"
+        r"agustus|september|oktober|november|desember)"
+        r"\s+(\d{4})\b"
+    )
+
+    for match in re.finditer(date_pattern, normalized, re.I):
+        day = int(match.group(1))
+        month = MONTHS_ID[match.group(2).lower()]
+        year = int(match.group(3))
+
+        try:
+            fields["tanggal"] = datetime.date(
+                year, month, day
+            ).isoformat()
+            break
+        except ValueError:
+            continue
+
+    # Tanggal numerik hanya diambil jika memiliki label tanggal.
+    if not fields["tanggal"]:
+        match = re.search(
+            r"(?im)^\s*(?:tanggal|tgl\.?)\s*[:=-]\s*"
+            r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s*$",
+            normalized
+        )
+        if match:
+            try:
+                fields["tanggal"] = datetime.date(
+                    int(match.group(3)),
+                    int(match.group(2)),
+                    int(match.group(1))
+                ).isoformat()
+            except ValueError:
+                pass
+
+    # Tujuan: baris Yth./Kepada.
+    for index, line in enumerate(lines):
+        if re.search(r"\b(?:yth\.?|yang terhormat)\b", line, re.I):
+            value = re.sub(
+                r"(?i)^.*?\b(?:yth\.?|yang terhormat)\b",
+                "",
+                line
+            ).strip(" .,:;-")
+
+            if not value and index + 1 < len(lines):
+                value = lines[index + 1]
+
+            if value and len(value) <= 255:
+                fields["tujuan"] = value
+            break
+
+    # Perihal atau Hal.
+    match = re.search(
+        r"(?im)^\s*(?:perihal|hal)\s*[:=-]\s*(.+)$",
+        normalized
+    )
+    if match:
+        value = match.group(1).strip()
+        if value and len(value) <= 1000:
+            fields["perihal"] = value
+
+    # Klasifikasi atau sifat surat jika tertulis eksplisit.
+    match = re.search(
+        r"(?im)^\s*(?:klasifikasi|sifat)\s*[:=-]\s*(.+)$",
+        normalized
+    )
+    if match:
+        fields["klasifikasi"] = match.group(1).strip()[:100]
+
+    # Isi surat dimulai pada salam pembuka yang dikenali.
+    body_match = re.search(
+        r"(?im)^\s*(?:dengan hormat[,.:]?|"
+        r"assalamu['’]alaikum(?:\s+warahmatullahi)?[,.:]?)\s*$",
+        normalized
+    )
+
+    if body_match:
+        body = normalized[body_match.start():].strip()
+        if body and len(body) <= 12000:
+            fields["isi"] = body
+        elif body:
+            fields["isi"] = body[:12000]
+
+    return fields
+
+
 # ==========================================
 # 2. FUNGSI UTAMA
 # ==========================================
@@ -51,12 +169,14 @@ def main(path: str, kind: str) -> dict:
         "nomor_surat_saran": None,
         "kandidat": [],
         "qrcodes": [],
+        "teks_terbaca": "",
         "ocr_tersedia": False,
         "peringatan": []
     }
 
     seen = set()
     qr_seen = set()
+    ocr_language = None
 
     # ======================================
     # 3. SIMPAN KANDIDAT NOMOR SURAT
@@ -98,6 +218,20 @@ def main(path: str, kind: str) -> dict:
         source: str
     ) -> None:
 
+        # Simpan teks dokumen digital dan hasil OCR.
+        # Jangan masukkan payload QR sebagai isi surat.
+        if isinstance(text, str) and not source.startswith("qr_"):
+            cleaned_text = text.strip()
+
+            if cleaned_text:
+                remaining = 30000 - len(result["teks_terbaca"])
+
+                if remaining > 0:
+                    result["teks_terbaca"] += (
+                        "\n" + cleaned_text[:remaining]
+                    )
+
+        # Pertahankan deteksi kandidat nomor surat.
         for match in PATTERN.finditer(text):
 
             add_candidate(
@@ -285,7 +419,7 @@ def main(path: str, kind: str) -> dict:
 
                 text = pytesseract.image_to_string(
                     rgb,
-                    lang="eng",
+                    lang=ocr_language,
                     config="--psm 3",
                     timeout=5
                 )
@@ -325,7 +459,15 @@ def main(path: str, kind: str) -> dict:
 
             pytesseract.get_tesseract_version()
 
-            result["ocr_tersedia"] = True
+            installed = set(pytesseract.get_languages(config=""))
+            selected = [lang for lang in ("ind", "eng") if lang in installed]
+            if selected:
+                ocr_language = "+".join(selected)
+                result["ocr_tersedia"] = True
+            if "ind" not in installed:
+                result["peringatan"].append(
+                    "Data bahasa Indonesia Tesseract belum tersedia."
+                )
 
         except Exception:
             pass
@@ -514,6 +656,11 @@ def main(path: str, kind: str) -> dict:
         result["nomor_surat_saran"] = (
             result["kandidat"][0]["nomor"]
         )
+
+    result["fields"] = extract_fields(
+        result["teks_terbaca"],
+        result["nomor_surat_saran"]
+    )
 
     return result
 

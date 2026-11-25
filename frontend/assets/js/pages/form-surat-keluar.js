@@ -1,29 +1,11 @@
-/*
- * FORM SURAT KELUAR ADMIN
- * E-Office BKSDA - Integrasi API CodeIgniter 4
- *
- * POST /api/surat-keluar
- * POST /api/surat-keluar/{id}/file
- * GET  /api/resorts
- *
- * Catatan:
- * - Backend belum mempunyai workflow Draft/Kirim.
- * - Backend belum menyimpan isi editor dan penandatangan.
- * - Backend hanya menyimpan satu lampiran per surat.
- * - Upload menggunakan Idempotency-Key E14.
- */
+import { createDraftSession, downloadDraftAttachment, validateSuratAttachment } from "./surat-keluar-draft.js";
 
 "use strict";
 
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-  const ALLOWED_EXTENSIONS = ["pdf", "docx", "jpg", "jpeg", "png"];
-
-  const API_BASE =
-    window.EOfficeAPI?.config?.BASE_URL || "/api";
+  const draftSession = createDraftSession();
 
   const form = $("form-surat");
   const fileInput = $("file-input");
@@ -36,7 +18,8 @@
   let fileObjectURL = null;
 
   let isBusy = false;
-  let createdSuratId = null;
+  let ready = false;
+  let submitted = false;
   let uploadKey = null;
   let toastTimer = null;
 
@@ -259,38 +242,11 @@
      TANGGAL
   =========================== */
 
-  function setupDate() {
-    const input = $("tanggal-surat");
-
-    if (!input) return;
-
-    // HTML asli masih mempunyai tanggal
-    // contoh statis dari Juli 2026.
-    if (!input.value || input.value === "2026-07-09") {
-      const now = new Date();
-
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-
-      input.value = `${year}-${month}-${day}`;
-    }
-  }
-
   /* ===========================
      FITUR YANG BELUM DIDUKUNG
   =========================== */
 
-  function setupUnsupportedFeatures() {
-    // Backend belum mempunyai workflow Draft.
-    if (draftButton) {
-      draftButton.disabled = true;
-
-      draftButton.title = "Backend belum mendukung penyimpanan draft.";
-    }
-
-    // Backend belum mendukung penandatangan
-    // maupun isi surat dari rich-text editor.
+  function setupPlainTextForm() {
     const signer = $("penandatangan");
 
     if (signer) {
@@ -312,34 +268,6 @@
       jabatanText.textContent = "Penandatangan belum tersedia";
     }
 
-    const editor = $("editor-body");
-
-    if (editor) {
-      editor.setAttribute("contenteditable", "false");
-
-      editor.setAttribute("aria-disabled", "true");
-
-      editor.dataset.placeholder =
-        "Penyimpanan isi surat belum didukung backend.";
-
-      const message = document.createElement("p");
-
-      message.className = "form-hint";
-
-      message.style.padding = "10px";
-      message.style.color = "#92400e";
-
-      message.textContent =
-        "Isi surat dan penandatangan belum " +
-        "disimpan oleh API saat ini. " +
-        "Form ini hanya mencatat metadata " +
-        "surat dan satu lampiran.";
-
-      editor.closest(".editor")?.after(message);
-    }
-
-    // Toolbar editor tidak boleh menyiratkan
-    // fitur penyimpanan yang sudah tersedia.
     document.querySelectorAll(".editor-btn").forEach((button) => {
       button.disabled = true;
     });
@@ -356,7 +284,7 @@
     }
 
     if (sendButton) {
-      sendButton.textContent = "Simpan Surat Keluar";
+      sendButton.textContent = "Ajukan Surat Keluar";
     }
   }
 
@@ -371,11 +299,9 @@
   function validateForm() {
     const fields = [
       ["nomor-surat", "Nomor surat"],
-      ["nomor-agenda", "Nomor agenda"],
       ["tanggal-surat", "Tanggal surat"],
       ["tujuan-surat", "Tujuan surat"],
       ["perihal", "Perihal"],
-      ["resort-id", "Resort"],
     ];
 
     for (const [id, label] of fields) {
@@ -399,19 +325,9 @@
       return false;
     }
 
-    // Jangan sampai isi surat yang sudah diketik
-    // sebelumnya hilang tanpa disadari.
-    const editorContent = String($("editor-body")?.textContent || "").trim();
-
-    if (editorContent) {
-      showNotice(
-        "Editor masih memiliki isi surat. " +
-          "API belum menyimpan isi tersebut. " +
-          "Salin isi surat ke dokumen terpisah " +
-          "sebelum melanjutkan.",
-        true,
-      );
-
+    if (!$("editor-body").innerText.trim()) {
+      showNotice("Isi surat wajib diisi.", true);
+      $("editor-body").focus();
       return false;
     }
 
@@ -420,8 +336,6 @@
 
   function buildPayload() {
     return {
-      no_agenda: fieldValue("nomor-agenda"),
-
       no_surat: fieldValue("nomor-surat"),
 
       tanggal: fieldValue("tanggal-surat"),
@@ -433,32 +347,13 @@
       klasifikasi: fieldValue("klasifikasi") || "",
 
       resort_id: Number(fieldValue("resort-id")),
+      isi: $("editor-body").innerText.trim(),
     };
   }
 
   /* ===========================
      FILE VALIDATION
   =========================== */
-
-  function validateFile(file) {
-    if (!(file instanceof File)) {
-      throw new Error("File lampiran tidak valid.");
-    }
-
-    const ext = file.name.split(".").pop().toLowerCase();
-
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      throw new Error("Lampiran harus PDF, DOCX, JPG, JPEG atau PNG.");
-    }
-
-    if (file.size === 0 || file.size > MAX_FILE_SIZE) {
-      throw new Error(
-        "Ukuran lampiran harus lebih dari 0 " + "dan maksimal 10 MB.",
-      );
-    }
-
-    return true;
-  }
 
   function formatSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(2) + " MB";
@@ -510,7 +405,7 @@
     const count = $("attachment-count");
 
     if (count) {
-      count.textContent = selectedFile ? "1" : "0";
+      count.textContent = selectedFile || draftSession.draft?.file_path ? "1" : "0";
     }
 
     if (!list) return;
@@ -522,6 +417,20 @@
 
       empty.className = "form-hint";
       empty.textContent = "Belum ada berkas terlampir.";
+      if (draftSession.draft?.file_path) {
+        const download = document.createElement("button");
+        download.type = "button";
+        download.textContent = "Unduh lampiran tersimpan";
+        download.addEventListener("click", async () => {
+          try {
+            await downloadDraftAttachment(draftSession.draft.id);
+          } catch (error) {
+            showNotice(error.message, true);
+          }
+        });
+        list.append(download);
+        return;
+      }
 
       list.appendChild(empty);
       return;
@@ -540,9 +449,7 @@
     const meta = document.createElement("span");
     meta.className = "attachment-meta";
 
-    meta.textContent =
-      `${formatSize(selectedFile.size)} • ` +
-      (createdSuratId ? "Siap diunggah / diulang" : "Menunggu surat disimpan");
+    meta.textContent = formatSize(selectedFile.size);
 
     info.appendChild(name);
     info.appendChild(meta);
@@ -562,11 +469,13 @@
     removeButton.className = "icon-btn icon-btn--danger";
     removeButton.textContent = "Hapus";
 
-    removeButton.disabled = isBusy || createdSuratId !== null;
+    removeButton.disabled = isBusy;
 
     removeButton.addEventListener("click", () => {
-      if (createdSuratId !== null) return;
+      if (isBusy) return;
 
+      ocrController?.abort();
+      ocrController = null;
       selectedFile = null;
       uploadKey = null;
 
@@ -583,19 +492,183 @@
     list.appendChild(wrapper);
   }
 
-  function chooseFile(file) {
-    if (createdSuratId !== null) {
-      showNotice(
-        "Surat sudah dibuat. Untuk menghindari " +
-          "duplikasi, file tidak dapat diganti " +
-          "di sesi ini.",
-        true,
-      );
+  let ocrController = null;
+
+  async function extractSurat(file) {
+    ocrController?.abort();
+    ocrController = null;
+
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (!["pdf", "jpg", "jpeg", "png"].includes(extension)) {
       return;
     }
 
+    const token = getToken();
+
+    if (!token) {
+      showNotice("Token login tidak ditemukan.", true);
+      return;
+    }
+
+    const controller = new AbortController();
+    ocrController = controller;
+
+    const timeout = setTimeout(
+      () => controller.abort(),
+      90000
+    );
+
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
     try {
-      validateFile(file);
+      showNotice(
+        "Sedang membaca dokumen dengan OCR. Mohon tunggu..."
+      );
+
+      const response = await fetch(
+        `${EOfficeAPI.config.BASE_URL}/surat-keluar/extract`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+          body: formData,
+          signal: controller.signal,
+        }
+      );
+
+      const result = await response.json();
+
+      if (
+        selectedFile !== file ||
+        ocrController !== controller ||
+        isBusy
+      ) {
+        return;
+      }
+
+      if (!response.ok || result?.status !== true) {
+        throw new Error(
+          result?.message || "Ekstraksi OCR gagal."
+        );
+      }
+
+      const data = result.data || {};
+      const fields = data.fields || {};
+      let filled = 0;
+
+      const values = {
+        "nomor-surat":
+          fields.no_surat || data.nomor_surat_saran,
+        "tanggal-surat": fields.tanggal,
+        "tujuan-surat": fields.tujuan,
+        "perihal": fields.perihal,
+        "klasifikasi": fields.klasifikasi,
+      };
+
+      for (const [id, value] of Object.entries(values)) {
+        const element = $(id);
+
+        if (!element || !value) continue;
+
+        if (String(element.value || "").trim()) continue;
+
+        const text = String(value).trim();
+
+        if (id === "tanggal-surat" &&
+            !/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+          continue;
+        }
+
+        if (element.tagName === "SELECT") {
+          const option = Array.from(element.options).find(
+            (item) =>
+              item.value.toLowerCase() === text.toLowerCase() ||
+              item.textContent.trim().toLowerCase() === text.toLowerCase()
+          );
+
+          if (!option) continue;
+
+          element.value = option.value;
+        } else {
+          element.value = text;
+        }
+
+        if (element.value) {
+          element.dispatchEvent(
+            new Event("input", { bubbles: true })
+          );
+
+          element.dispatchEvent(
+            new Event("change", { bubbles: true })
+          );
+
+          filled++;
+        }
+      }
+
+      const editor = $("editor-body");
+
+      if (
+        editor &&
+        fields.isi &&
+        !String(editor.textContent || "").trim()
+      ) {
+        editor.textContent = String(fields.isi);
+        filled++;
+      }
+
+      const warnings = Array.isArray(data.peringatan)
+        ? data.peringatan.filter(Boolean).join(" ")
+        : "";
+
+      showNotice(
+        (
+          filled > 0
+            ? `OCR selesai. ${filled} kolom berhasil diisi. `
+            : "OCR selesai, tetapi tidak ada kolom kosong yang berhasil diisi. "
+        ) +
+        "Periksa kembali informasi surat sebelum menyimpan. " +
+        warnings
+      );
+
+      showToast("Pembacaan dokumen selesai.");
+
+    } catch (error) {
+      if (
+        selectedFile !== file ||
+        ocrController !== controller ||
+        isBusy
+      ) {
+        return;
+      }
+
+      showNotice(
+        error.name === "AbortError"
+          ? "OCR melewati batas waktu. Silakan isi form secara manual."
+          : "OCR gagal: " + error.message +
+            " Lampiran tetap dapat digunakan.",
+        true
+      );
+
+    } finally {
+      clearTimeout(timeout);
+
+      if (ocrController === controller) {
+        ocrController = null;
+      }
+    }
+  }
+
+
+  function chooseFile(file) {
+    if (isBusy || !ready) return;
+
+    try {
+      validateSuratAttachment(file);
 
       selectedFile = file;
 
@@ -608,6 +681,7 @@
       showNotice(
         `Berkas "${file.name}" siap diunggah ` + "setelah surat disimpan.",
       );
+      void extractSurat(file);
     } catch (error) {
       showNotice(error.message, true);
     }
@@ -632,7 +706,6 @@
 
     ["dragenter", "dragover"].forEach((eventName) => {
       dropzone.addEventListener(eventName, (event) => {
-        let completed = false;
         event.preventDefault();
         dropzone.classList.add("is-over");
       });
@@ -663,215 +736,65 @@
     });
   }
 
-  /* ===========================
-     CREATE SURAT
-  =========================== */
-
-  async function createSurat() {
-    const payload = buildPayload();
-
-    const result = await request("POST", "/surat-keluar", payload);
-
-    const id = Number(result.data?.id);
-
-    if (!Number.isSafeInteger(id) || id < 1) {
-      throw new Error(
-        "Surat mungkin sudah dibuat, tetapi " +
-          "server tidak mengembalikan ID valid. " +
-          "Periksa daftar surat sebelum mencoba lagi.",
-      );
-    }
-
-    return id;
-  }
-
-  /* ===========================
-     UPLOAD FILE E14
-  =========================== */
-
-  async function uploadAttachment() {
-    if (!selectedFile) return;
-
-    if (!createdSuratId || !uploadKey) {
-      throw new Error("ID surat atau Idempotency-Key belum tersedia.");
-    }
-
-    const token = getToken();
-
-    if (!token) {
-      throw new Error("Token login tidak ditemukan.");
-    }
-
-    const formData = new FormData();
-
-    // Backend membaca getFile("file")
-    formData.append("file", selectedFile, selectedFile.name);
-
-    const controller = new AbortController();
-
-    const timeout = setTimeout(() => controller.abort(), 60000);
-
-    try {
-      const response = await fetch(
-        `${API_BASE}/surat-keluar/${createdSuratId}/file`,
-        {
-          method: "POST",
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-
-            "Idempotency-Key": uploadKey,
-
-            Accept: "application/json",
-          },
-
-          body: formData,
-          signal: controller.signal,
-        },
-      );
-
-      let result;
-
-      try {
-        result = await response.json();
-      } catch {
-        throw new Error("Server tidak mengembalikan respons upload JSON.");
-      }
-
-      if (!response.ok || result?.status !== true) {
-        throw new Error(
-          result?.message || `Upload gagal (HTTP ${response.status}).`,
-        );
-      }
-
-      return result.data;
-    } catch (error) {
-      if (error.name === "AbortError") {
-        throw new Error(
-          "Upload melewati batas waktu. " +
-            "Periksa lampiran surat sebelum mengulang.",
-        );
-      }
-
-      throw error;
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  /* ===========================
-     SUBMIT
-  =========================== */
-
   function setBusy(busy) {
     isBusy = busy;
-
-    if (sendButton) {
-      sendButton.disabled = busy;
-
-      if (busy) {
-        sendButton.textContent = "Memproses...";
-      } else {
-        sendButton.textContent =
-          createdSuratId && selectedFile
-            ? "Coba Unggah Lagi"
-            : "Simpan Surat Keluar";
-      }
-    }
-
-    if ($("browse-btn")) {
-      $("browse-btn").disabled = busy || createdSuratId !== null;
-    }
-
+    sendButton.disabled = busy || !ready || submitted;
+    draftButton.disabled = sendButton.disabled;
+    $("browse-btn").disabled = sendButton.disabled;
+    sendButton.textContent = busy ? "Memproses..." : "Ajukan Surat Keluar";
     renderAttachment();
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    let completed = false;
+  async function loadDraftFromUrl() {
+    const draft = await draftSession.load();
+    if (!draft) return;
+    for (const [field, value] of Object.entries({
+      "nomor-agenda": draft.no_agenda,
+      "nomor-surat": draft.no_surat,
+      "tanggal-surat": draft.tanggal,
+      "tujuan-surat": draft.tujuan,
+      perihal: draft.perihal,
+      klasifikasi: draft.klasifikasi,
+      "resort-id": draft.resort_id,
+    })) {
+      $(field).value = value ?? "";
+    }
 
-    if (isBusy) return;
+    $("resort-id").disabled = true;
+    $("editor-body").textContent = draft.isi ?? "";
+  }
 
+  async function save(submit) {
+    if (isBusy || !ready || submitted) return;
+    if (ocrController) {
+      showNotice("OCR masih berjalan. Tunggu hingga selesai.", true);
+      return;
+    }
+    if (submit && !validateForm()) return;
+    if (!fieldValue("resort-id") && !draftSession.draft) {
+      showNotice("Pilih resort / unit kerja.", true);
+      return;
+    }
+    setBusy(true);
     try {
-      requireAdmin();
-
-      // Setelah surat tercipta, jangan POST ulang.
-      if (!createdSuratId && !validateForm()) {
-        return;
+      const payload = buildPayload();
+      if (draftSession.draft) delete payload.resort_id;
+      const record = await draftSession.save(payload, selectedFile, uploadKey, submit);
+      selectedFile = null;
+      showNotice(submit ? "Surat berhasil diajukan." : "Draft berhasil disimpan.");
+      showToast(submit ? "Surat berhasil diajukan." : "Draft berhasil disimpan.");
+      if (submit) {
+        submitted = true;
+        location.href = `detail-surat-admin.html?id=${record.id}&jenis=KELUAR`;
       }
-
-      setBusy(true);
-
-      if (!createdSuratId) {
-        showNotice("Menyimpan Surat Keluar...");
-
-        createdSuratId = await createSurat();
-
-        // Setelah surat berhasil dibuat, data
-        // tidak boleh disimpan ulang melalui POST.
-        form.querySelectorAll("input, select").forEach((element) => {
-          if (element !== fileInput) {
-            element.disabled = true;
-          }
-        });
-
-        console.info("Surat Keluar tercatat:", createdSuratId);
-      }
-
-      if (selectedFile) {
-        showNotice(
-          `Surat ID ${createdSuratId} tersimpan. ` + "Mengunggah lampiran...",
-        );
-
-        await uploadAttachment();
-        completed = true;
-      }
-
-      showNotice(
-        `Berhasil! Surat Keluar ID ${createdSuratId} ` +
-          (selectedFile
-            ? "dan lampirannya sudah tersimpan."
-            : "sudah tersimpan tanpa lampiran."),
-      );
-
-      showToast("Surat Keluar berhasil dicatat.");
-
-      if (sendButton) {
-        sendButton.disabled = true;
-        sendButton.textContent = "Berhasil Disimpan";
-      }
-
-      console.info("Integrasi Surat Keluar berhasil:", {
-        id: createdSuratId,
-        lampiran: Boolean(selectedFile),
-      });
     } catch (error) {
-      console.error("Simpan Surat Keluar gagal:", error);
-
-      if (createdSuratId) {
-        showNotice(
-          `Surat ID ${createdSuratId} sudah tercatat, ` +
-            "tetapi upload belum terkonfirmasi. " +
-            error.message +
-            " Jangan membuat surat baru. " +
-            "Periksa detail surat atau coba ulangi upload.",
-          true,
-        );
-      } else {
-        showNotice(
-          error.message +
-            " Jika request pembuatan sempat terkirim, " +
-            "periksa daftar surat sebelum mengulangi.",
-          true,
-        );
-      }
+      showNotice(error.message, true);
     } finally {
-      setBusy(false);
-
-      if (completed && sendButton) {
-        sendButton.disabled = true;
-        sendButton.textContent = "Berhasil Disimpan";
+      if (draftSession.draft) {
+        $("nomor-agenda").value = draftSession.draft.no_agenda ?? "";
+        $("resort-id").disabled = true;
       }
+      setBusy(false);
     }
   }
 
@@ -884,14 +807,20 @@
       requireAdmin();
 
       setupNomorSurat();
-      setupDate();
+      $("nomor-agenda").readOnly = true;
+      $("nomor-agenda").placeholder = "Ditetapkan saat surat disimpan";
+      $("tanggal-surat").value = "";
 
       createResortField();
-      setupUnsupportedFeatures();
+      setupPlainTextForm();
 
       setupFileInput();
 
-      form.addEventListener("submit", handleSubmit);
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        save(true);
+      });
+      draftButton.addEventListener("click", () => save(false));
 
       $("btn-cancel")?.addEventListener("click", () => {
         window.location.href = "input-surat.html";
@@ -899,7 +828,11 @@
 
       renderAttachment();
 
+      setBusy(true);
       await loadResorts();
+      await loadDraftFromUrl();
+      ready = true;
+      setBusy(false);
 
       console.info("Form Surat Keluar Admin siap.");
     } catch (error) {
@@ -913,7 +846,10 @@
     }
   }
 
-  window.addEventListener("pagehide", revokeFileURL);
+  window.addEventListener("pagehide", () => {
+    ocrController?.abort();
+    revokeFileURL();
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init, { once: true });

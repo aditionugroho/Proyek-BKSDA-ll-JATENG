@@ -16,7 +16,7 @@ let notifData = [];
 
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    return EOfficeAPI.getNotifikasi();
+    return normalizeNotifikasi(await EOfficeAPI.getNotifikasi());
   }
   /* Mock: notifikasi dinamis (pemicu aksi pengguna) + data contoh */
   return [...ambilNotif("ks"), ...NOTIF_MOCK];
@@ -189,6 +189,10 @@ function renderList() {
 }
 
 function normalizeNotifikasi(response) {
+  if (response?.status === false) {
+    throw new Error(response.message || "Gagal memuat notifikasi.");
+  }
+
   // Respons langsung berupa array.
   if (Array.isArray(response)) {
     return response;
@@ -238,7 +242,6 @@ function refresh() {
       ),
       teks: n.teks || escape(n.pesan || ""),
       waktu: n.waktu || n.created_at || "-",
-      meta: n.meta || n.created_at || "Notifikasi sistem",
       meta: n.meta || n.created_at || "-",
       unread: n.unread !== undefined
         ? Boolean(n.unread)
@@ -291,17 +294,28 @@ document.getElementById("nt-sort").addEventListener("change", () => {
 });
 
 /* ===== EVENT: tandai dibaca ===== */
-document.getElementById("nt-list").addEventListener("click", (event) => {
+document.getElementById("nt-list").addEventListener("click", async (event) => {
   const readBtn = event.target.closest("[data-read]");
   if (readBtn) {
     const item = notifData.find((n) => String(n.id) === readBtn.dataset.read);
-    if (item) {
-      if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-        EOfficeAPI.markNotifikasiRead(item.id).catch(() => showToast("Gagal menyimpan status dibaca"));
-      } else {
-        tandaiDibaca("ks", item.id); // persist notifikasi dinamis
+    if (item && !readBtn.disabled) {
+      readBtn.disabled = true;
+      try {
+        if (window.EOfficeAPI?.config.LIVE) {
+          const response = await EOfficeAPI.markNotifikasiRead(item.id);
+          if (response?.status !== true) {
+            throw new Error(response?.message || "Gagal menyimpan status dibaca.");
+          }
+        } else {
+          tandaiDibaca("ks", item.id);
+        }
+        item.unread = false;
+      } catch (error) {
+        showToast(error.message);
+        return;
+      } finally {
+        readBtn.disabled = false;
       }
-      item.unread = false;
     }
     refresh();
     return;
@@ -318,15 +332,27 @@ document.getElementById("nt-list").addEventListener("click", (event) => {
 });
 
 /* ===== EVENT: tandai semua dibaca ===== */
-document.getElementById("btn-read-all").addEventListener("click", () => {
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    EOfficeAPI.markAllNotifikasiRead().catch(() => showToast("Gagal menyimpan status dibaca"));
-  } else {
-    tandaiSemuaDibaca("ks");
+document.getElementById("btn-read-all").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    if (window.EOfficeAPI?.config.LIVE) {
+      const response = await EOfficeAPI.markAllNotifikasiRead();
+      if (response?.status !== true) {
+        throw new Error(response?.message || "Gagal menyimpan status dibaca.");
+      }
+    } else {
+      tandaiSemuaDibaca("ks");
+    }
+    notifData.forEach((n) => { n.unread = false; });
+    refresh();
+    showToast("Semua notifikasi ditandai dibaca");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
   }
-  notifData.forEach((n) => (n.unread = false));
-  refresh();
-  showToast("Semua notifikasi ditandai dibaca");
 });
 
 /* ===== EVENT: pagination ===== */

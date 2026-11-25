@@ -60,7 +60,8 @@
           <div class="pgb-row-2">
             <div class="pgb-field">
               <label class="pgb-label" for="f-nomor">Nomor Surat <span class="pgb-req">*</span></label>
-              <textarea id="f-nomor" rows="2" placeholder="Tinggalkan kosong untuk auto-generate"></textarea>
+              <textarea id="f-nomor" rows="2" placeholder="Masukkan nomor surat resmi"></textarea>
+              <p class="pgb-error" id="f-nomor-error" hidden>Wajib diisi</p>
               <p class="pgb-helper">Format: B-[No]/K.XX/TU/[Bulan]/[Tahun]</p>
             </div>
             <div class="pgb-field">
@@ -68,6 +69,11 @@
               <input type="date" id="f-tanggal" />
               <p class="pgb-error" id="f-tanggal-error" hidden>Wajib diisi</p>
             </div>
+          </div>
+
+          <div class="pgb-field">
+            <label class="pgb-label" for="f-agenda">Nomor Agenda</label>
+            <input type="text" id="f-agenda" readonly placeholder="Ditetapkan saat surat disimpan" />
           </div>
 
           <div class="pgb-field">
@@ -126,7 +132,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
             <p class="pgb-dropzone-title">Klik atau seret file ke sini</p>
             <p class="pgb-dropzone-sub">PDF, DOCX, JPG (Max. 10MB)</p>
-            <input type="file" id="pgb-file" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png" hidden />
+            <input type="file" id="pgb-file" accept=".pdf,.docx,.jpg,.jpeg,.png" hidden />
           </div>
           <p class="pgb-error" id="pgb-file-error" hidden></p>
 

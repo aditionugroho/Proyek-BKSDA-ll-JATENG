@@ -1,51 +1,12 @@
-/* ============================================
-   INPUT SURAT (ADMIN) — E-Office SKSDA
-   Mock data tabel + search client-side +
-   navigasi halaman detail (placeholder)
-   ============================================ */
-
-/* ===== MOCK DATA: surat terakhir diinput ===== */
-export const SURAT_TERAKHIR_MOCK = [
-  {
-    id: 1,
-    nomor: "S.123/SKSDA-JT/TU/09/2026",
-    jenis: "MASUK",
-    pihak: "Kementerian Lingkungan Hidup",
-    perihal: "Undangan Rapat Koordinasi",
-    tanggal: "04 Sep 2026",
-    status: "Terdaftar"
-  },
-  {
-    id: 2,
-    nomor: "B.045/SKSDA-JT/09/2026",
-    jenis: "KELUAR",
-    pihak: "Dinas Lingkungan Hidup Jawa Tengah",
-    perihal: "Permohonan Koordinasi",
-    tanggal: "03 Sep 2026",
-    status: "Terdaftar"
-  },
-  {
-    id: 3,
-    nomor: "S.098/SKSDA-JT/TU/09/2026",
-    jenis: "MASUK",
-    pihak: "Balai Taman Nasional",
-    perihal: "Laporan Kegiatan",
-    tanggal: "02 Sep 2026",
-    status: "Terdaftar"
-  }
-];
-
-/* Halaman detail (dibuat khusus untuk admin) */
 const DETAIL_URL = "detail-surat-admin.html";
 
-/* ===== DATA: diisi loadData() — API saat LIVE, mock saat belum ===== */
 let suratTerakhir = [];
 
 async function loadData() {
   if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
     return EOfficeAPI.getSuratTerbaru();
   }
-  return SURAT_TERAKHIR_MOCK;
+  throw new Error("Koneksi API belum aktif.");
 }
 
 /* ===== RENDER: baris tabel ===== */
@@ -55,22 +16,33 @@ function renderTable(data) {
   if (data.length === 0) {
     tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Tidak ada surat yang cocok dengan pencarian.</td></tr>`;
   } else {
-    tbody.innerHTML = data
-      .map(
-        (s) => `
-        <tr>
-          <td><span class="cell-nomor">${s.nomor}</span></td>
-          <td><span class="badge badge-jenis--${s.jenis}">${s.jenis}</span></td>
-          <td><span class="cell-pihak">${s.pihak}</span></td>
-          <td><span class="cell-perihal">${s.perihal}</span></td>
-          <td><span class="cell-tanggal">${s.tanggal}</span></td>
-          <td><span class="badge badge-status--registered">${s.status}</span></td>
-          <td class="th-actions">
-            <button type="button" class="detail-btn" data-id="${s.id}" data-jenis="${s.jenis}">Lihat Detail</button>
-          </td>
-        </tr>`
-      )
-      .join("");
+    tbody.replaceChildren(...data.map((surat) => {
+      const row = document.createElement("tr");
+      const columns = [
+        [surat.nomor, "cell-nomor"],
+        [surat.jenis, `badge badge-jenis--${surat.jenis}`],
+        [surat.pihak, "cell-pihak"],
+        [surat.perihal, "cell-perihal"],
+        [surat.tanggal, "cell-tanggal"],
+        [surat.status, "badge badge-status--registered"],
+      ];
+      for (const [value, className] of columns) {
+        const span = document.createElement("span");
+        span.className = className;
+        span.textContent = value;
+        row.insertCell().append(span);
+      }
+      const action = row.insertCell();
+      action.className = "th-actions";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "detail-btn";
+      button.dataset.id = surat.id;
+      button.dataset.jenis = surat.jenis;
+      button.textContent = "Lihat Detail";
+      action.append(button);
+      return row;
+    }));
   }
 
   document.getElementById("table-count").textContent = `Menampilkan ${data.length} surat terbaru`;
@@ -80,7 +52,7 @@ function renderTable(data) {
 document.getElementById("table-search")?.addEventListener("input", (event) => {
   const q = event.target.value.trim().toLowerCase();
   const filtered = suratTerakhir.filter((s) =>
-    [s.nomor, s.pihak, s.perihal].some((f) => f.toLowerCase().includes(q))
+    [s.nomor, s.pihak, s.perihal].some((f) => String(f ?? "").toLowerCase().includes(q))
   );
   renderTable(filtered);
 });

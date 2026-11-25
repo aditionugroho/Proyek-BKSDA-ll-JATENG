@@ -765,7 +765,88 @@ function openPasswordForm(user) {
 
 /* ========== EVENTS ========== */
 
+function exportUsersCsv() {
+  if (!state.users.length) {
+    showMessage("Tidak ada data pengguna untuk diekspor.", true);
+    return;
+  }
+
+  const columns = [
+    ["ID", "id"],
+    ["Nama", "nama"],
+    ["Username", "username"],
+    ["Email", "email"],
+    ["No WhatsApp", "noWhatsapp"],
+    ["Role", "roleLabel"],
+    ["Jabatan", "jabatan"],
+    ["Resort", "resortNama"],
+    ["Kode Resort", "resortKode"],
+    ["Status", "status"],
+    ["Tanggal Dibuat", "createdAt"]
+  ];
+
+  // Lindungi isi CSV dari pemrosesan formula Excel.
+  const csvCell = (value) => {
+    let text = String(value ?? "");
+
+    if (/^[\s]*[=+\-@]/.test(text)) {
+      text = "'" + text;
+    }
+
+    return '"' + text.replace(/"/g, '""') + '"';
+  };
+
+  const rows = [
+    columns.map(([label]) => csvCell(label)).join(","),
+
+    ...state.users.map((user) => {
+      return columns.map(([label, key]) => {
+        let value = user[key];
+
+        if (key === "status") {
+          value = user.status === 1 ? "Aktif" : "Nonaktif";
+        }
+
+        return csvCell(value);
+      }).join(",");
+    })
+  ];
+
+  // BOM UTF-8 agar karakter Indonesia terbaca dengan benar.
+  const csv = "\uFEFF" + rows.join("\r\n");
+
+  const blob = new Blob(
+    [csv],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  const now = new Date();
+  const date = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+  ].join("-");
+
+  link.href = url;
+  link.download = `rekap-pengguna-bksda-${date}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+  showMessage(
+    `Rekap berhasil diekspor: ${state.users.length} pengguna.`
+  );
+
+}
+
 function setupActions() {
+  $("btn-export-users")?.addEventListener("click", exportUsersCsv);
   $("users-tbody")?.addEventListener("click", (event) => {
     const button = event.target.closest(
       "button[data-action]"
@@ -848,19 +929,6 @@ function hideMockPanels() {
     verification.hidden = true;
   }
 
-  // Nonaktifkan HANYA tombol Unduh Rekap.
-  // Jangan sampai tombol Impor CSV ikut dinonaktifkan.
-  const headerButtons = document.querySelectorAll(
-    ".page-header-actions button"
-  );
-
-  headerButtons.forEach((button) => {
-    if (button.textContent.includes("Unduh Rekap")) {
-      button.disabled = true;
-      button.title = "Ekspor belum diintegrasikan";
-    }
-  });
-
   // Pastikan tombol Import bisa digunakan.
   const importButton = document.getElementById(
     "btn-import-csv"
@@ -893,6 +961,8 @@ async function initUsersPage() {
 
   try {
     await loadUsers();
+    const exportButton = $("btn-export-users");
+    if (exportButton) exportButton.disabled = state.users.length === 0;
     updateUnitFilter();
     refresh();
 

@@ -484,6 +484,35 @@ class LaporanController extends BaseController
     |
     */
 
+    public function ringkasan()
+    {
+        $period = $this->request->getGet('periode');
+        if (!is_string($period) || !preg_match('/^(20[0-9]{2}|2100)-(0[1-9]|1[0-2])$/D', $period)) {
+            return $this->respond(['status' => false, 'message' => 'Periode harus YYYY-MM.'], 422);
+        }
+        $start = new \DateTimeImmutable($period . '-01');
+        $from = $start->format('Y-m-d');
+        $until = $start->modify('+1 month')->format('Y-m-d');
+        $counts = [];
+        foreach ([
+            'surat_masuk' => ['surat_masuk', 'tanggal', null],
+            'surat_keluar' => ['surat_keluar', 'tanggal', ['status !=', 'Draft']],
+            'disposisi_selesai' => ['disposisi', 'updated_at', ['status', 'selesai']],
+            'tugas_selesai' => ['tugas', 'updated_at', ['status', 'Selesai']],
+        ] as $key => [$table, $dateField, $status]) {
+            $query = $this->db->table($table)->where($dateField . ' >=', $from)->where($dateField . ' <', $until);
+            if ($status !== null) {
+                $query->where($status[0], $status[1]);
+            }
+            $counts[$key] = $query->countAllResults();
+        }
+
+        return $this->respond(['status' => true, 'data' => [
+            'periode' => $period,
+            'ringkasan' => $counts,
+        ]]);
+    }
+
     public function suratMasuk()
     {
         $tanggalMulai = trim(
@@ -782,6 +811,7 @@ class LaporanController extends BaseController
         $builder =
             $this->db
                 ->table('surat_keluar sk')
+                ->where('sk.status !=', 'Draft')
                 ->select(
                     '
                     sk.id,
@@ -1380,7 +1410,7 @@ class LaporanController extends BaseController
                 FROM surat_keluar
 
                 WHERE
-                    YEAR(tanggal) = ?
+                    YEAR(tanggal) = ? AND status != ?
 
                 GROUP BY created_by
             ) sk
@@ -1449,6 +1479,7 @@ class LaporanController extends BaseController
                     [
                         $year,
                         $year,
+                        'Draft',
                         $year,
                         $year,
                     ]

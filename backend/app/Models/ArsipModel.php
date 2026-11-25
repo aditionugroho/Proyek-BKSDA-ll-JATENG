@@ -19,4 +19,13 @@ class ArsipModel extends Model
     ];
 
     protected $useTimestamps = false;
+
+    /** Call after locking the source letter in the same transaction. */
+    public function findReferenceForUpdate(string $jenis, int $referensiId): ?array
+    {
+        return $this->db->query(
+            'SELECT id FROM arsip WHERE jenis = ? AND referensi_id = ? FOR UPDATE',
+            [$jenis, $referensiId]
+        )->getRowArray();
+    }
 }

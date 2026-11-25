@@ -4,8 +4,10 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Libraries\ResortAccessPolicy;
+use App\Libraries\SuratAttachmentPath;
 use App\Models\ResortModel;
 use App\Models\ActivityLogModel;
+use App\Models\ArsipModel;
 use App\Models\AuthTokenModel;
 use App\Models\NotifikasiModel;
 use App\Models\SuratKeluarModel;
@@ -16,6 +18,9 @@ use CodeIgniter\API\ResponseTrait;
 class SuratKeluarController extends BaseController
 {
     use ResponseTrait;
+
+    private const FIELDS = ['no_agenda', 'no_surat', 'tanggal', 'tujuan', 'perihal', 'klasifikasi', 'isi'];
+    private const REQUIRED = ['no_surat', 'tanggal', 'tujuan', 'perihal'];
 
     protected SuratKeluarModel $suratModel;
     protected AuthTokenModel $tokenModel;
@@ -79,21 +84,94 @@ class SuratKeluarController extends BaseController
             return $this->respond(['status' => false, 'message' => 'Akun tidak aktif atau tidak terautentikasi.'], 401);
         }
         $surat = $this->suratModel->find((int) $id);
-        if ($surat && !ResortAccessPolicy::canAccess(
+        if ($surat && (!$this->canReadDraft($surat, $user) || !ResortAccessPolicy::canAccess(
             $user,
             isset($surat['resort_id']) ? (int) $surat['resort_id'] : null
-        )) {
+        ))) {
             return $this->respond(['status' => false, 'message' => 'Dokumen tidak ditemukan atau tidak dapat diakses.'], 404);
         }
         return null;
+    }
+
+    private function canReadDraft(array $surat, array $actor): bool
+    {
+        return $surat['status'] !== SuratKeluarModel::DRAFT
+            || $actor['role'] === 'admin'
+            || ($actor['role'] === 'staf' && (int) $surat['created_by'] === (int) $actor['id']);
+    }
+
+    private function canEdit(array $surat, array $actor): bool
+    {
+        if ($surat['status'] === SuratKeluarModel::REGISTERED) {
+            return $actor['role'] === 'admin';
+        }
+        return $surat['status'] === SuratKeluarModel::DRAFT
+            && ($actor['role'] === 'admin'
+                || ($actor['role'] === 'staf' && (int) $surat['created_by'] === (int) $actor['id']));
+    }
+
+    private function failure(string $message, int $code)
+    {
+        return $this->respond(['status' => false, 'message' => $message], $code);
+    }
+
+    private function readFields(array $data): array
+    {
+        $fields = [];
+        foreach (self::FIELDS as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+            if ($data[$field] !== null && !is_string($data[$field])) {
+                throw new \InvalidArgumentException($field . ' harus berupa teks.');
+            }
+            $value = trim($data[$field] ?? '');
+            $fields[$field] = $value === '' ? null : $value;
+        }
+        foreach (['no_agenda' => 50, 'no_surat' => 100, 'tujuan' => 255, 'klasifikasi' => 100] as $field => $length) {
+            if (isset($fields[$field]) && mb_strlen($fields[$field]) > $length) {
+                throw new \InvalidArgumentException($field . ' melebihi batas panjang.');
+            }
+        }
+        foreach (['perihal', 'isi'] as $field) {
+            if (isset($fields[$field]) && strlen($fields[$field]) > 65535) {
+                throw new \InvalidArgumentException($field . ' melebihi batas panjang.');
+            }
+        }
+        if (isset($fields['tanggal']) && !$this->isValidDate($fields['tanggal'])) {
+            throw new \InvalidArgumentException('Format tanggal harus YYYY-MM-DD.');
+        }
+        return $fields;
+    }
+
+    private function requireComplete(array $fields, string $status): void
+    {
+        $required = self::REQUIRED;
+        if ($status === SuratKeluarModel::SUBMITTED) {
+            $required[] = 'isi';
+        }
+        foreach ($required as $field) {
+            if (empty($fields[$field]) && ($fields[$field] ?? null) !== '0') {
+                throw new \InvalidArgumentException($field . ' wajib diisi.');
+            }
+        }
+    }
+
+    private function notifySubmitted(array $surat): void
+    {
+        $this->notifyKepalaSeksi(
+            'Surat keluar diajukan dengan nomor agenda "' . $surat['no_agenda']
+                . '" dan perihal "' . $surat['perihal'] . '".',
+            'surat_keluar_baru'
+        );
     }
 
     private function logActivity(
         string $aktivitas,
         ?int $referensiId = null,
         ?string $deskripsi = null
-    ): void {
-        $this->activityLogModel->insert([
+    ): bool {
+        return $this->activityLogModel->insert([
             'user_id' => $this->getCurrentUserId(),
             'aktivitas' => $aktivitas,
             'modul' => 'surat_keluar',
@@ -101,7 +179,7 @@ class SuratKeluarController extends BaseController
             'deskripsi' => $deskripsi,
             'ip_address' => $this->request->getIPAddress(),
             'created_at' => date('Y-m-d H:i:s'),
-        ]);
+        ]) !== false;
     }
 
     private function notifyKepalaSeksi(
@@ -114,14 +192,52 @@ class SuratKeluarController extends BaseController
             ->findAll();
 
         foreach ($kepalaList as $kepala) {
-            $this->notifikasiModel->insert([
+            $written = $this->notifikasiModel->insert([
                 'user_id' => (int) $kepala['id'],
                 'pesan' => $pesan,
                 'tipe' => $tipe,
                 'is_read' => 0,
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
+            if ($written === false) {
+                throw new \RuntimeException('Notifikasi gagal disimpan.');
+            }
         }
+    }
+
+    private function afterSuratWrite(string $operation, array $surat, bool $submitting = false): void
+    {
+        $id = (int) $surat['id'];
+        $effects = [
+            'activity_log' => fn () => $this->logActivity($operation, $id, 'Status surat keluar: ' . $surat['status'] . '.'),
+        ];
+        if ($submitting) {
+            $effects['notification'] = fn () => $this->notifySubmitted($surat);
+        }
+        foreach ($effects as $name => $effect) {
+            try {
+                if ($effect() === false) {
+                    throw new \RuntimeException('Efek pascasimpan gagal disimpan.');
+                }
+            } catch (\Throwable $error) {
+                log_message('error', 'Surat Keluar {id}: efek pascasimpan {effect} gagal ({type}).', [
+                    'id' => $id, 'effect' => $name, 'type' => get_class($error),
+                ]);
+            }
+        }
+    }
+
+    private function draftReplay(array $actor, int $resortId, string $keyHash)
+    {
+        $surat = $this->suratModel->where('created_by', $actor['id'])->where('draft_create_key', $keyHash)->first();
+        if (!$surat) {
+            return null;
+        }
+        if ((int) $surat['resort_id'] !== $resortId) {
+            return $this->failure('Permintaan ini sudah digunakan untuk resort lain.', 409);
+        }
+        unset($surat['draft_create_key']);
+        return $this->respond(['status' => true, 'data' => $surat, 'replayed' => true]);
     }
 
     private function isValidDate(string $date): bool
@@ -137,23 +253,51 @@ class SuratKeluarController extends BaseController
 
     public function index()
     {
+        return $this->listSurat(false);
+    }
+
+    public function dokumenSaya()
+    {
+        return $this->listSurat(true);
+    }
+
+    private function listSurat(bool $ownedOnly)
+    {
         $user = $this->currentAccessUser();
         if (!$user) {
             return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
         }
         ResortAccessPolicy::scopeQuery($this->suratModel, 'surat_keluar', $user);
+        if ($ownedOnly) {
+            $status = $this->request->getGet('status');
+            if ($status !== null && !in_array($status, [
+                SuratKeluarModel::DRAFT, SuratKeluarModel::SUBMITTED, SuratKeluarModel::REGISTERED,
+            ], true)) {
+                return $this->failure('Filter status dokumen tidak valid.', 422);
+            }
+            $this->suratModel->where('surat_keluar.created_by', $user['id']);
+            if ($status !== null) {
+                $this->suratModel->where('surat_keluar.status', $status);
+            }
+        } elseif ($user['role'] !== 'admin') {
+            $this->suratModel->groupStart()->where('surat_keluar.status !=', SuratKeluarModel::DRAFT);
+            if ($user['role'] === 'staf') {
+                $this->suratModel->orWhere('surat_keluar.created_by', $user['id']);
+            }
+            $this->suratModel->groupEnd();
+        }
 
-        $search = trim(
-            (string) $this->request->getGet('search')
-        );
-
-        $klasifikasi = trim(
-            (string) $this->request->getGet('klasifikasi')
-        );
-
-        $perPage = (int) (
-            $this->request->getGet('per_page') ?? 20
-        );
+        $search = $this->request->getGet('search') ?? '';
+        $klasifikasi = $this->request->getGet('klasifikasi') ?? '';
+        $pageSize = $this->request->getGet('per_page') ?? '20';
+        $page = $this->request->getGet('page');
+        if (!is_string($search) || !is_string($klasifikasi) || !ctype_digit((string) (is_scalar($pageSize) ? $pageSize : ''))
+            || ($page !== null && (!is_string($page) || !ctype_digit($page) || (int) $page < 1))) {
+            return $this->failure('Parameter daftar surat tidak valid.', 422);
+        }
+        $search = trim($search);
+        $klasifikasi = trim($klasifikasi);
+        $perPage = (int) $pageSize;
 
         if ($perPage < 1) {
             $perPage = 20;
@@ -240,7 +384,17 @@ class SuratKeluarController extends BaseController
 
     public function show($id = null)
     {
-        if ($id !== null && ctype_digit((string) $id)) {
+        return $this->findSurat($id, false);
+    }
+
+    public function detailDokumenSaya($id = null)
+    {
+        return $this->findSurat($id, true);
+    }
+
+    private function findSurat($id, bool $ownedOnly)
+    {
+        if (!$ownedOnly && $id !== null && ctype_digit((string) $id)) {
             $denied = $this->guardDocumentAccess($id);
             if ($denied !== null) {
                 return $denied;
@@ -256,6 +410,15 @@ class SuratKeluarController extends BaseController
                 'message' =>
                     'ID surat keluar tidak valid.',
             ], 400);
+        }
+
+        if ($ownedOnly) {
+            $user = $this->currentAccessUser();
+            if (!$user) {
+                return $this->failure('Akun tidak terautentikasi.', 401);
+            }
+            ResortAccessPolicy::scopeQuery($this->suratModel, 'surat_keluar', $user);
+            $this->suratModel->where('surat_keluar.created_by', $user['id']);
         }
 
         $surat = $this->suratModel
@@ -291,93 +454,27 @@ class SuratKeluarController extends BaseController
 
     public function create()
     {
-        $userId = $this->getCurrentUserId();
-
-        if (!$userId) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'User tidak terautentikasi.',
-            ], 401);
-        }
-
-        $data = $this->request
-            ->getJSON(true);
-
-        if (!$data) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Request harus menggunakan format JSON.',
-            ], 400);
-        }
-
-        $noAgenda = trim(
-            $data['no_agenda'] ?? ''
-        );
-
-        $noSurat = trim(
-            $data['no_surat'] ?? ''
-        );
-
-        $tanggal = trim(
-            $data['tanggal'] ?? ''
-        );
-
-        $tujuan = trim(
-            $data['tujuan'] ?? ''
-        );
-
-        $perihal = trim(
-            $data['perihal'] ?? ''
-        );
-
-        $klasifikasi = trim(
-            $data['klasifikasi'] ?? ''
-        );
-
-        if (
-            $noAgenda === '' ||
-            $noSurat === '' ||
-            $tanggal === '' ||
-            $tujuan === '' ||
-            $perihal === ''
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'No agenda, no surat, tanggal, tujuan, dan perihal wajib diisi.',
-            ], 422);
-        }
-
-        if (!$this->isValidDate($tanggal)) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Format tanggal harus YYYY-MM-DD.',
-            ], 422);
-        }
-
-        $duplicate = $this->suratModel
-            ->where(
-                'no_agenda',
-                $noAgenda
-            )
-            ->first();
-
-        if ($duplicate) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Nomor agenda sudah digunakan.',
-            ], 409);
-        }
-
-        // Resort is assigned by the server, never trusted from the client for staff.
         $actor = $this->currentAccessUser();
         if (!$actor) {
-            return $this->respond(['status' => false, 'message' => 'Akun tidak terautentikasi.'], 401);
+            return $this->failure('Akun tidak terautentikasi.', 401);
         }
+        try {
+            $data = $this->request->getJSON(true);
+        } catch (\CodeIgniter\HTTP\Exceptions\HTTPException) {
+            return $this->failure('Request harus menggunakan format JSON.', 400);
+        }
+        if (!is_array($data) || !$data) {
+            return $this->failure('Request harus menggunakan format JSON.', 400);
+        }
+        if (array_key_exists('status', $data) && $data['status'] !== SuratKeluarModel::DRAFT) {
+            return $this->failure('Surat keluar baru harus dibuat sebagai Draft.', 422);
+        }
+        try {
+            $fields = $this->readFields($data);
+        } catch (\InvalidArgumentException $error) {
+            return $this->failure($error->getMessage(), 422);
+        }
+
         $requestedResortId = $data['resort_id'] ?? null;
         if ($actor['role'] === 'staf') {
             $chosenResortId = (int) ($actor['resort_id'] ?? 0);
@@ -388,9 +485,9 @@ class SuratKeluarController extends BaseController
                 (!ctype_digit((string) $requestedResortId) || (int) $requestedResortId !== $chosenResortId)) {
                 return $this->respond(['status' => false, 'message' => 'Tidak dapat membuat surat untuk resort lain.'], 403);
             }
-        } elseif (in_array($actor['role'], ['admin', 'kepala_seksi'], true)) {
+        } elseif ($actor['role'] === 'admin') {
             if (!ctype_digit((string) $requestedResortId) || (int) $requestedResortId < 1) {
-                return $this->respond(['status' => false, 'message' => 'resort_id wajib diisi untuk admin dan kepala seksi.'], 422);
+                return $this->respond(['status' => false, 'message' => 'resort_id wajib diisi untuk admin.'], 422);
             }
             $chosenResortId = (int) $requestedResortId;
         } else {
@@ -401,223 +498,130 @@ class SuratKeluarController extends BaseController
             return $this->respond(['status' => false, 'message' => 'Resort tidak aktif atau tidak ditemukan.'], 422);
         }
 
-        $id = $this->suratModel->insert([
-            'created_by' => $userId,
-            'resort_id' => $chosenResortId,
-            'no_agenda' => $noAgenda,
-            'no_surat' => $noSurat,
-            'tanggal' => $tanggal,
-            'tujuan' => $tujuan,
-            'perihal' => $perihal,
-            'klasifikasi' =>
-                $klasifikasi !== ''
-                    ? $klasifikasi
-                    : null,
-            'file_path' => null,
-        ], true);
-
-        if (!$id) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Gagal menambahkan surat keluar.',
-            ], 500);
+        $key = $this->request->getHeaderLine('Idempotency-Key');
+        if ($key !== '' && !preg_match('/\A[A-Za-z0-9_-]{16,128}\z/', $key)) {
+            return $this->failure('Idempotency-Key tidak valid.', 422);
+        }
+        $keyHash = $key === '' ? null : hash('sha256', $key);
+        if ($keyHash !== null) {
+            $replay = $this->draftReplay($actor, $chosenResortId, $keyHash);
+            if ($replay !== null) {
+                return $replay;
+            }
+        }
+        unset($fields['no_agenda']);
+        $db = db_connect();
+        if (!$db->transBegin()) {
+            return $this->failure('Gagal memulai penyimpanan surat keluar.', 500);
+        }
+        try {
+            $id = $this->suratModel->insert($fields + [
+                'created_by' => $actor['id'],
+                'resort_id' => $chosenResortId,
+                'no_agenda' => 'TMP-' . bin2hex(random_bytes(16)),
+                'status' => SuratKeluarModel::DRAFT,
+                'draft_create_key' => $keyHash,
+            ], true);
+            if (!$id) {
+                throw new \RuntimeException('Gagal menyimpan surat keluar.');
+            }
+            $year = isset($fields['tanggal']) ? substr($fields['tanggal'], 0, 4) : date('Y');
+            $agenda = sprintf('SKK/%s/%04d', $year, (int) $id);
+            if (!$this->suratModel->update($id, ['no_agenda' => $agenda])) {
+                throw new \RuntimeException('Gagal menetapkan nomor agenda.');
+            }
+            $surat = $this->suratModel->find($id);
+            if (!$surat || !$db->transStatus() || !$db->transCommit()) {
+                throw new \RuntimeException('Gagal menyelesaikan transaksi surat keluar.');
+            }
+        } catch (\Throwable $error) {
+            $db->transRollback();
+            if ($keyHash !== null) {
+                $replay = $this->draftReplay($actor, $chosenResortId, $keyHash);
+                if ($replay !== null) {
+                    return $replay;
+                }
+            }
+            log_message('error', 'Penyimpanan Surat Keluar gagal: {type}', ['type' => get_class($error)]);
+            return $this->failure('Gagal menyimpan surat keluar.', 500);
         }
 
-        $this->logActivity(
-            'create',
-            (int) $id,
-            'Menambahkan surat keluar nomor agenda ' .
-            $noAgenda
-        );
-
-        $this->notifyKepalaSeksi(
-            'Surat keluar baru dibuat dengan nomor agenda "' .
-            $noAgenda .
-            '" dan perihal "' .
-            $perihal .
-            '".',
-            'surat_keluar_baru'
-        );
-
-        return $this->respondCreated([
-            'status' => true,
-            'message' =>
-                'Surat keluar berhasil ditambahkan.',
-            'data' =>
-                $this->suratModel
-                    ->find($id),
-        ]);
+        unset($surat['draft_create_key']);
+        $this->afterSuratWrite('create', $surat);
+        return $this->respondCreated(['status' => true, 'data' => $surat]);
     }
 
     public function update($id = null)
     {
-        if ($id !== null && ctype_digit((string) $id)) {
-            $denied = $this->guardDocumentAccess($id);
-            if ($denied !== null) {
-                return $denied;
-            }
+        $denied = $this->guardDocumentAccess($id);
+        if ($denied !== null) {
+            return $denied;
         }
-
-        if (
-            !$id ||
-            !ctype_digit((string) $id)
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'ID surat keluar tidak valid.',
-            ], 400);
-        }
-
-        $surat = $this->suratModel
-            ->find($id);
-
+        $surat = $this->suratModel->find($id);
         if (!$surat) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Surat keluar tidak ditemukan.',
-            ], 404);
+            return $this->failure('Surat keluar tidak ditemukan.', 404);
         }
-
-        $data = $this->request
-            ->getJSON(true);
-
-        if (!$data) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Request harus menggunakan format JSON.',
-            ], 400);
+        $actor = $this->currentAccessUser();
+        if (!$actor || !$this->canEdit($surat, $actor)) {
+            return $this->failure('Surat keluar tidak dapat diubah.', 403);
         }
-
-        $allowedFields = [
-            'no_agenda',
-            'no_surat',
-            'tanggal',
-            'tujuan',
-            'perihal',
-            'klasifikasi',
-        ];
-
-        $updateData = [];
-
-        foreach ($allowedFields as $field) {
-            if (array_key_exists($field, $data)) {
-                if (
-                    is_string($data[$field])
-                ) {
-                    $updateData[$field] =
-                        trim($data[$field]);
-                } else {
-                    $updateData[$field] =
-                        $data[$field];
-                }
+        try {
+            $data = $this->request->getJSON(true);
+        } catch (\CodeIgniter\HTTP\Exceptions\HTTPException) {
+            return $this->failure('Request harus menggunakan format JSON.', 400);
+        }
+        if (!is_array($data) || !$data) {
+            return $this->failure('Request harus menggunakan format JSON.', 400);
+        }
+        $currentStatus = $surat['status'];
+        $status = $data['status'] ?? $currentStatus;
+        $submitting = $currentStatus === SuratKeluarModel::DRAFT && $status === SuratKeluarModel::SUBMITTED;
+        if ($status !== $currentStatus && !$submitting) {
+            return $this->failure('Perubahan status surat tidak valid.', 422);
+        }
+        try {
+            $fields = $this->readFields($data);
+            if ($status !== SuratKeluarModel::DRAFT) {
+                $this->requireComplete($fields + $surat, $status);
+            }
+        } catch (\InvalidArgumentException $error) {
+            return $this->failure($error->getMessage(), 422);
+        }
+        if (array_key_exists('no_agenda', $fields) && $fields['no_agenda'] !== $surat['no_agenda']) {
+            return $this->failure('Nomor agenda ditetapkan oleh sistem.', 422);
+        }
+        unset($fields['no_agenda']);
+        if (!$fields && !$submitting && !array_key_exists('status', $data)) {
+            return $this->failure('Tidak ada data yang dapat diperbarui.', 422);
+        }
+        $this->suratModel->where('id', $id)->where('status', $currentStatus);
+        if ($submitting) {
+            // Pastikan data yang telah divalidasi masih sama ketika status berubah.
+            foreach (array_merge(self::REQUIRED, ['isi']) as $field) {
+                $this->suratModel->where($field, $surat[$field]);
             }
         }
-
-        if (!$updateData) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Tidak ada data yang dapat diperbarui.',
-            ], 422);
-        }
-
-        $requiredFields = [
-            'no_agenda',
-            'no_surat',
-            'tanggal',
-            'tujuan',
-            'perihal',
-        ];
-
-        foreach ($requiredFields as $field) {
-            if (
-                array_key_exists(
-                    $field,
-                    $updateData
-                ) &&
-                $updateData[$field] === ''
-            ) {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        $field .
-                        ' tidak boleh kosong.',
-                ], 422);
+        try {
+            $updated = $this->suratModel->set($fields + ['status' => $status])->update();
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $error) {
+            if ((int) $error->getCode() !== 1062) {
+                throw $error;
             }
+            return $this->failure('Nomor agenda sudah digunakan.', 409);
         }
-
-        if (
-            isset($updateData['tanggal']) &&
-            !$this->isValidDate(
-                $updateData['tanggal']
-            )
-        ) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'Format tanggal harus YYYY-MM-DD.',
-            ], 422);
+        if (!$updated) {
+            return $this->failure('Gagal memperbarui surat keluar.', 500);
         }
-
-        if (
-            isset(
-                $updateData['no_agenda']
-            )
-        ) {
-            $duplicate = $this->suratModel
-                ->where(
-                    'no_agenda',
-                    $updateData['no_agenda']
-                )
-                ->where(
-                    'id !=',
-                    $id
-                )
-                ->first();
-
-            if ($duplicate) {
-                return $this->respond([
-                    'status' => false,
-                    'message' =>
-                        'Nomor agenda sudah digunakan.',
-                ], 409);
-            }
+        if ($submitting && db_connect()->affectedRows() !== 1) {
+            return $this->failure('Status surat sudah berubah. Muat ulang detail.', 409);
         }
-
-        if (
-            array_key_exists(
-                'klasifikasi',
-                $updateData
-            ) &&
-            $updateData['klasifikasi'] === ''
-        ) {
-            $updateData['klasifikasi'] =
-                null;
+        $surat = $this->suratModel->find($id);
+        if (!$surat || $surat['status'] !== $status) {
+            return $this->failure('Status surat sudah berubah. Muat ulang detail.', 409);
         }
-
-        $this->suratModel->update(
-            $id,
-            $updateData
-        );
-
-        $this->logActivity(
-            'update',
-            (int) $id,
-            'Memperbarui data surat keluar.'
-        );
-
-        return $this->respond([
-            'status' => true,
-            'message' =>
-                'Surat keluar berhasil diperbarui.',
-            'data' =>
-                $this->suratModel
-                    ->find($id),
-        ]);
+        unset($surat['draft_create_key']);
+        $this->afterSuratWrite('update', $surat, $submitting);
+        return $this->respond(['status' => true, 'data' => $surat]);
     }
 
     public function uploadFile($id = null)
@@ -649,6 +653,11 @@ class SuratKeluarController extends BaseController
                 'message' =>
                     'Surat keluar tidak ditemukan.',
             ], 404);
+        }
+
+        $actor = $this->currentAccessUser();
+        if (!$actor || !$this->canEdit($surat, $actor)) {
+            return $this->failure('Lampiran surat tidak dapat diubah.', 403);
         }
 
         // E14: Setiap percobaan ulang upload menggunakan key yang sama.
@@ -992,17 +1001,9 @@ class SuratKeluarController extends BaseController
             ], 404);
         }
 
-        $filePath =
-            WRITEPATH .
-            'uploads/' .
-            $surat['file_path'];
-
-        if (!is_file($filePath)) {
-            return $this->respond([
-                'status' => false,
-                'message' =>
-                    'File tidak ditemukan di server.',
-            ], 404);
+        $attachment = $this->resolveAttachment($surat['file_path']);
+        if ($attachment['status'] !== 'valid') {
+            return $this->failure('File lampiran tidak ditemukan.', 404);
         }
 
         $this->logActivity(
@@ -1013,129 +1014,12 @@ class SuratKeluarController extends BaseController
 
         return $this->response
             ->download(
-                $filePath,
+                $attachment['path'],
                 null
             );
     }
 
-public function previewFile($id = null)
-{
-        if ($id !== null && ctype_digit((string) $id)) {
-            $denied = $this->guardDocumentAccess($id);
-            if ($denied !== null) {
-                return $denied;
-            }
-        }
-
-    if (!$id || !ctype_digit((string) $id)) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'ID surat keluar tidak valid.',
-        ], 400);
-    }
-
-    $surat = $this->suratModel->find($id);
-
-    if (!$surat) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Surat keluar tidak ditemukan.',
-        ], 404);
-    }
-
-    if (empty($surat['file_path'])) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Surat belum memiliki lampiran.',
-        ], 404);
-    }
-
-    $relativePath = str_replace(
-        '\\',
-        '/',
-        (string) $surat['file_path']
-    );
-
-    if (!preg_match(
-        '#^surat_keluar/[A-Za-z0-9._-]+$#D',
-        $relativePath
-    )) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Path lampiran tidak valid.',
-        ], 404);
-    }
-
-    $extension = strtolower(
-        pathinfo($relativePath, PATHINFO_EXTENSION)
-    );
-
-    $allowedMimes = [
-        'pdf'  => 'application/pdf',
-        'jpg'  => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'png'  => 'image/png',
-    ];
-
-    if (!isset($allowedMimes[$extension])) {
-        return $this->respond([
-            'status' => false,
-            'message' =>
-                'Preview hanya mendukung PDF, JPG/JPEG, dan PNG.',
-        ], 415);
-    }
-
-    $uploadDir = realpath(
-        WRITEPATH . 'uploads/surat_keluar'
-    );
-
-    $filePath = realpath(
-        WRITEPATH . 'uploads/' . $relativePath
-    );
-
-    if (
-        $uploadDir === false ||
-        $filePath === false ||
-        !is_file($filePath) ||
-        !str_starts_with(
-            $filePath,
-            $uploadDir . DIRECTORY_SEPARATOR
-        )
-    ) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'File tidak ditemukan di server.',
-        ], 404);
-    }
-
-    $actualMime = (new \finfo(FILEINFO_MIME_TYPE))
-        ->file($filePath);
-
-    if ($actualMime !== $allowedMimes[$extension]) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Tipe isi file tidak valid untuk preview.',
-        ], 415);
-    }
-
-    $this->logActivity(
-        'preview_file',
-        (int) $id,
-        'Melihat preview surat keluar.'
-    );
-
-    return $this->response
-        ->download($filePath, null, true)
-        ->inline()
-        ->setHeader('Content-Type', $actualMime)
-        ->setHeader('X-Content-Type-Options', 'nosniff')
-        ->setHeader(
-            'Cache-Control',
-            'private, no-store, max-age=0'
-        );
-}
-
-    public function delete($id = null)
+    public function previewFile($id = null)
     {
         if ($id !== null && ctype_digit((string) $id)) {
             $denied = $this->guardDocumentAccess($id);
@@ -1144,55 +1028,185 @@ public function previewFile($id = null)
             }
         }
 
-        if (
-            !$id ||
-            !ctype_digit((string) $id)
-        ) {
+        if (!$id || !ctype_digit((string) $id)) {
             return $this->respond([
                 'status' => false,
-                'message' =>
-                    'ID surat keluar tidak valid.',
+                'message' => 'ID surat keluar tidak valid.',
             ], 400);
         }
 
-        $surat = $this->suratModel
-            ->find($id);
+        $surat = $this->suratModel->find($id);
 
         if (!$surat) {
             return $this->respond([
                 'status' => false,
-                'message' =>
-                    'Surat keluar tidak ditemukan.',
+                'message' => 'Surat keluar tidak ditemukan.',
             ], 404);
         }
 
-        if (
-            !empty($surat['file_path'])
-        ) {
-            $filePath =
-                WRITEPATH .
-                'uploads/' .
-                $surat['file_path'];
-
-            if (is_file($filePath)) {
-                unlink($filePath);
-            }
+        if (empty($surat['file_path'])) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Surat belum memiliki lampiran.',
+            ], 404);
         }
 
-        $this->suratModel
-            ->delete($id);
+        $attachment = $this->resolveAttachment($surat['file_path']);
+        if ($attachment['status'] !== 'valid') {
+            return $this->failure('File lampiran tidak ditemukan.', 404);
+        }
+        $filePath = $attachment['path'];
+        $extension = strtolower(pathinfo($attachment['name'], PATHINFO_EXTENSION));
+        $allowedMimes = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+        ];
+        if (!isset($allowedMimes[$extension])) {
+            return $this->failure('Preview hanya mendukung PDF, JPG/JPEG, dan PNG.', 415);
+        }
+
+        $actualMime = (new \finfo(FILEINFO_MIME_TYPE))
+            ->file($filePath);
+
+        if ($actualMime !== $allowedMimes[$extension]) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Tipe isi file tidak valid untuk preview.',
+            ], 415);
+        }
 
         $this->logActivity(
-            'delete',
+            'preview_file',
             (int) $id,
-            'Menghapus surat keluar nomor agenda ' .
-            $surat['no_agenda']
+            'Melihat preview surat keluar.'
         );
+
+        return $this->response
+            ->download($filePath, null, true)
+            ->inline()
+            ->setHeader('Content-Type', $actualMime)
+            ->setHeader('X-Content-Type-Options', 'nosniff')
+            ->setHeader(
+                'Cache-Control',
+                'private, no-store, max-age=0'
+            );
+    }
+
+    public function delete($id = null)
+    {
+        if (!$id || !ctype_digit((string) $id)) {
+            return $this->failure('ID surat keluar tidak valid.', 400);
+        }
+        $actor = $this->currentAccessUser();
+        if (!$actor) {
+            return $this->failure('Akun tidak aktif atau tidak terautentikasi.', 401);
+        }
+        if ($actor['role'] !== 'admin') {
+            return $this->failure('Hanya admin yang dapat menghapus surat keluar.', 403);
+        }
+
+        try {
+            $surat = $this->deleteSuratRecord((int) $id);
+        } catch (\DomainException $error) {
+            return $this->failure($error->getMessage(), 409);
+        } catch (\Throwable $error) {
+            log_message('error', 'Penghapusan record surat keluar {id} gagal: {type}', [
+                'id' => $id, 'type' => get_class($error),
+            ]);
+            return $this->failure('Gagal menghapus surat keluar.', 500);
+        }
+        if ($surat === null) {
+            return $this->failure('Surat keluar tidak ditemukan.', 404);
+        }
+
+        $cleanup = $this->cleanupDeletedAttachment($surat['file_path'], (int) $id);
+        try {
+            $this->logActivity(
+                'delete',
+                (int) $id,
+                'Menghapus surat keluar nomor agenda ' . $surat['no_agenda']
+            );
+        } catch (\Throwable $error) {
+            log_message('error', 'Gagal mencatat aktivitas penghapusan surat keluar {id}: {type}', [
+                'id' => $id, 'type' => get_class($error),
+            ]);
+        }
 
         return $this->respond([
             'status' => true,
-            'message' =>
-                'Surat keluar berhasil dihapus.',
+            'message' => $cleanup === 'pending' || $cleanup === 'unsafe'
+                ? 'Surat keluar berhasil dihapus. Lampiran memerlukan penanganan terpisah.'
+                : 'Surat keluar berhasil dihapus.',
+            'data' => ['attachment_cleanup' => $cleanup],
         ]);
+    }
+
+    protected function deleteSuratRecord(int $id): ?array
+    {
+        $db = db_connect();
+        if (!$db->transBegin()) {
+            throw new \RuntimeException('Gagal memulai transaksi penghapusan.');
+        }
+        try {
+            // Upload lampiran juga mengunci baris ini sebelum mengubah file_path.
+            $surat = $db->query(
+                'SELECT no_agenda, file_path FROM surat_keluar WHERE id = ? FOR UPDATE',
+                [$id]
+            )->getRowArray();
+            if ($surat === null) {
+                $db->transRollback();
+                return null;
+            }
+            if ((new ArsipModel())->findReferenceForUpdate('surat_keluar', $id) !== null) {
+                throw new \DomainException('Surat keluar masih digunakan oleh arsip dan tidak dapat dihapus.');
+            }
+            if (!$this->suratModel->delete($id) || $db->affectedRows() !== 1
+                || !$db->transStatus() || !$db->transCommit()) {
+                throw new \RuntimeException('Database tidak mengonfirmasi penghapusan.');
+            }
+            return $surat;
+        } catch (\Throwable $error) {
+            $db->transRollback();
+            throw $error;
+        }
+    }
+
+    private function resolveAttachment(?string $relativePath): array
+    {
+        return SuratAttachmentPath::resolve('surat_keluar', $relativePath);
+    }
+
+    private function cleanupDeletedAttachment(?string $relativePath, int $id): string
+    {
+        $attachment = $this->resolveAttachment($relativePath);
+        if ($attachment['status'] === 'unsafe') {
+            log_message('warning', 'Path lampiran surat keluar {id} tidak aman; pembersihan dilewati.', ['id' => $id]);
+        } elseif ($attachment['status'] === 'missing') {
+            log_message('notice', 'Lampiran surat keluar {id} sudah tidak ada saat record dihapus.', ['id' => $id]);
+        }
+        if ($attachment['status'] !== 'valid') {
+            return $attachment['status'];
+        }
+
+        try {
+            $removed = $this->unlinkAttachment($attachment['path']);
+        } catch (\Throwable) {
+            $removed = false;
+        }
+        if (!$removed) {
+            log_message('error', 'Lampiran yatim surat keluar {id}: surat_keluar/{attachment}; pembersihan gagal.', [
+                'id' => $id, 'attachment' => $attachment['name'],
+            ]);
+            return 'pending';
+        }
+
+        return 'removed';
+    }
+
+    protected function unlinkAttachment(string $file): bool
+    {
+        return @unlink($file);
     }
 }

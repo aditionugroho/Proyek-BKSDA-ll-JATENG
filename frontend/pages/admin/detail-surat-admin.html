@@ -60,25 +60,29 @@
   <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
   <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
   <script type="module">
-    import { SURAT_TERAKHIR_MOCK } from "../../assets/js/pages/admin-input-surat.js";
-
     async function loadDetail(id, jenis) {
-      const list =
-        window.EOfficeAPI && EOfficeAPI.config.LIVE
-          ? await EOfficeAPI.getSuratTerbaru()
-          : SURAT_TERAKHIR_MOCK;
-
-      const surat = list.find(
-        (x) =>
-          Number(x.id) === id &&
-          String(x.jenis).toUpperCase() === jenis
-      );
-
-      if (!surat) {
-        throw new Error("Surat tidak ditemukan.");
+      const api = window.EOfficeAPI;
+      if (!api?.config.LIVE) {
+        throw new Error("Koneksi API belum aktif.");
       }
 
-      return surat;
+      const response = jenis === "KELUAR"
+        ? await api.getSuratKeluarDetail(id)
+        : await api.getSuratMasukDetail(id);
+      const surat = response?.data;
+      if (response?.status !== true || Number(surat?.id) !== id) {
+        throw new Error(response?.status === false && response.message
+          ? response.message : "Respons detail surat tidak valid.");
+      }
+      return {
+        ...surat,
+        jenis,
+        nomor: surat.no_surat || "—",
+        pihak: (jenis === "KELUAR" ? surat.tujuan : surat.asal) || "—",
+        perihal: surat.perihal || "Tanpa perihal",
+        tanggal: surat.tanggal || "—",
+        status: surat.status || "Terdaftar",
+      };
     }
 
     async function init() {
@@ -97,6 +101,7 @@
         d = await loadDetail(id, jenis);
       } catch (e) {
         document.getElementById("dg-title").textContent = "Gagal memuat detail surat";
+        document.getElementById("dg-sub").textContent = e.message;
         return;
       }
 
@@ -113,20 +118,37 @@
         ["Jenis", d.jenis],
         ["Pengirim / Penerima", d.pihak],
         ["Tanggal", d.tanggal],
-        ["Status", d.status]
+        ["Status", d.status],
+        ["Nomor Agenda", d.no_agenda]
       ];
+      if (d.isi) rows.push(["Isi Surat", d.isi]);
 
-      document.getElementById("dg-info").innerHTML = rows
-        .map(([l, v, mono]) => `
-          <div class="dg-field">
-            <p class="dg-label">${l}</p>
-            <p class="dg-value${mono ? " dg-value--mono" : ""}">${v}</p>
-          </div>`)
-        .join("");
+      const info = document.getElementById("dg-info");
+      info.replaceChildren(...rows.map(([label, value, mono]) => {
+        const field = document.createElement("div");
+        field.className = "dg-field";
+        const name = document.createElement("p");
+        name.className = "dg-label";
+        name.textContent = label;
+        const content = document.createElement("p");
+        content.className = mono ? "dg-value dg-value--mono" : "dg-value";
+        content.textContent = value || "—";
+        if (label === "Isi Surat") content.style.whiteSpace = "pre-wrap";
+        field.append(name, content);
+        return field;
+      }));
+
+      if (d.jenis === "KELUAR" && d.status === "Draft") {
+        const edit = document.createElement("a");
+        edit.className = "dg-back";
+        edit.href = `form-surat-keluar.html?draft_id=${id}`;
+        edit.textContent = "Edit Draft";
+        info.after(edit);
+      }
 
       // Lampiran tersedia untuk Surat Masuk dan Surat Keluar.
       const jenisSurat = String(d.jenis || "").toUpperCase();
-      const hasAttachment = Boolean(d.file_path || d.raw?.file_path);
+      const hasAttachment = Boolean(d.file_path);
 
       if (["MASUK", "KELUAR"].includes(jenisSurat) && hasAttachment) {
         const container = document.createElement("div");

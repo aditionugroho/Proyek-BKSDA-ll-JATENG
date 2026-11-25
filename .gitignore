@@ -2,6 +2,26 @@
 # Backup hasil pengeditan
 *.bak
 *.backup-*
+
+# Artefak pengembangan lokal
+/.integrasi-backup/
+/.backend-integration-test/
+/.export-source-backup-*/
+/.local-backup-*/
+/.backup-export-*/
+/database-backups/
+/backend.zip
+vendor/
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.sql
+*.sql.gz
+*.backup_*
+*.bak_*
+*.php.backup*
+*.php.bak*
 /.env
 
 # Konfigurasi rahasia dan backup lokal

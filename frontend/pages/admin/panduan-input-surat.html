@@ -208,17 +208,7 @@
   <script type="module" src="../../assets/js/components/sidebar-admin.js"></script>
   <script type="module" src="../../assets/js/components/navbar-admin.js"></script>
   <script>
-    /* ===== Data riwayat input surat (mock) ===== */
-    const RIWAYAT = [
-      { waktu: "22 Okt 2026 13:42", petugas: "Rian Prasetyo, S.Kom", jenis: "Masuk", nomor: "SM-098/Agd/2026", pihak: "Dinas Kehutanan Jateng", perihal: "Undangan Rapat Koordinasi", status: "Terdistribusi" },
-      { waktu: "22 Okt 2026 10:15", petugas: "Rian Prasetyo, S.Kom", jenis: "Keluar", nomor: "S.502/SKSDA-JT/2026", pihak: "BKSDA Jawa Tengah", perihal: "Laporan Patroli Oktober", status: "Terkirim" },
-      { waktu: "21 Okt 2026 16:03", petugas: "Dewi Lestari (TU)", jenis: "Masuk", nomor: "SM-097/Agd/2026", pihak: "Polsek Taman, Pemalang", perihal: "Permintaan Data TSL", status: "Didisposisi" },
-      { waktu: "21 Okt 2026 09:30", petugas: "Rian Prasetyo, S.Kom", jenis: "Keluar", nomor: "S.501/SKSDA-JT/2026", pihak: "DLH Kab. Pemalang", perihal: "Balasan Permohonan Kerja Sama", status: "Terkirim" },
-      { waktu: "20 Okt 2026 14:22", petugas: "Dewi Lestari (TU)", jenis: "Masuk", nomor: "SM-096/Agd/2026", pihak: "Kantor Bupati Pemalang", perihal: "Edaran Protokoler", status: "Diarsipkan" },
-      { waktu: "20 Okt 2026 11:05", petugas: "Rian Prasetyo, S.Kom", jenis: "Masuk", nomor: "SM-095/Agd/2026", pihak: "Resort Konservasi Tegal", perihal: "Laporan Kegiatan Monitoring", status: "Didisposisi" },
-      { waktu: "18 Okt 2026 15:48", petugas: "Rian Prasetyo, S.Kom", jenis: "Keluar", nomor: "S.500/SKSDA-JT/2026", pihak: "Gakkum KLHK", perihal: "Permohonan Penyidikan", status: "Terkirim" },
-      { waktu: "17 Okt 2026 08:55", petugas: "Dewi Lestari (TU)", jenis: "Masuk", nomor: "SM-094/Agd/2026", pihak: "SMK N 1 Pemalang", perihal: "Permohonan Kunjungan Edukasi", status: "Diarsipkan" }
-    ];
+    let RIWAYAT = [];
 
     function esc(s) {
       return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
@@ -258,7 +248,25 @@
       });
     });
 
-    render();
+    (async () => {
+      const count = document.getElementById("pd-count");
+      count.textContent = "Memuat riwayat surat...";
+      try {
+        const rows = await window.EOfficeAPI.getSuratTerbaru();
+        RIWAYAT = rows.map((row) => ({
+          waktu: row.created_at || row.tanggal || "?",
+          petugas: row.raw?.created_by_name || "?",
+          jenis: row.jenis === "MASUK" ? "Masuk" : "Keluar",
+          nomor: row.nomor,
+          pihak: row.pihak,
+          perihal: row.perihal,
+          status: row.status,
+        }));
+        render();
+      } catch (error) {
+        count.textContent = error.message || "Gagal memuat riwayat surat.";
+      }
+    })();
   </script>
   <script src="/sw-register.js"></script>
 </body>

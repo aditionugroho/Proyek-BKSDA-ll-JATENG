@@ -4,9 +4,15 @@
    ajukan/preview/simpan draft
    ============================================ */
 
-import { suratPgData as SURAT_PG_MOCK } from "../data/surat-pegawai.js";
 import { showToast } from "../components/toast.js";
 import { openModal } from "../components/modal.js";
+import { createDraftSession, downloadDraftAttachment, validateSuratAttachment } from "./surat-keluar-draft.js";
+
+const session = createDraftSession();
+let selectedFile = null;
+let uploadKey = null;
+let ready = false;
+let busy = false;
 
 /* ===== Elemen ===== */
 const nomorInput = document.getElementById("f-nomor");
@@ -15,8 +21,7 @@ const penerimaInput = document.getElementById("f-penerima");
 const perihalInput = document.getElementById("f-perihal");
 const editor = document.getElementById("f-isi");
 
-const AUTO_NOMOR = "B-045/K.21/TU/10/2023";
-const REQUIRED = ["f-tanggal", "f-penerima", "f-perihal"];
+const REQUIRED = ["f-nomor", "f-tanggal", "f-penerima", "f-perihal"];
 
 /* ===== VALIDASI INLINE ===== */
 function setFieldError(id, show) {
@@ -29,7 +34,7 @@ REQUIRED.forEach((id) => {
 });
 
 function editorIsEmpty() {
-  return editor.textContent.trim() === "" && editor.innerHTML !== "<br>";
+  return editor.innerText.trim() === "";
 }
 
 function setEditorError(show) {
@@ -39,61 +44,51 @@ function setEditorError(show) {
 
 editor.addEventListener("input", () => setEditorError(false));
 
-/* ===== TOOLBAR B / I / LIST ===== */
-document.querySelectorAll(".pgb-tool").forEach((btn) => {
-  btn.addEventListener("mousedown", (event) => event.preventDefault()); // jaga seleksi
-  btn.addEventListener("click", () => {
-    editor.focus();
-    document.execCommand(btn.dataset.cmd, false, null);
-  });
-});
+document.querySelectorAll(".pgb-tool").forEach((button) => { button.disabled = true; });
 
-/* ===== LAMPIRAN ===== */
-const files = [{ name: "SK_Tim_Evaluasi.pdf", size: "2.4 MB" }];
-
-const PDF_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
-const X_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-
+const fileList = document.getElementById("pgb-file-list");
 function renderFiles() {
-  document.getElementById("pgb-file-list").innerHTML = files
-    .map(
-      (f, i) => `
-      <div class="pgb-file-item">
-        <span class="pgb-file-icon">${PDF_ICON}</span>
-        <span class="pgb-file-name">${f.name} <span class="pgb-file-size">${f.size}</span></span>
-        <button type="button" class="pgb-file-remove" data-remove="${i}" title="Hapus lampiran" aria-label="Hapus ${f.name}">${X_ICON}</button>
-      </div>`
-    )
-    .join("");
-}
-
-function formatSize(bytes) {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  fileList.replaceChildren();
+  if (session.draft?.file_path) {
+    const download = document.createElement("button");
+    download.type = "button";
+    download.textContent = "Unduh lampiran tersimpan";
+    download.addEventListener("click", async () => {
+      try {
+        await downloadDraftAttachment(session.draft.id);
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+    fileList.append(download);
+  }
+  if (selectedFile) {
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = `Batalkan unggah ${selectedFile.name}`;
+    remove.disabled = busy;
+    remove.addEventListener("click", () => {
+      selectedFile = null;
+      uploadKey = null;
+      renderFiles();
+    });
+    fileList.append(remove);
+  }
 }
 
 function addFile(file) {
+  if (busy || !ready) return;
   const errorEl = document.getElementById("pgb-file-error");
   errorEl.hidden = true;
-
-  const ext = "." + file.name.split(".").pop().toLowerCase();
-  const validTypes = [".pdf", ".docx", ".doc", ".jpg", ".jpeg", ".png"];
-
-  if (!validTypes.includes(ext)) {
-    errorEl.textContent = "Format tidak didukung. Gunakan PDF, DOCX, atau JPG.";
+  try {
+    validateSuratAttachment(file);
+    uploadKey = crypto.randomUUID();
+    selectedFile = file;
+    renderFiles();
+  } catch (error) {
+    errorEl.textContent = error.message;
     errorEl.hidden = false;
-    return;
   }
-  if (file.size > 10 * 1024 * 1024) {
-    errorEl.textContent = "Ukuran file melebihi 10MB.";
-    errorEl.hidden = false;
-    return;
-  }
-
-  files.push({ name: file.name, size: formatSize(file.size) });
-  renderFiles();
 }
 
 const dropzone = document.getElementById("pgb-dropzone");
@@ -124,101 +119,82 @@ dropzone.addEventListener("drop", (e) => {
   if (e.dataTransfer.files.length > 0) addFile(e.dataTransfer.files[0]);
 });
 
-/* Hapus lampiran (tanpa konfirmasi — draft) */
-document.getElementById("pgb-file-list").addEventListener("click", (event) => {
-  const btn = event.target.closest("[data-remove]");
-  if (!btn) return;
-  files.splice(Number(btn.dataset.remove), 1);
-  renderFiles();
-});
+const agenda = document.getElementById("f-agenda");
+const submitButton = document.getElementById("btn-ajukan");
+const saveButton = document.getElementById("btn-draft");
+const previewButton = document.getElementById("btn-preview");
 
-/* ===== KUMPULKAN DATA ===== */
-function collectDraft() {
-  return {
-    nomor: nomorInput.value.trim() || AUTO_NOMOR,
-    tanggal: tanggalInput.value,
-    penerima: penerimaInput.value.trim(),
-    perihal: perihalInput.value.trim(),
-    isi: editor.innerHTML,
-    lampiran: files.length,
-    disimpanPada: new Date().toISOString()
-  };
+function setBusy(value) {
+  busy = value;
+  for (const button of [submitButton, saveButton, previewButton, fileInput]) {
+    button.disabled = busy || !ready;
+  }
+  renderFiles();
 }
 
-/* ===== AJUKAN SURAT ===== */
-document.getElementById("btn-ajukan").addEventListener("click", () => {
+async function save(action) {
+  if (!ready || busy) return;
+  setBusy(true);
+  try {
+    const record = await session.save({
+      no_surat: nomorInput.value.trim(),
+      tanggal: tanggalInput.value,
+      tujuan: penerimaInput.value.trim(),
+      perihal: perihalInput.value.trim(),
+      isi: editor.innerText.trim(),
+    }, selectedFile, uploadKey, action === "submit");
+    selectedFile = null;
+    if (action === "submit" || action === "preview") {
+      ready = false;
+      location.href = action === "submit" ? "surat.html" : `preview-surat.html?draft_id=${record.id}`;
+      return;
+    }
+    showToast("Draft disimpan.");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    agenda.value = session.draft?.no_agenda ?? "";
+    setBusy(false);
+  }
+}
+
+submitButton.addEventListener("click", () => {
   let valid = true;
-
-  REQUIRED.forEach((id) => {
-    const isEmpty = document.getElementById(id).value.trim() === "";
-    setFieldError(id, isEmpty);
-    if (isEmpty) valid = false;
-  });
-
-  const editorError = editorIsEmpty();
-  setEditorError(editorError);
-  if (editorError) valid = false;
-
-  if (!valid) return;
-
-  const draft = collectDraft();
-
+  for (const id of REQUIRED) {
+    const empty = !document.getElementById(id).value.trim();
+    setFieldError(id, empty);
+    if (empty) valid = false;
+  }
+  setEditorError(editorIsEmpty());
+  if (!valid || editorIsEmpty()) return;
   openModal({
     title: "Ajukan Surat Keluar",
-    desc: "Periksa ringkasan surat sebelum diajukan:",
-    html: `
-      <div class="app-modal-list">
-        <div class="app-modal-option" style="cursor:default"><span><strong>Nomor Surat</strong><span>${draft.nomor}</span></span></div>
-        <div class="app-modal-option" style="cursor:default"><span><strong>Penerima</strong><span>${draft.penerima}</span></span></div>
-        <div class="app-modal-option" style="cursor:default"><span><strong>Perihal</strong><span>${draft.perihal}</span></span></div>
-        <div class="app-modal-option" style="cursor:default"><span><strong>Lampiran</strong><span>${draft.lampiran} berkas</span></span></div>
-      </div>`,
+    desc: "Surat akan diajukan dengan data yang telah diisi.",
     confirmLabel: "Ya, Ajukan",
-    onConfirm: () => {
-      showToast("Surat diajukan untuk persetujuan");
-      setTimeout(() => {
-        window.location.href = "surat.html";
-      }, 1500);
+    onConfirm: () => save("submit"),
+  });
+});
+saveButton.addEventListener("click", () => save("draft"));
+previewButton.addEventListener("click", () => save("preview"));
+
+async function init() {
+  setBusy(true);
+  try {
+    const draft = await session.load();
+    if (draft) {
+      agenda.value = draft.no_agenda ?? "";
+      nomorInput.value = draft.no_surat ?? "";
+      tanggalInput.value = draft.tanggal ?? "";
+      penerimaInput.value = draft.tujuan ?? "";
+      perihalInput.value = draft.perihal ?? "";
+      editor.textContent = draft.isi ?? "";
     }
-  });
-});
-
-/* ===== PREVIEW (kirim via sessionStorage) ===== */
-document.getElementById("btn-preview").addEventListener("click", () => {
-  window.sessionStorage.setItem("draftSurat", JSON.stringify(collectDraft()));
-  window.location.href = "preview-surat.html";
-});
-
-/* ===== SIMPAN DRAFT ===== */
-document.getElementById("btn-draft").addEventListener("click", () => {
-  const draft = collectDraft();
-
-  if (window.EOfficeAPI && EOfficeAPI.config.LIVE) {
-    // LIVE: draft tersimpan di server
-    EOfficeAPI.createSuratKeluar({ ...draft, status: "Draft" })
-      .then(() => showToast("Draft disimpan"))
-      .catch(() => showToast("Gagal menyimpan draft. Periksa koneksi lalu coba lagi."));
-    return;
+    ready = true;
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    setBusy(false);
   }
+}
 
-  // Mock: tambah ke data Draft (tab Draft di halaman Surat)
-  SURAT_PG_MOCK.unshift({
-    id: Date.now(),
-    jenis: "draft",
-    nomor: draft.nomor,
-    pengirim: "Anda (Bagian TU)",
-    perihal: draft.perihal || "(Tanpa perihal)",
-    perihalDetail: "Draf surat keluar yang sedang dikerjakan.",
-    tanggal: "Hari ini",
-    waktu: "Baru saja",
-    iso: new Date().toISOString().slice(0, 10),
-    sifat: "Biasa",
-    status: "Draft",
-    label: { text: "Draft", tone: "gray", dot: false }
-  });
-
-  showToast("Draft disimpan");
-});
-
-/* ===== Inisialisasi ===== */
-renderFiles();
+init();
