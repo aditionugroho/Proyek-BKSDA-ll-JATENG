@@ -1,0 +1,82 @@
+<?= $this->extend('layouts/pegawai') ?>
+
+<?= $this->section('title') ?>
+Disposisi Saya - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/pg-disposisi.css') ?>" />
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- ===== 1. HEADER ===== -->
+    <section class="pgd-head">
+      <div>
+        <h1 class="pgd-title">Disposisi Saya</h1>
+        <p class="pgd-desc">Kelola dan tindaklanjuti instruksi resmi yang ditugaskan kepada Anda.</p>
+      </div>
+      <button type="button" class="pgd-btn pgd-btn--primary" id="btn-lapor">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Lapor Tindak Lanjut
+      </button>
+    </section>
+
+    <!-- ===== 2. CARD TAB + FILTER ===== -->
+    <section class="pgd-card">
+
+      <!-- Baris tab -->
+      <nav class="pgd-tabs" id="pgd-tabs" aria-label="Filter status disposisi">
+        <button type="button" class="pgd-tab is-active" data-status="baru">Baru (<span data-count="baru"></span>)</button>
+        <button type="button" class="pgd-tab" data-status="diterima">Diterima</button>
+        <button type="button" class="pgd-tab" data-status="berjalan">Berjalan</button>
+        <button type="button" class="pgd-tab" data-status="selesai">Selesai</button>
+      </nav>
+
+      <!-- Baris filter -->
+      <div class="pgd-filters">
+        <select id="pgd-prioritas" class="pgd-select" aria-label="Filter prioritas">
+          <option value="all">Semua Prioritas</option>
+          <option value="Segera">Segera</option>
+          <option value="Penting">Penting</option>
+          <option value="Biasa">Biasa</option>
+        </select>
+        <div class="pgd-search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="search" id="pgd-search" placeholder="Cari no. disposisi..." aria-label="Cari disposisi" />
+        </div>
+      </div>
+
+      <!-- ===== 3. TABEL ===== -->
+      <div class="pgd-table-scroll">
+        <table class="pgd-table">
+          <thead>
+            <tr>
+              <th>Nomor Disposisi</th>
+              <th>Info Surat Asal</th>
+              <th>Instruksi Pimpinan</th>
+              <th>Prioritas</th>
+              <th>Batas Waktu</th>
+            </tr>
+          </thead>
+          <tbody id="pgd-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="pgd-foot">
+        <span id="pgd-showing">Menampilkan 1-3 dari 3 data baru</span>
+        <div class="pgd-page-btns">
+          <button type="button" class="pgd-page-btn" disabled aria-label="Sebelumnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button type="button" class="pgd-page-btn" disabled aria-label="Berikutnya">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module" src="<?= base_url('assets/js/pages/disposisi-saya.js') ?>"></script>
+<?= $this->endSection() ?>

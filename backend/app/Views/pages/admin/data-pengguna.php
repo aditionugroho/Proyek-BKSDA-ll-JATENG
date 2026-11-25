@@ -1,0 +1,155 @@
+<?= $this->extend('layouts/admin') ?>
+
+<?= $this->section('title') ?>
+Data Pengguna - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/admin-users.css') ?>" />
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- ===== 1. BARIS STAT CARD (render via JS) ===== -->
+    <section class="users-stats" id="users-stats" aria-label="Ringkasan pengguna"></section>
+
+    <!-- ===== 2. HEADER SECTION ===== -->
+    <section class="page-header">
+      <div class="page-header-text">
+        <div class="page-title-row">
+          <h1 class="page-title">Manajemen Data Pengguna</h1>
+          <span class="tag-gray">KONTROL RBAC</span>
+        </div>
+        <p class="page-desc">Kelola akun pegawai, hak akses, peran sistem, dan status verifikasi akun e-Office BKSDA Jawa Tengah.</p>
+      </div>
+      <div class="page-header-actions">
+        <button
+  type="button"
+  id="btn-import-csv"
+  class="btn btn--outline"
+>
+  Impor Pegawai CSV
+</button>
+
+<input
+  type="file"
+  id="input-import-csv"
+  accept=".csv,text/csv"
+  hidden
+/>
+        <button type="button" class="btn btn--outline">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Unduh Rekap
+        </button>
+        <a href="<?= base_url('admin/tambah-pengguna') ?>" class="btn btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          Tambah Pengguna Baru
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 3. BARIS FILTER ===== -->
+    <section class="filter-bar">
+      <div class="filter-search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="search" id="filter-search" placeholder="Cari nama, NIP, email, atau unit kerja..." aria-label="Cari pengguna" />
+      </div>
+
+      <select id="filter-role" class="filter-select" aria-label="Filter peran">
+        <option value="all">Semua Peran</option>
+        <option value="Kepala Seksi">Kepala Seksi</option>
+        <option value="Staf">Staf</option>
+        <option value="Admin Sistem">Admin Sistem</option>
+      </select>
+
+      <select id="filter-status" class="filter-select" aria-label="Filter status">
+        <option value="all">Semua Status</option>
+        <option value="AKTIF">Aktif</option>
+        <option value="NONAKTIF">Nonaktif</option>
+      </select>
+
+      <select id="filter-unit" class="filter-select" aria-label="Filter unit kerja">
+        <option value="all">Semua Unit Kerja</option>
+        <option value="Seksi Konservasi Wilayah II">Seksi Konservasi Wilayah II</option>
+        <option value="Seksi Konservasi Wilayah I">Seksi Konservasi Wilayah I</option>
+        <option value="Resort">Resort</option>
+        <option value="Subbag TU & Data">Subbag TU &amp; Data</option>
+      </select>
+
+      <button type="button" id="filter-reset" class="filter-reset" title="Reset filter" aria-label="Reset filter">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+      </button>
+    </section>
+
+    <!-- ===== 3.5 ANTREAN ACC PENDAFTAR (render via JS) ===== -->
+    <section class="verif-card" id="verif-section" hidden>
+      <div class="verif-head">
+        <h2 class="verif-title">
+          <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Registrasi Menunggu Acc Admin
+        </h2>
+        <span class="verif-count" id="verif-count">0</span>
+      </div>
+      <ul class="verif-list" id="verif-list"></ul>
+    </section>
+
+    <!-- ===== 4. TABEL PENGGUNA ===== -->
+    <section class="table-card">
+      <div class="table-scroll">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Nama &amp; NIP</th>
+              <th>Username / Email</th>
+              <th>Role / Peran</th>
+              <th>Unit / Seksi</th>
+              <th>Status</th>
+              <th>Login Terakhir</th>
+              <th class="th-actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== 5. FOOTER TABEL ===== -->
+      <div class="table-footer">
+        <div class="table-footer-left">
+          <span id="showing-text">Menampilkan 1-5 dari 148 pengguna</span>
+          <span class="rows-select">
+            Tampilkan
+            <select id="per-page" aria-label="Jumlah baris">
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+            </select>
+            baris
+          </span>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </section>
+
+    <!-- ===== 6. TIGA PANEL BAWAH ===== -->
+    <section class="panels-grid" id="panels-grid"></section>
+    <section
+  id="import-result-panel"
+  class="table-card"
+  style="display:none; padding:20px; margin-top:20px;"
+  aria-live="polite"
+>
+  <h2>Hasil Impor Pegawai</h2>
+
+  <p id="import-result-summary"></p>
+
+  <div
+    id="import-result-errors"
+    style="margin-top:12px;"
+  ></div>
+</section>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module" src="<?= base_url('assets/js/pages/admin-users.js') ?>"></script>
+
+<script defer src="<?= base_url('assets/js/pages/admin-import-csv.js') ?>"></script>
+<?= $this->endSection() ?>

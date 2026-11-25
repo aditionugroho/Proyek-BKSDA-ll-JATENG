@@ -208,7 +208,10 @@ public function register()
         $throttler =
             service('throttler');
 
+        // Sementara: rate limit login dilewati saat mode
+        // development agar akun pengujian lokal tidak terkunci.
         if (
+            ENVIRONMENT !== 'development' &&
             !$throttler->check(
                 $rateLimitKey,
                 5,

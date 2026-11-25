@@ -1,0 +1,577 @@
+<?= $this->extend('layouts/pegawai') ?>
+
+<?= $this->section('title') ?>
+Detail Arsip - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/detail-generic.css') ?>" />
+    <style>
+      .arsip-file-card {
+        margin-top: 20px;
+        padding: 24px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+      .arsip-file-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .arsip-file-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .arsip-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .arsip-button {
+        padding: 10px 16px;
+        border-radius: 8px;
+        background: #2563eb;
+        border: 1px solid #2563eb;
+        color: #fff;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .arsip-button--outline {
+        background: white;
+        color: #2563eb;
+      }
+      .arsip-button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .arsip-file-name {
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #475569;
+        margin-bottom: 16px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+      .arsip-preview {
+        min-height: 180px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        color: #64748b;
+        text-align: center;
+      }
+      .arsip-preview iframe {
+        width: 100%;
+        height: 650px;
+        border: 0;
+        display: block;
+        background: #fff;
+      }
+      .arsip-preview img {
+        max-width: 100%;
+        max-height: 780px;
+        object-fit: contain;
+        display: block;
+        margin: auto;
+      }
+      .arsip-placeholder {
+        padding: 50px 20px;
+        line-height: 1.6;
+      }
+      .arsip-message {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 13px;
+      }
+      .arsip-message.is-error {
+        background: #fef2f2;
+        color: #991b1b;
+      }
+    </style>
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<nav class="dg-breadcrumb" aria-label="Breadcrumb">
+        <a href="<?= base_url('pegawai/dashboard') ?>">Dashboard</a>
+        <span class="dg-breadcrumb-sep">&gt;</span>
+        <a href="<?= base_url('pegawai/arsip') ?>">Arsip</a>
+        <span class="dg-breadcrumb-sep">&gt;</span>
+        <span class="dg-breadcrumb-current" id="dg-crumb"> Detail Arsip </span>
+      </nav>
+
+      <a href="<?= base_url('pegawai/arsip') ?>" class="dg-back"> Kembali ke Arsip </a>
+
+      <section class="dg-card">
+        <div class="dg-title-row">
+          <div>
+            <h1 class="dg-title" id="dg-title">Memuat arsip...</h1>
+            <p class="dg-sub" id="dg-sub"></p>
+          </div>
+
+          <span class="dg-badge dg-badge--green" id="dg-badge">
+            Memuat...
+          </span>
+        </div>
+
+        <div class="dg-grid" id="dg-info"></div>
+
+        <div
+          id="dg-message"
+          class="arsip-message"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></div>
+      </section>
+
+      <section class="arsip-file-card">
+        <div class="arsip-file-header">
+          <h2>Dokumen Arsip</h2>
+
+          <div class="arsip-actions">
+            <button
+              type="button"
+              class="arsip-button arsip-button--outline"
+              id="btn-preview"
+              disabled
+            >
+              Muat Ulang Preview
+            </button>
+
+            <button
+              type="button"
+              class="arsip-button"
+              id="btn-download"
+              disabled
+            >
+              Unduh Arsip
+            </button>
+          </div>
+        </div>
+
+        <div id="arsip-file-name" class="arsip-file-name">
+          Memeriksa file...
+        </div>
+
+        <div id="arsip-preview" class="arsip-preview">
+          <div class="arsip-placeholder">Memuat dokumen...</div>
+        </div>
+      </section>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module">
+      const $ = (id) => document.getElementById(id);
+
+      const API_BASE =
+        EOfficeAPI.config.BASE_URL || "/api";
+
+      let arsipId = null;
+      let arsip = null;
+      let surat = null;
+      let previewURL = null;
+      let previewBusy = false;
+      let downloadBusy = false;
+
+      function text(id, value) {
+        const element = $(id);
+        if (element) {
+          element.textContent = String(value ?? "-");
+        }
+      }
+
+      function firstValue(...values) {
+        return (
+          values.find(
+            (value) =>
+              value !== undefined &&
+              value !== null &&
+              String(value).trim() !== "",
+          ) ?? "-"
+        );
+      }
+
+      function getId() {
+        const value = new URLSearchParams(location.search).get("id");
+
+        if (!value || !/^[1-9]\d*$/.test(value)) {
+          throw new Error("ID arsip tidak valid.");
+        }
+
+        return Number(value);
+      }
+
+      function formatDate(value) {
+        if (!value) return "-";
+
+        const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+        if (!match) return String(value);
+
+        const date = new Date(
+          Number(match[1]),
+          Number(match[2]) - 1,
+          Number(match[3]),
+        );
+
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      }
+
+      function basename(path) {
+        return (
+          String(path || "")
+            .replace(/\\/g, "/")
+            .split("/")
+            .pop() || "-"
+        );
+      }
+
+      function notice(message, error = false) {
+        const box = $("dg-message");
+
+        box.hidden = false;
+        box.className = "arsip-message" + (error ? " is-error" : "");
+        box.textContent = message;
+      }
+
+      function field(label, value, mono = false) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "dg-field";
+
+        const name = document.createElement("p");
+        name.className = "dg-label";
+        name.textContent = label;
+
+        const content = document.createElement("p");
+        content.className = "dg-value" + (mono ? " dg-value--mono" : "");
+        content.textContent = String(value ?? "-");
+
+        wrapper.append(name, content);
+        $("dg-info").appendChild(wrapper);
+      }
+
+      function placeholder(message) {
+        const box = $("arsip-preview");
+        box.replaceChildren();
+
+        const element = document.createElement("div");
+        element.className = "arsip-placeholder";
+        element.textContent = message;
+
+        box.appendChild(element);
+      }
+
+      function clearPreview() {
+        if (previewURL) {
+          URL.revokeObjectURL(previewURL);
+          previewURL = null;
+        }
+      }
+
+      async function apiJSON(path) {
+        const result = await EOfficeAPI.request("GET", path);
+
+        if (result?.status !== true || !result.data) {
+          throw new Error(result?.message || "Data tidak valid.");
+        }
+
+        return result.data;
+      }
+
+      async function apiFile(path) {
+        const token = (sessionStorage.getItem("eoffice_token") || localStorage.getItem("eoffice_token"));
+
+        if (!token) {
+          throw new Error("Silakan login ulang.");
+        }
+
+        const controller = new AbortController();
+
+        const timer = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const response = await fetch(API_BASE + path, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            let message = `Request gagal (HTTP ${response.status}).`;
+
+            const mime = response.headers.get("content-type") || "";
+
+            if (mime.includes("application/json")) {
+              const body = await response.json();
+              message = body.message || message;
+            }
+
+            throw new Error(message);
+          }
+
+          const mime = response.headers.get("content-type") || "";
+
+          if (mime.includes("application/json") || mime.includes("text/html")) {
+            throw new Error("Server tidak mengembalikan berkas.");
+          }
+
+          const blob = await response.blob();
+
+          if (!blob.size) {
+            throw new Error("Berkas kosong.");
+          }
+
+          return blob;
+        } catch (error) {
+          if (error.name === "AbortError") {
+            throw new Error("Pengambilan file melewati batas waktu.");
+          }
+
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      function suratPath() {
+        const reference = Number(arsip?.referensi_id);
+
+        if (!Number.isSafeInteger(reference) || reference < 1) {
+          return null;
+        }
+
+        const jenis =
+          arsip.jenis === "surat_masuk"
+            ? "surat-masuk"
+            : arsip.jenis === "surat_keluar"
+              ? "surat-keluar"
+              : null;
+
+        if (!jenis) return null;
+
+        return `/${jenis}/${reference}`;
+      }
+
+      function render() {
+        const nomor = firstValue(
+          surat?.no_surat,
+          arsip?.no_surat,
+          arsip?.no_agenda,
+        );
+
+        const perihal = firstValue(surat?.perihal, arsip?.perihal);
+
+        const pihak = firstValue(
+          surat?.asal,
+          surat?.tujuan,
+          arsip?.asal,
+          arsip?.tujuan,
+        );
+
+        const jenis =
+          arsip.jenis === "surat_masuk" ? "Surat Masuk" : "Surat Keluar";
+
+        text("dg-crumb", nomor);
+        text("dg-title", perihal);
+        text("dg-sub", `${jenis} • Arsip #${arsip.id}`);
+        text("dg-badge", "Diarsipkan");
+
+        $("dg-info").replaceChildren();
+
+        field("ID Arsip", arsip.id, true);
+        field("Jenis Dokumen", jenis);
+        field("Nomor Surat", nomor, true);
+
+        field(
+          "Nomor Agenda",
+          firstValue(surat?.no_agenda, arsip?.no_agenda),
+          true,
+        );
+
+        field("Perihal", perihal);
+        field("Asal / Tujuan", pihak);
+        field("Tanggal Surat", formatDate(surat?.tanggal));
+
+        field("Tanggal Diarsipkan", formatDate(arsip.tanggal_arsip));
+
+        field("Kategori", arsip.kategori || "-");
+
+        field("ID Surat Asal", arsip.referensi_id, true);
+
+        const path = surat?.file_path;
+        const available = Boolean(path);
+
+        text(
+          "arsip-file-name",
+          available
+            ? `File: ${basename(path)}`
+            : "Surat ini belum memiliki lampiran.",
+        );
+
+        $("btn-download").disabled = !available;
+        $("btn-preview").disabled = !available;
+
+        if (!available) {
+          placeholder("Belum ada dokumen yang bisa ditampilkan.");
+        }
+
+        document.title = `${perihal} - E-Office SKSDA`;
+      }
+
+      async function preview() {
+        if (!surat?.file_path || !suratPath() || previewBusy) return;
+
+        previewBusy = true;
+        $("btn-preview").disabled = true;
+
+        clearPreview();
+        placeholder("Memuat preview lampiran...");
+
+        try {
+          const blob = await apiFile(suratPath() + "/preview");
+
+          const mime = blob.type.toLowerCase();
+
+          if (!mime.includes("application/pdf") && !mime.startsWith("image/")) {
+            placeholder(
+              "Format file tidak mendukung preview. " +
+                "Gunakan tombol Unduh Arsip.",
+            );
+            return;
+          }
+
+          previewURL = URL.createObjectURL(blob);
+
+          const container = $("arsip-preview");
+          container.replaceChildren();
+
+          if (mime.includes("application/pdf")) {
+            const frame = document.createElement("iframe");
+
+            frame.src = previewURL;
+            frame.title = "Preview Dokumen Arsip";
+
+            container.appendChild(frame);
+          } else {
+            const image = document.createElement("img");
+
+            image.src = previewURL;
+            image.alt = "Preview Lampiran Arsip";
+
+            container.appendChild(image);
+          }
+        } catch (error) {
+          console.warn("Preview gagal:", error.message);
+
+          placeholder(
+            error.message.includes("415")
+              ? "Format ini tidak dapat dipreview. " +
+                  "Gunakan tombol Unduh Arsip."
+              : "Gagal preview: " + error.message,
+          );
+        } finally {
+          previewBusy = false;
+          $("btn-preview").disabled = !surat?.file_path;
+        }
+      }
+
+      async function download() {
+        if (!arsipId || downloadBusy) return;
+
+        downloadBusy = true;
+        $("btn-download").disabled = true;
+
+        try {
+          const blob = await apiFile(`/arsip/${arsipId}/file`);
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+
+          link.href = url;
+          link.download = basename(surat?.file_path);
+
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+          notice("Permintaan download berhasil.");
+        } catch (error) {
+          notice(error.message, true);
+          console.error("Download gagal:", error);
+        } finally {
+          downloadBusy = false;
+          $("btn-download").disabled = !surat?.file_path;
+        }
+      }
+
+      async function init() {
+        $("btn-preview").addEventListener("click", preview);
+
+        $("btn-download").addEventListener("click", download);
+
+        try {
+          arsipId = getId();
+
+          // Detail menggunakan ID arsip.
+          arsip = await apiJSON(`/arsip/${arsipId}`);
+
+          // Cari informasi surat asal.
+          const path = suratPath();
+
+          if (path) {
+            try {
+              surat = await apiJSON(path);
+            } catch (error) {
+              console.warn("Surat asal tidak bisa dimuat:", error.message);
+            }
+          }
+
+          render();
+
+          if (surat?.file_path) {
+            await preview();
+          }
+
+          console.info("Detail Arsip Staf berhasil dimuat:", {
+            arsipId,
+            jenis: arsip.jenis,
+            referensi: arsip.referensi_id,
+            adaLampiran: Boolean(surat?.file_path),
+          });
+        } catch (error) {
+          console.error("Detail arsip gagal:", error);
+
+          text("dg-title", "Gagal memuat detail arsip");
+
+          text("dg-sub", error.message);
+          text("dg-badge", "Gagal");
+
+          notice(error.message, true);
+          placeholder("Data arsip tidak dapat ditampilkan.");
+        }
+      }
+
+      window.addEventListener("pagehide", clearPreview);
+
+      init();
+    </script>
+<?= $this->endSection() ?>

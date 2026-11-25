@@ -1,0 +1,136 @@
+<?= $this->extend('layouts/kepala-seksi') ?>
+
+<?= $this->section('title') ?>
+Manajemen Disposisi - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/ks-disposisi.css') ?>" />
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- ===== 1. HEADER ===== -->
+    <section class="kdp-head">
+      <div>
+        <h1 class="kdp-title">Manajemen Disposisi</h1>
+        <p class="kdp-desc">Pantau dan kelola penugasan surat ke staf.</p>
+      </div>
+      <button type="button" class="kdp-btn kdp-btn--primary" id="btn-buat">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Buat Disposisi
+      </button>
+    </section>
+
+    <!-- ===== 2. GRID DUA KOLOM ===== -->
+    <section class="kdp-grid">
+
+      <!-- KIRI: form disposisi -->
+      <form class="kdp-card kdp-form-card" id="dsp-form" novalidate>
+        <div class="kdp-card-head">
+          <h2 class="kdp-card-title">Form Disposisi Baru</h2>
+          <span class="kdp-head-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+          </span>
+        </div>
+
+        <div class="kdp-field">
+          <label class="kdp-label" for="f-surat">Nomor Surat</label>
+          <input type="text" id="f-surat" list="daftar-surat" placeholder="Contoh: SM-2023/10/001 - Laporan Patroli Kawasan" autocomplete="off" />
+          <datalist id="daftar-surat"></datalist>
+          <p class="kdp-hint">Ketik manual nomor surat masuk beserta perihal singkat.<br />Format: <strong>Nomor Surat - Perihal</strong> (contoh: <strong>SM-2023/10/045 - Undangan Rapat Koordinasi</strong>)</p>
+          <p class="kdp-error" id="f-surat-error" hidden>Wajib diisi</p>
+        </div>
+
+        <div class="kdp-field">
+          <label class="kdp-label" for="f-staf">Pilih Staf (Tujuan)</label>
+          <select id="f-staf">
+            <option value="" selected disabled>Tugaskan kepada...</option>
+            <option value="Budi Santoso">Budi Santoso</option>
+            <option value="Siti Rahma">Siti Rahma</option>
+            <option value="Andi Wijaya">Andi Wijaya</option>
+          </select>
+          <p class="kdp-error" id="f-staf-error" hidden>Wajib dipilih</p>
+        </div>
+
+        <div class="kdp-field">
+          <label class="kdp-label" for="f-instruksi">Instruksi</label>
+          <select id="f-instruksi">
+            <option value="" selected disabled>Pilih instruksi tindakan...</option>
+            <option value="Segera ditindaklanjuti">Segera ditindaklanjuti</option>
+            <option value="Untuk dilaporkan">Untuk dilaporkan</option>
+            <option value="Untuk ditelaah">Untuk ditelaah</option>
+          </select>
+          <p class="kdp-error" id="f-instruksi-error" hidden>Wajib dipilih</p>
+        </div>
+
+        <div class="kdp-field-cols">
+          <div class="kdp-field">
+            <label class="kdp-label" for="f-prioritas">Prioritas</label>
+            <select id="f-prioritas">
+              <option value="Biasa" selected>Biasa</option>
+              <option value="Penting">Penting</option>
+              <option value="Segera">Segera</option>
+            </select>
+          </div>
+          <div class="kdp-field">
+            <label class="kdp-label" for="f-deadline">Deadline</label>
+            <input type="date" id="f-deadline" />
+          </div>
+        </div>
+
+        <div class="kdp-field">
+          <label class="kdp-label" for="f-catatan">Catatan Tambahan</label>
+          <textarea id="f-catatan" rows="4" placeholder="Masukkan catatan..."></textarea>
+        </div>
+
+        <button type="submit" class="kdp-btn kdp-btn--primary kdp-btn--block">
+          Kirim Disposisi &#9656;
+        </button>
+      </form>
+
+      <!-- KANAN: daftar disposisi -->
+      <div class="kdp-card">
+        <div class="kdp-card-head">
+          <h2 class="kdp-card-title">Daftar Disposisi Aktif</h2>
+          <div class="kdp-head-icons">
+            <button type="button" class="kdp-filter-btn" title="Filter daftar" aria-label="Filter">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            </button>
+            <button type="button" class="kdp-filter-btn" title="Urutkan daftar" aria-label="Urutkan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="kdp-table-scroll">
+          <table class="kdp-table">
+            <thead>
+              <tr>
+                <th>Nomor / Surat</th>
+                <th>Tujuan (PIC)</th>
+                <th>Tanggal &amp; Deadline</th>
+              </tr>
+            </thead>
+            <tbody id="dsp-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="kdp-table-foot">
+          <span class="kdp-showing" id="dsp-showing">Menampilkan 1-3 dari 24 disposisi</span>
+          <div class="kdp-page-btns">
+            <button type="button" class="kdp-page-btn" id="dsp-prev" aria-label="Sebelumnya">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button type="button" class="kdp-page-btn" id="dsp-next" aria-label="Berikutnya">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module" src="<?= base_url('assets/js/pages/disposisi.js') ?>"></script>
+<?= $this->endSection() ?>

@@ -1,0 +1,126 @@
+<?= $this->extend('layouts/kepala-seksi') ?>
+
+<?= $this->section('title') ?>
+Buat Tugas Baru - E-Office SKSDA
+<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/pages/ks-tugas.css') ?>" />
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- ===== 1. HEADER ===== -->
+    <section class="ktg-head">
+      <div>
+        <h1 class="ktg-title">Buat Tugas Baru</h1>
+        <p class="ktg-desc">Isi form di bawah ini untuk menugaskan staf pada kegiatan operasional BKSDA.</p>
+      </div>
+    </section>
+
+    <!-- ===== 2. CARD FORM ===== -->
+    <form class="bt-form-card" id="bt-form" novalidate>
+
+      <!-- Judul tugas -->
+      <div class="bt-field">
+        <label class="bt-label" for="bt-judul">Judul Tugas</label>
+        <input type="text" id="bt-judul" placeholder="Misal: Patroli Hutan Lindung Resort A" />
+        <p class="bt-error" id="bt-judul-error" hidden>Wajib diisi</p>
+      </div>
+
+      <!-- Deskripsi -->
+      <div class="bt-field">
+        <label class="bt-label" for="bt-deskripsi">Deskripsi</label>
+        <textarea id="bt-deskripsi" rows="5" placeholder="Detail kegiatan, rute, dan target patroli..."></textarea>
+        <p class="bt-error" id="bt-deskripsi-error" hidden>Wajib diisi</p>
+      </div>
+
+      <!-- Staf + prioritas -->
+      <div class="bt-row">
+        <div class="bt-field">
+          <label class="bt-label" for="bt-staf">Pilih Staf</label>
+          <select id="bt-staf">
+            <option value="" selected disabled>Pilih Anggota Tim</option>
+            <option value="Budi Santoso">Budi Santoso</option>
+            <option value="Siti Aminah">Siti Aminah</option>
+            <option value="Arif Wibowo">Arif Wibowo</option>
+            <option value="Budi Wibowo">Budi Wibowo</option>
+          </select>
+          <p class="bt-error" id="bt-staf-error" hidden>Wajib dipilih</p>
+        </div>
+
+        <div class="bt-field bt-field--auto">
+          <span class="bt-label">Prioritas</span>
+          <div class="bt-prio-box" role="radiogroup" aria-label="Prioritas tugas">
+            <label class="bt-prio-option">
+              <input type="radio" name="prioritas" value="Rendah" />
+              Rendah
+            </label>
+            <label class="bt-prio-option">
+              <input type="radio" name="prioritas" value="Sedang" checked />
+              Sedang
+            </label>
+            <label class="bt-prio-option">
+              <input type="radio" name="prioritas" value="Tinggi" />
+              Tinggi
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tanggal mulai + deadline -->
+      <div class="bt-row-2">
+        <div class="bt-field">
+          <label class="bt-label" for="bt-mulai">Tanggal Mulai</label>
+          <input type="date" id="bt-mulai" />
+        </div>
+        <div class="bt-field">
+          <label class="bt-label" for="bt-deadline">Deadline</label>
+          <input type="date" id="bt-deadline" />
+        </div>
+      </div>
+
+      <!-- Checklist persiapan -->
+      <div class="bt-field">
+        <span class="bt-label">Checklist Persiapan</span>
+        <div class="bt-checklist-box">
+          <label class="bt-check">
+            <input type="checkbox" name="persiapan" value="Surat Perintah Tugas (SPT)" />
+            <span>Surat Perintah Tugas (SPT)</span>
+          </label>
+          <label class="bt-check">
+            <input type="checkbox" name="persiapan" value="Kendaraan Dinas Siap" />
+            <span>Kendaraan Dinas Siap</span>
+          </label>
+          <label class="bt-check">
+            <input type="checkbox" name="persiapan" value="Peralatan Navigasi (GPS/Peta)" />
+            <span>Peralatan Navigasi (GPS/Peta)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Lampiran -->
+      <div class="bt-field">
+        <span class="bt-label">Lampiran</span>
+        <div class="bt-dropzone" id="bt-dropzone" role="button" tabindex="0" aria-label="Unggah lampiran">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+          <p class="bt-dropzone-title">Klik untuk upload atau drag &amp; drop file</p>
+          <p class="bt-dropzone-sub">PDF, DOCX, JPG maksimal 10MB</p>
+          <input type="file" id="bt-file" accept=".pdf,.docx,.jpg,.jpeg" hidden multiple />
+        </div>
+        <div class="bt-file-list" id="bt-file-list"></div>
+      </div>
+
+      <!-- ===== 3. FOOTER FORM ===== -->
+      <div class="bt-form-foot">
+        <button type="button" class="bt-cancel-link" id="btn-batal">Batal</button>
+        <button type="submit" class="ktg-btn ktg-btn--primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Simpan Tugas
+        </button>
+      </div>
+    </form>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script type="module" src="<?= base_url('assets/js/pages/buat-tugas.js') ?>"></script>
+<?= $this->endSection() ?>
