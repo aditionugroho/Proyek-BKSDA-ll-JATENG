@@ -25,6 +25,13 @@ class Database extends Config
      * @var array<string, mixed>
      */
     public array $default = [
+        /*
+         * Nilai di bawah di-override melalui file .env
+         * (database.default.*) atau variabel lingkungan
+         * container (database_default_*, lihat
+         * docker-compose.yml).
+         */
+
         'DSN'          => '',
         'hostname'     => 'localhost',
         'username'     => '',
