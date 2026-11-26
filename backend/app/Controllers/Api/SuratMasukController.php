@@ -6,7 +6,6 @@ use App\Controllers\BaseController;
 use App\Libraries\ResortAccessPolicy;
 use App\Models\ResortModel;
 use App\Models\ActivityLogModel;
-use App\Models\AuthTokenModel;
 use App\Models\DisposisiModel;
 use App\Models\NotifikasiModel;
 use App\Models\SuratMasukModel;
@@ -21,7 +20,6 @@ class SuratMasukController extends BaseController
 
     protected SuratMasukModel $suratModel;
     protected DisposisiModel $disposisiModel;
-    protected AuthTokenModel $tokenModel;
     protected ActivityLogModel $activityLogModel;
     protected NotifikasiModel $notifikasiModel;
     protected UserModel $userModel;
@@ -30,32 +28,14 @@ class SuratMasukController extends BaseController
     {
         $this->suratModel = new SuratMasukModel();
         $this->disposisiModel = new DisposisiModel();
-        $this->tokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
         $this->notifikasiModel = new NotifikasiModel();
         $this->userModel = new UserModel();
     }
 
-    private function getCurrentUserId(): ?int
-    {
-        $authorization = $this->request->getHeaderLine('Authorization');
-
-        if (!preg_match('/^Bearer\s+(\S+)$/i', $authorization, $matches)) {
-            return null;
-        }
-
-        $token = $this->tokenModel
-            ->where('token_hash', hash('sha256', $matches[1]))
-            ->where('revoked_at', null)
-            ->first();
-
-        return $token ? (int) $token['user_id'] : null;
-    }
-
     private function currentAccessUser(): ?array
     {
-        $id = $this->getCurrentUserId();
-        return $id ? $this->userModel->where('id', $id)->where('status', 1)->first() : null;
+        return $this->getCurrentUser();
     }
 
     // Fail closed before any detail, write, preview, or file access.

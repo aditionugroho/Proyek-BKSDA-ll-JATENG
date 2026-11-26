@@ -14,6 +14,8 @@ class BackupService
 
     protected int $retentionDays;
 
+    protected ?string $serverVersion = null;
+
     public function __construct()
     {
         $databaseConfig = config('Database');
@@ -118,6 +120,33 @@ class BackupService
 
     /*
     |--------------------------------------------------------------------------
+    | SERVER FLAVOR
+    |--------------------------------------------------------------------------
+    */
+
+    protected function serverVersion(): string
+    {
+        if ($this->serverVersion === null) {
+            $this->serverVersion = (string) (
+                db_connect()
+                    ->query('SELECT VERSION() AS version')
+                    ->getRowArray()['version'] ?? ''
+            );
+        }
+
+        return $this->serverVersion;
+    }
+
+    protected function isMariaDb(): bool
+    {
+        return str_contains(
+            strtolower($this->serverVersion()),
+            'mariadb'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | PROCESS ENVIRONMENT
     |--------------------------------------------------------------------------
     */
@@ -216,8 +245,6 @@ class BackupService
 
             '--events',
 
-            '--set-gtid-purged=OFF',
-
             '--no-tablespaces',
 
             '--result-file=' .
@@ -225,6 +252,32 @@ class BackupService
 
             $database['database'],
         ];
+
+        /*
+         * Opsi ini hanya ada pada mysqldump dari MySQL;
+         * mysqldump MariaDB gagal jika menerima flag ini.
+         */
+
+        if (!$this->isMariaDb()) {
+            $command[] = '--set-gtid-purged=OFF';
+
+            /*
+             * mysqldump MySQL 8.0 mengaktifkan column statistics
+             * secara default dan gagal saat server lebih lama
+             * tidak memiliki sys.column_statistics.
+             */
+
+            if (
+                version_compare(
+                    $this->serverVersion(),
+                    '8.0',
+                    '<'
+                )
+            ) {
+                $command[] =
+                    '--column-statistics=0';
+            }
+        }
 
         $descriptorSpec = [
             0 => [

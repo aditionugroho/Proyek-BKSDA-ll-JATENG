@@ -3,51 +3,12 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
-use App\Models\AuthTokenModel;
 use App\Models\JadwalModel;
-use App\Models\UserModel;
 use CodeIgniter\API\ResponseTrait;
 
 class JadwalController extends BaseController
 {
     use ResponseTrait;
-
-    private function currentUser(): ?array
-    {
-        $header = $this->request->getHeaderLine('Authorization');
-
-        if (!preg_match('/^Bearer\s+(\S+)$/i', $header, $matches)) {
-            return null;
-        }
-
-        $token = (new AuthTokenModel())
-            ->where('token_hash', hash('sha256', $matches[1]))
-            ->where('revoked_at', null)
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        if (
-            !empty($token['expires_at']) &&
-            strtotime($token['expires_at']) <= time()
-        ) {
-            return null;
-        }
-
-        if (
-            !empty($token['last_used_at']) &&
-            time() - strtotime($token['last_used_at']) > 1800
-        ) {
-            return null;
-        }
-
-        return (new UserModel())
-            ->where('id', $token['user_id'])
-            ->where('status', 1)
-            ->first();
-    }
 
     private function formatAgenda(array $row): array
     {
@@ -127,7 +88,7 @@ class JadwalController extends BaseController
 
     public function index()
     {
-        if (!$this->currentUser()) {
+        if (!$this->getCurrentUser()) {
             return $this->unauthorized();
         }
 
@@ -145,7 +106,7 @@ class JadwalController extends BaseController
 
     public function saya()
     {
-        $user = $this->currentUser();
+        $user = $this->getCurrentUser();
 
         if (!$user) {
             return $this->unauthorized();
@@ -176,7 +137,7 @@ class JadwalController extends BaseController
 
     public function create()
     {
-        $user = $this->currentUser();
+        $user = $this->getCurrentUser();
 
         if (!$user) {
             return $this->unauthorized();
@@ -200,11 +161,38 @@ class JadwalController extends BaseController
             ], 422);
         }
 
+        /*
+         * Agenda seksi hanya untuk Admin dan Kepala Seksi;
+         * pegawai lain hanya dapat membuat agenda pribadi.
+         */
+
+        $jenis = $data['jenis'] ?? 'pribadi';
+
+        if ($jenis === 'seksi') {
+            if (
+                !in_array(
+                    $user['role'],
+                    ['admin', 'kepala_seksi'],
+                    true
+                )
+            ) {
+                return $this->respond([
+                    'status' => false,
+                    'message' => 'Hanya Admin dan Kepala Seksi yang dapat menambahkan agenda seksi.',
+                ], 403);
+            }
+        } elseif ($jenis !== 'pribadi') {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Jenis agenda hanya boleh pribadi atau seksi.',
+            ], 422);
+        }
+
         $model = new JadwalModel();
 
         $payload = $this->payload($data);
         $payload['user_id'] = (int) $user['id'];
-        $payload['jenis'] = 'pribadi';
+        $payload['jenis'] = $jenis;
         $payload['status'] = 'Terjadwal';
 
         $id = $model->insert($payload);
@@ -226,7 +214,7 @@ class JadwalController extends BaseController
 
     public function update($id)
     {
-        $user = $this->currentUser();
+        $user = $this->getCurrentUser();
 
         if (!$user) {
             return $this->unauthorized();
@@ -234,11 +222,27 @@ class JadwalController extends BaseController
 
         $model = new JadwalModel();
 
-        $agenda = $model
+        /*
+         * Agenda seksi hanya dapat dikelola oleh
+         * Admin dan Kepala Seksi; selain itu hanya
+         * agenda pribadi milik sendiri.
+         */
+
+        $agendaQuery = $model
             ->where('id', $id)
-            ->where('user_id', $user['id'])
-            ->where('jenis', 'pribadi')
-            ->first();
+            ->where('user_id', $user['id']);
+
+        if (
+            !in_array(
+                $user['role'],
+                ['admin', 'kepala_seksi'],
+                true
+            )
+        ) {
+            $agendaQuery->where('jenis', 'pribadi');
+        }
+
+        $agenda = $agendaQuery->first();
 
         if (!$agenda) {
             return $this->respond([
@@ -282,7 +286,7 @@ class JadwalController extends BaseController
 
     public function delete($id)
     {
-        $user = $this->currentUser();
+        $user = $this->getCurrentUser();
 
         if (!$user) {
             return $this->unauthorized();
@@ -290,11 +294,27 @@ class JadwalController extends BaseController
 
         $model = new JadwalModel();
 
-        $agenda = $model
+        /*
+         * Agenda seksi hanya dapat dikelola oleh
+         * Admin dan Kepala Seksi; selain itu hanya
+         * agenda pribadi milik sendiri.
+         */
+
+        $agendaQuery = $model
             ->where('id', $id)
-            ->where('user_id', $user['id'])
-            ->where('jenis', 'pribadi')
-            ->first();
+            ->where('user_id', $user['id']);
+
+        if (
+            !in_array(
+                $user['role'],
+                ['admin', 'kepala_seksi'],
+                true
+            )
+        ) {
+            $agendaQuery->where('jenis', 'pribadi');
+        }
+
+        $agenda = $agendaQuery->first();
 
         if (!$agenda) {
             return $this->respond([

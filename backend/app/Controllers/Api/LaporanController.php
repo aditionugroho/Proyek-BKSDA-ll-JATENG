@@ -4,7 +4,6 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Models\ActivityLogModel;
-use App\Models\AuthTokenModel;
 use CodeIgniter\API\ResponseTrait;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -15,13 +14,11 @@ class LaporanController extends BaseController
 
     protected $db;
     protected ActivityLogModel $activityLogModel;
-    protected AuthTokenModel $authTokenModel;
 
     public function __construct()
     {
         $this->db = db_connect();
         $this->activityLogModel = new ActivityLogModel();
-        $this->authTokenModel = new AuthTokenModel();
     }
 
     /*
@@ -321,51 +318,6 @@ class LaporanController extends BaseController
                 </tr>
             </table>
         ';
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CURRENT USER
-    |--------------------------------------------------------------------------
-    */
-
-    private function getCurrentUserId(): ?int
-    {
-        $authorization = $this->request
-            ->getHeaderLine('Authorization');
-
-        if (
-            !$authorization ||
-            !preg_match(
-                '/^Bearer\s+(\S+)$/i',
-                $authorization,
-                $matches
-            )
-        ) {
-            return null;
-        }
-
-        $tokenHash = hash(
-            'sha256',
-            $matches[1]
-        );
-
-        $token = $this->authTokenModel
-            ->where(
-                'token_hash',
-                $tokenHash
-            )
-            ->where(
-                'revoked_at',
-                null
-            )
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        return (int) $token['user_id'];
     }
 
     /*

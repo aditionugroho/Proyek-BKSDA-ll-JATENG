@@ -518,6 +518,13 @@ if (array_key_exists('resort_id', $data)) {
         */
 
         if (array_key_exists('name', $data)) {
+            if (isset($data['name']) && !is_string($data['name'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Nama harus berupa teks.',
+                ], 422);
+            }
+
             $name = trim($data['name']);
 
             if ($name === '') {
@@ -537,6 +544,13 @@ if (array_key_exists('resort_id', $data)) {
         */
 
         if (array_key_exists('username', $data)) {
+            if (isset($data['username']) && !is_string($data['username'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Username harus berupa teks.',
+                ], 422);
+            }
+
             $username = strtolower(
                 trim($data['username'])
             );
@@ -578,6 +592,13 @@ if (array_key_exists('resort_id', $data)) {
         */
 
         if (array_key_exists('email', $data)) {
+            if (isset($data['email']) && !is_string($data['email'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Email harus berupa teks.',
+                ], 422);
+            }
+
             $email = strtolower(
                 trim($data['email'] ?? '')
             );
@@ -632,6 +653,13 @@ if (array_key_exists('resort_id', $data)) {
             'no_whatsapp',
             $data
         )) {
+            if (isset($data['no_whatsapp']) && !is_string($data['no_whatsapp'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Nomor WhatsApp harus berupa teks.',
+                ], 422);
+            }
+
             $noWhatsapp = trim(
                 $data['no_whatsapp'] ?? ''
             );
@@ -670,6 +698,13 @@ if (array_key_exists('resort_id', $data)) {
         */
 
         if (array_key_exists('role', $data)) {
+            if (isset($data['role']) && !is_string($data['role'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Role harus berupa teks.',
+                ], 422);
+            }
+
             $role = trim(
                 $data['role']
             );
@@ -705,6 +740,13 @@ if (array_key_exists('resort_id', $data)) {
             'jabatan',
             $data
         )) {
+            if (isset($data['jabatan']) && !is_string($data['jabatan'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Jabatan harus berupa teks.',
+                ], 422);
+            }
+
             $jabatan = trim(
                 $data['jabatan'] ?? ''
             );
@@ -728,6 +770,13 @@ if (array_key_exists('resort_id', $data)) {
             ) &&
             $data['password'] !== ''
         ) {
+            if (!is_string($data['password'])) {
+                return $this->respond([
+                    'status'  => false,
+                    'message' => 'Password harus berupa teks.',
+                ], 422);
+            }
+
             if (
                 strlen(
                     $data['password']
@@ -774,6 +823,29 @@ if (array_key_exists('resort_id', $data)) {
             $id,
             $updateData
         );
+
+        /*
+         * Kalau password diubah, cabut semua token
+         * aktif user terkait agar sesi lama yang
+         * mungkin telah bocor tidak tetap berlaku.
+         */
+
+        if (isset($updateData['password'])) {
+            $tokens = $this->tokenModel
+                ->where('user_id', $id)
+                ->where('revoked_at', null)
+                ->findAll();
+
+            foreach ($tokens as $token) {
+                $this->tokenModel->update(
+                    $token['id'],
+                    [
+                        'revoked_at' =>
+                            date('Y-m-d H:i:s'),
+                    ]
+                );
+            }
+        }
 
         /*
          * Kalau user dinonaktifkan,

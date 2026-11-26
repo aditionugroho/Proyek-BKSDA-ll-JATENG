@@ -170,12 +170,23 @@ public function register()
             ], 400);
         }
 
-        $username = trim(
-            $data['username'] ?? ''
-        );
+        $username = $data['username'] ?? '';
 
         $password =
             $data['password'] ?? '';
+
+        if (
+            !is_string($username) ||
+            !is_string($password)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Username dan password harus berupa teks.',
+            ], 422);
+        }
+
+        $username = trim($username);
 
         if (
             $username === '' ||

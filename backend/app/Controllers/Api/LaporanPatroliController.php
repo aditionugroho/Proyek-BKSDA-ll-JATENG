@@ -3,7 +3,6 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
-use App\Models\AuthTokenModel;
 use App\Models\FotoPatroliModel;
 use App\Models\LaporanPatroliModel;
 use CodeIgniter\API\ResponseTrait;
@@ -20,27 +19,6 @@ class LaporanPatroliController extends BaseController
      * Pemeriksaan role dan masa berlaku token tetap dilakukan
      * oleh route filter: role:admin,staf.
      */
-    private function getAuthenticatedUserId(): ?int
-    {
-        $authorization = $this->request->getHeaderLine('Authorization');
-
-        if (!preg_match('/^Bearer\s+(\S+)$/i', $authorization, $matches)) {
-            return null;
-        }
-
-        $token = (new AuthTokenModel())
-            ->where('token_hash', hash('sha256', $matches[1]))
-            ->where('revoked_at', null)
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        return (int) $token['user_id'];
-    }
-
-
     /**
      * GET /api/laporan-patroli
      * Menampilkan laporan sesuai hak akses pengguna.
@@ -52,7 +30,7 @@ class LaporanPatroliController extends BaseController
      */
     public function tampilFoto($id)
     {
-        $userId = $this->getAuthenticatedUserId();
+        $userId = $this->getCurrentUserId();
 
         if (!$userId) {
             return $this->respond([
@@ -174,7 +152,7 @@ class LaporanPatroliController extends BaseController
      */
     public function reviewStatus($id)
     {
-        $userId = $this->getAuthenticatedUserId();
+        $userId = $this->getCurrentUserId();
 
         if (!$userId) {
             return $this->respond([
@@ -254,7 +232,7 @@ class LaporanPatroliController extends BaseController
 
     public function index()
     {
-        $userId = $this->getAuthenticatedUserId();
+        $userId = $this->getCurrentUserId();
 
         if (!$userId) {
             return $this->respond([
@@ -362,7 +340,7 @@ class LaporanPatroliController extends BaseController
      */
     public function create()
     {
-        $userId = $this->getAuthenticatedUserId();
+        $userId = $this->getCurrentUserId();
 
         if (!$userId) {
             return $this->respond([
@@ -582,7 +560,7 @@ if ($clientUuid !== null) {
      */
     public function uploadFoto($id)
     {
-        $userId = $this->getAuthenticatedUserId();
+        $userId = $this->getCurrentUserId();
 
         if (!$userId) {
             return $this->respond([
@@ -607,29 +585,35 @@ if ($clientUuid !== null) {
             ], 404);
         }
 
-        // Pengguna hanya boleh mengunggah foto pada laporannya sendiri.
-        if ((int) $laporan['user_id'] !== $userId) {
+        $user = (new UserModel())
+            ->where('id', $userId)
+            ->where('status', 1)
+            ->first();
+
+        if (!$user) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'Akun pengguna tidak ditemukan atau tidak aktif.',
+            ], 401);
+        }
+
+        /*
+         * Admin dapat mengunggah foto ke laporan mana pun;
+         * selain itu hanya pemilik laporan.
+         */
+        if (
+            $user['role'] !== 'admin' &&
+            (int) $laporan['user_id'] !== $userId
+        ) {
             return $this->respond([
                 'status' => false,
                 'message' => 'Anda tidak memiliki akses ke laporan ini.',
             ], 403);
         }
-        // Periksa penempatan resort pengguna saat ini.
-$user = (new UserModel())
-    ->where('id', $userId)
-    ->where('status', 1)
-    ->first();
 
-if (!$user) {
-    return $this->respond([
-        'status' => false,
-        'message' => 'Akun pengguna tidak ditemukan atau tidak aktif.',
-    ], 401);
-}
-
-// Staf hanya boleh mengunggah foto ke laporan
-// yang berasal dari resort penempatannya saat ini.
-if ($user['role'] === 'staf') {
+        // Staf hanya boleh mengunggah foto ke laporan
+        // yang berasal dari resort penempatannya saat ini.
+        if ($user['role'] === 'staf') {
     if (
         empty($user['resort_id']) ||
         empty($laporan['resort_id']) ||

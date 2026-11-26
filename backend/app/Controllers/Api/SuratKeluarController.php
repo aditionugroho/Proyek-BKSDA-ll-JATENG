@@ -6,7 +6,6 @@ use App\Controllers\BaseController;
 use App\Libraries\ResortAccessPolicy;
 use App\Models\ResortModel;
 use App\Models\ActivityLogModel;
-use App\Models\AuthTokenModel;
 use App\Models\NotifikasiModel;
 use App\Models\SuratKeluarModel;
 use App\Models\UserModel;
@@ -18,7 +17,6 @@ class SuratKeluarController extends BaseController
     use ResponseTrait;
 
     protected SuratKeluarModel $suratModel;
-    protected AuthTokenModel $tokenModel;
     protected ActivityLogModel $activityLogModel;
     protected NotifikasiModel $notifikasiModel;
     protected UserModel $userModel;
@@ -26,49 +24,14 @@ class SuratKeluarController extends BaseController
     public function __construct()
     {
         $this->suratModel = new SuratKeluarModel();
-        $this->tokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
         $this->notifikasiModel = new NotifikasiModel();
         $this->userModel = new UserModel();
     }
 
-    private function getCurrentUserId(): ?int
-    {
-        $authorization = $this->request
-            ->getHeaderLine('Authorization');
-
-        if (
-            !$authorization ||
-            !preg_match(
-                '/^Bearer\s+(\S+)$/i',
-                $authorization,
-                $matches
-            )
-        ) {
-            return null;
-        }
-
-        $tokenHash = hash(
-            'sha256',
-            $matches[1]
-        );
-
-        $token = $this->tokenModel
-            ->where('token_hash', $tokenHash)
-            ->where('revoked_at', null)
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        return (int) $token['user_id'];
-    }
-
     private function currentAccessUser(): ?array
     {
-        $id = $this->getCurrentUserId();
-        return $id ? $this->userModel->where('id', $id)->where('status', 1)->first() : null;
+        return $this->getCurrentUser();
     }
 
     // Fail closed before any detail, write, preview, or file access.
@@ -504,17 +467,21 @@ class SuratKeluarController extends BaseController
         $updateData = [];
 
         foreach ($allowedFields as $field) {
-            if (array_key_exists($field, $data)) {
-                if (
-                    is_string($data[$field])
-                ) {
-                    $updateData[$field] =
-                        trim($data[$field]);
-                } else {
-                    $updateData[$field] =
-                        $data[$field];
-                }
+            if (!array_key_exists($field, $data)) {
+                continue;
             }
+
+            if (!is_string($data[$field])) {
+                return $this->respond([
+                    'status' => false,
+                    'message' =>
+                        $field .
+                        ' harus berupa teks.',
+                ], 422);
+            }
+
+            $updateData[$field] =
+                trim($data[$field]);
         }
 
         if (!$updateData) {
@@ -1166,6 +1133,17 @@ public function previewFile($id = null)
             ], 404);
         }
 
+        // Hapus baris database lebih dulu; file lampiran
+        // hanya dihapus bila penghapusan berhasil.
+
+        if (!$this->suratModel->delete($id)) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Gagal menghapus surat keluar.',
+            ], 500);
+        }
+
         if (
             !empty($surat['file_path'])
         ) {
@@ -1178,9 +1156,6 @@ public function previewFile($id = null)
                 unlink($filePath);
             }
         }
-
-        $this->suratModel
-            ->delete($id);
 
         $this->logActivity(
             'delete',

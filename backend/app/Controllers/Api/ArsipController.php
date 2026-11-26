@@ -4,10 +4,8 @@ namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
 use App\Libraries\ResortAccessPolicy;
-use App\Models\UserModel;
 use App\Models\ActivityLogModel;
 use App\Models\ArsipModel;
-use App\Models\AuthTokenModel;
 use App\Models\SuratKeluarModel;
 use App\Models\SuratMasukModel;
 use CodeIgniter\API\ResponseTrait;
@@ -19,7 +17,6 @@ class ArsipController extends BaseController
     protected ArsipModel $arsipModel;
     protected SuratMasukModel $suratMasukModel;
     protected SuratKeluarModel $suratKeluarModel;
-    protected AuthTokenModel $authTokenModel;
     protected ActivityLogModel $activityLogModel;
 
     public function __construct()
@@ -27,7 +24,6 @@ class ArsipController extends BaseController
         $this->arsipModel = new ArsipModel();
         $this->suratMasukModel = new SuratMasukModel();
         $this->suratKeluarModel = new SuratKeluarModel();
-        $this->authTokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
     }
 
@@ -37,39 +33,6 @@ class ArsipController extends BaseController
     |--------------------------------------------------------------------------
     */
 
-    private function getCurrentUserId(): ?int
-    {
-        $authorization = $this->request
-            ->getHeaderLine('Authorization');
-
-        if (
-            !$authorization ||
-            !preg_match(
-                '/^Bearer\s+(\S+)$/i',
-                $authorization,
-                $matches
-            )
-        ) {
-            return null;
-        }
-
-        $tokenHash = hash(
-            'sha256',
-            $matches[1]
-        );
-
-        $token = $this->authTokenModel
-            ->where('token_hash', $tokenHash)
-            ->where('revoked_at', null)
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        return (int) $token['user_id'];
-    }
-
     /*
     |--------------------------------------------------------------------------
     | ACTIVITY LOG
@@ -78,8 +41,7 @@ class ArsipController extends BaseController
 
     private function currentAccessUser(): ?array
     {
-        $id = $this->getCurrentUserId();
-        return $id ? (new UserModel())->where('id', $id)->where('status', 1)->first() : null;
+        return $this->getCurrentUser();
     }
 
     private function guardArchiveAccess($id)
@@ -496,6 +458,14 @@ class ArsipController extends BaseController
             $data['referensi_id'] ?? 0
         );
 
+        if (isset($data['kategori']) && !is_string($data['kategori'])) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Kategori harus berupa teks.',
+            ], 422);
+        }
+
         $kategori = trim(
             $data['kategori'] ?? ''
         );
@@ -884,6 +854,14 @@ class ArsipController extends BaseController
                 'status' => false,
                 'message' =>
                     'Kategori wajib dikirim.',
+            ], 422);
+        }
+
+        if (isset($data['kategori']) && !is_string($data['kategori'])) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Kategori harus berupa teks.',
             ], 422);
         }
 

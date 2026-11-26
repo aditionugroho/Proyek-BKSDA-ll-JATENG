@@ -3,7 +3,6 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\BaseController;
-use App\Models\AuthTokenModel;
 use App\Models\NotifikasiModel;
 use CodeIgniter\API\ResponseTrait;
 
@@ -12,51 +11,10 @@ class NotifikasiController extends BaseController
     use ResponseTrait;
 
     protected NotifikasiModel $notifikasiModel;
-    protected AuthTokenModel $authTokenModel;
 
     public function __construct()
     {
         $this->notifikasiModel = new NotifikasiModel();
-        $this->authTokenModel = new AuthTokenModel();
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CURRENT USER
-    |--------------------------------------------------------------------------
-    */
-
-    private function getCurrentUserId(): ?int
-    {
-        $authorization = $this->request
-            ->getHeaderLine('Authorization');
-
-        if (
-            !$authorization ||
-            !preg_match(
-                '/^Bearer\s+(\S+)$/i',
-                $authorization,
-                $matches
-            )
-        ) {
-            return null;
-        }
-
-        $tokenHash = hash(
-            'sha256',
-            $matches[1]
-        );
-
-        $token = $this->authTokenModel
-            ->where('token_hash', $tokenHash)
-            ->where('revoked_at', null)
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        return (int) $token['user_id'];
     }
 
     /*
