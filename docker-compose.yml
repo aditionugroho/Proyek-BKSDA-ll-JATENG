@@ -60,6 +60,26 @@ services:
     volumes:
       - sksda_app_writable:/var/www/html/writable
 
+  adminer:
+    image: adminer:latest
+    container_name: sksda-adminer
+    restart: unless-stopped
+
+    depends_on:
+      sksda-mariadb:
+        condition: service_healthy
+
+    environment:
+      ADMINER_DEFAULT_SERVER: sksda-mariadb
+      ADMINER_DEFAULT_USER: ${DB_USER}
+      ADMINER_DEFAULT_PASSWORD: ${DB_PASSWORD}
+      ADMINER_DEFAULT_DB: ${DB_NAME}
+
+    # Antarmuka manajemen database; terikat ke 127.0.0.1
+    # agar tidak diakses dari luar mesin.
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
+
 volumes:
   sksda_mysql_data:
   sksda_app_writable:
