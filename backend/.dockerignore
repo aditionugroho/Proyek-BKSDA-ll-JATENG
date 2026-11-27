@@ -3,6 +3,6 @@ vendor/
 writable/
 .env
 .env.*
-tests/
 .php-cs-fixer.*
 .phpunit.result.cache
+build/
