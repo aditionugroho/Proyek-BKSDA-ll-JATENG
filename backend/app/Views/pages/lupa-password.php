@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/public') ?>
 
 <?= $this->section('title') ?>
-Lupa Password â€” E-Office SKSDA Wilayah II Pemalang
+Lupa Password  E-Office SKSDA Wilayah II Pemalang
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>

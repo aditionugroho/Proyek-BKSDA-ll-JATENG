@@ -152,7 +152,7 @@ Notifikasi Admin - E-Office SKSDA
             kategori: "Registrasi",
             icon: "userPlus",
             judul: "Pendaftar baru: " + r.nama + " (" + status + ")",
-            teks: (r.role === "kepala-seksi" ? "Kepala Seksi" : "Staff") + (r.resort ? " • Resort " + r.resort : "") + " â€¢ " + r.idAtauEmail + " â€” kelola di menu Data Pengguna.",
+            teks: (r.role === "kepala-seksi" ? "Kepala Seksi" : "Staff") + (r.resort ? " • Resort " + r.resort : "") + " â€¢ " + r.idAtauEmail + "  kelola di menu Data Pengguna.",
             waktu: r.daftarPada || new Date().toISOString(),
             link: "<?= base_url('admin/data-pengguna') ?>"
           });

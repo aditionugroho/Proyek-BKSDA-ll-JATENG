@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/public') ?>
 
 <?= $this->section('title') ?>
-Masuk â€” E-Office SKSDA Wilayah II Pemalang
+Masuk  E-Office SKSDA Wilayah II Pemalang
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>

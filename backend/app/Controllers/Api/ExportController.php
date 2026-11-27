@@ -38,47 +38,8 @@ class ExportController extends BaseController
         ]
     ];
 
-    private function historyTable(): void
-    {
-        $db = db_connect();
-
-        if ($db->tableExists('export_history')) {
-            return;
-        }
-
-        $forge = \Config\Database::forge();
-
-        $forge->addField([
-            'id' => [
-                'type' => 'BIGINT',
-                'unsigned' => true,
-                'auto_increment' => true
-            ],
-            'jenis' => [
-                'type' => 'VARCHAR',
-                'constraint' => 24
-            ],
-            'format' => [
-                'type' => 'VARCHAR',
-                'constraint' => 8
-            ],
-            'filename' => [
-                'type' => 'VARCHAR',
-                'constraint' => 180
-            ],
-            'created_at' => [
-                'type' => 'DATETIME'
-            ]
-        ]);
-
-        $forge->addKey('id', true);
-        $forge->createTable('export_history', true);
-    }
-
     public function index()
     {
-        $this->historyTable();
-
         $db = db_connect();
         $stats = [];
         $exports = [];
@@ -325,8 +286,6 @@ class ExportController extends BaseController
         try {
             $file = $this->build($jenis, $format);
 
-            $this->historyTable();
-
             db_connect()->table('export_history')->insert([
                 'jenis' => $jenis,
                 'format' => $format,
@@ -351,8 +310,6 @@ class ExportController extends BaseController
                 ->setStatusCode(404)
                 ->setJSON(['message' => 'Riwayat tidak ditemukan.']);
         }
-
-        $this->historyTable();
 
         $row = db_connect()
             ->table('export_history')

@@ -1,0 +1,85 @@
+services:
+  sksda-mariadb:
+    image: mariadb:11.4
+    container_name: sksda-mariadb
+    restart: unless-stopped
+
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "127.0.0.1:3306:3306"
+
+    volumes:
+      - sksda_mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--connect",
+          "--innodb_initialized",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sksda-app
+    restart: unless-stopped
+
+    depends_on:
+      sksda-mariadb:
+        condition: service_healthy
+
+    environment:
+      CI_ENVIRONMENT: ${CI_ENVIRONMENT:-production}
+      DB_HOST: sksda-mariadb
+      # Nama lowercase mengikuti mekanisme override env
+      # BaseConfig CodeIgniter (database_default_*,
+      # app_baseURL, dll).
+      app_baseURL: http://localhost:${APP_PORT:-8080}/
+      database_default_hostname: sksda-mariadb
+      database_default_database: ${DB_NAME}
+      database_default_username: ${DB_USER}
+      database_default_password: ${DB_PASSWORD}
+      database_default_port: "3306"
+      MIGRATE_ON_START: ${MIGRATE_ON_START:-true}
+
+    ports:
+      - "${APP_PORT:-8080}:80"
+
+    volumes:
+      - sksda_app_writable:/var/www/html/writable
+
+  adminer:
+    image: adminer:latest
+    container_name: sksda-adminer
+    restart: unless-stopped
+
+    depends_on:
+      sksda-mariadb:
+        condition: service_healthy
+
+    environment:
+      ADMINER_DEFAULT_SERVER: sksda-mariadb
+      ADMINER_DEFAULT_USER: ${DB_USER}
+      ADMINER_DEFAULT_PASSWORD: ${DB_PASSWORD}
+      ADMINER_DEFAULT_DB: ${DB_NAME}
+
+    # Antarmuka manajemen database; terikat ke 127.0.0.1
+    # agar tidak diakses dari luar mesin.
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
+
+volumes:
+  sksda_mysql_data:
+  sksda_app_writable:

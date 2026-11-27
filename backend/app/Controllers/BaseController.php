@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Models\AuthTokenModel;
+use App\Models\UserModel;
 use CodeIgniter\Controller;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -28,6 +30,14 @@ abstract class BaseController extends Controller
     // protected $session;
 
     /**
+     * Cache identitas user pada request berjalan
+     * agar token/user tidak di-query berulang.
+     *
+     * null = belum di-resolve, false = anonim/token tidak valid.
+     */
+    protected array|false|null $currentUserIdentity = null;
+
+    /**
      * @return void
      */
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
@@ -41,5 +51,57 @@ abstract class BaseController extends Controller
 
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
+    }
+
+    /**
+     * User aktif dari bearer token pada request berjalan.
+     * Token sudah divalidasi penuh oleh auth/role filter;
+     * di sini cukup dipetakan ke baris user aktif.
+     */
+    protected function getCurrentUser(): ?array
+    {
+        if ($this->currentUserIdentity !== null) {
+            return $this->currentUserIdentity === false
+                ? null
+                : $this->currentUserIdentity;
+        }
+
+        $authHeader = $this->request->getHeaderLine('Authorization');
+
+        if (
+            !$authHeader ||
+            !preg_match('/^Bearer\s+(\S+)$/i', $authHeader, $matches)
+        ) {
+            $this->currentUserIdentity = false;
+
+            return null;
+        }
+
+        $token = (new AuthTokenModel())
+            ->where('token_hash', hash('sha256', $matches[1]))
+            ->where('revoked_at', null)
+            ->first();
+
+        if (!$token) {
+            $this->currentUserIdentity = false;
+
+            return null;
+        }
+
+        $user = (new UserModel())
+            ->where('id', $token['user_id'])
+            ->where('status', 1)
+            ->first();
+
+        $this->currentUserIdentity = $user ?: false;
+
+        return $user ?: null;
+    }
+
+    protected function getCurrentUserId(): ?int
+    {
+        $user = $this->getCurrentUser();
+
+        return $user !== null ? (int) $user['id'] : null;
     }
 }

@@ -149,21 +149,6 @@ $routes->group(
         );
 
         $routes->post(
-            'forgot-password',
-            'Api\AuthController::forgotPassword'
-        );
-
-        $routes->post(
-            'verify-otp',
-            'Api\AuthController::verifyOtp'
-        );
-
-        $routes->post(
-            'reset-password',
-            'Api\AuthController::resetPassword'
-        );
-
-        $routes->post(
             'logout',
             'Api\AuthController::logout',
             [

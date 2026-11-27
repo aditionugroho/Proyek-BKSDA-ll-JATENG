@@ -201,8 +201,14 @@ class TugasChecklistController extends BaseController
             ], 403);
         }
 
+        if (!ctype_digit((string) $checklistId)) {
+            return $this->respond([
+                'status' => false,
+                'message' => 'ID checklist tidak valid.'
+            ], 400);
+        }
+
         if (
-            !ctype_digit((string) $checklistId) ||
             in_array(
                 $access['task']['status'],
                 ['Menunggu Review', 'Selesai'],

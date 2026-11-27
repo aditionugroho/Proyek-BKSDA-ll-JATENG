@@ -30,10 +30,14 @@
 # DATABASE
 #--------------------------------------------------------------------
 
-# database.default.hostname = localhost
-# database.default.database = ci4
-# database.default.username = root
-# database.default.password = root
+# Nilai database, username, dan password harus sama dengan
+# konfigurasi docker-compose.yml di root repositori
+# (DB_NAME, DB_USER, dan DB_PASSWORD pada .env root).
+
+# database.default.hostname = 127.0.0.1
+# database.default.database =
+# database.default.username =
+# database.default.password =
 # database.default.DBDriver = MySQLi
 # database.default.DBPrefix =
 # database.default.port = 3306
@@ -67,3 +71,12 @@
 #--------------------------------------------------------------------
 
 # logger.threshold = 4
+
+#--------------------------------------------------------------------
+# EMAIL OTP (RESET PASSWORD)
+#--------------------------------------------------------------------
+# Alamat pengirim kode OTP. Jika kosong, fallback ke
+# email.fromEmail pada app/Config/Email.php.
+
+# OTP_EMAIL_FROM = 'no-reply@example.com'
+# OTP_EMAIL_NAME = 'E-Office BKSDA'

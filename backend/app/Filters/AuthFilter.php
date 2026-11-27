@@ -3,6 +3,7 @@
 namespace App\Filters;
 
 use App\Models\AuthTokenModel;
+use App\Models\LoginLogModel;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -169,6 +170,37 @@ if (!$user) {
                 ),
             ]
         );
+
+        /*
+         * ==============================
+         * RETENSI TOKEN & LOG LOGIN
+         * ==============================
+         *
+         * Dijalankan pada sebagian kecil request:
+         * token kedaluwarsa/dicabut > 30 hari dan
+         * log login > 90 hari dihapus agar tabel
+         * tidak tumbuh tanpa batas.
+         */
+
+        if (random_int(1, 100) === 1) {
+            $tokenCutoff =
+                date('Y-m-d H:i:s', $now - 30 * 86400);
+
+            $tokenModel
+                ->where('expires_at <', $tokenCutoff)
+                ->delete();
+
+            $tokenModel
+                ->where('revoked_at <', $tokenCutoff)
+                ->delete();
+
+            (new LoginLogModel())
+                ->where(
+                    'login_at <',
+                    date('Y-m-d H:i:s', $now - 90 * 86400)
+                )
+                ->delete();
+        }
 
         /*
          * Request boleh lanjut ke controller.

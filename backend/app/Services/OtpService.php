@@ -16,7 +16,7 @@ class OtpService
         $email = service('email');
 
         $email->setFrom(
-            env('OTP_EMAIL_FROM'),
+            env('OTP_EMAIL_FROM') ?: config('Email')->fromEmail,
             env('OTP_EMAIL_NAME', 'E-Office BKSDA')
         );
 

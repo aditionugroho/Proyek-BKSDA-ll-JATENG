@@ -5,7 +5,6 @@ namespace App\Controllers\Api;
 use App\Controllers\BaseController;
 use App\Models\ActivityLogModel;
 use App\Models\ArsipModel;
-use App\Models\AuthTokenModel;
 use App\Models\DisposisiModel;
 use App\Models\NotifikasiModel;
 use App\Models\SuratMasukModel;
@@ -20,7 +19,6 @@ class DisposisiController extends BaseController
     protected DisposisiModel $disposisiModel;
     protected SuratMasukModel $suratModel;
     protected UserModel $userModel;
-    protected AuthTokenModel $tokenModel;
     protected ActivityLogModel $activityLogModel;
     protected NotifikasiModel $notifikasiModel;
     protected ArsipModel $arsipModel;
@@ -31,53 +29,10 @@ class DisposisiController extends BaseController
         $this->disposisiModel = new DisposisiModel();
         $this->suratModel = new SuratMasukModel();
         $this->userModel = new UserModel();
-        $this->tokenModel = new AuthTokenModel();
         $this->activityLogModel = new ActivityLogModel();
         $this->notifikasiModel = new NotifikasiModel();
         $this->arsipModel = new ArsipModel();
         $this->riwayatModel = new DisposisiRiwayatModel();
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CURRENT USER
-    |--------------------------------------------------------------------------
-    */
-
-    private function getCurrentUser(): ?array
-    {
-        $authHeader = $this->request
-            ->getHeaderLine('Authorization');
-
-        if (
-            !$authHeader ||
-            !preg_match(
-                '/^Bearer\s+(\S+)$/i',
-                $authHeader,
-                $matches
-            )
-        ) {
-            return null;
-        }
-
-        $tokenHash = hash(
-            'sha256',
-            $matches[1]
-        );
-
-        $token = $this->tokenModel
-            ->where('token_hash', $tokenHash)
-            ->where('revoked_at', null)
-            ->first();
-
-        if (!$token) {
-            return null;
-        }
-
-        return $this->userModel
-            ->where('id', $token['user_id'])
-            ->where('status', 1)
-            ->first();
     }
 
     /*
@@ -1701,35 +1656,46 @@ try {
         |--------------------------------------------------------------------------
         | UPDATE SURAT MASUK
         |--------------------------------------------------------------------------
+        | Surat hanya dianggap selesai bila tidak ada
+        | disposisi lain yang masih berjalan untuk
+        | surat yang sama.
         */
 
-        $suratUpdated = $this->suratModel->update(
-            $disposisi['surat_masuk_id'],
-            [
-                'status' => 'selesai',
-            ]
-        );
+        $disposisiAktif = $db->table('disposisi')
+            ->where('surat_masuk_id', $disposisiTerkunci['surat_masuk_id'])
+            ->where('id !=', (int) $id)
+            ->where('status !=', 'selesai')
+            ->countAllResults();
 
-        if (!$suratUpdated) {
-            throw new \RuntimeException(
-                'Gagal memperbarui status surat masuk.'
+        if ($disposisiAktif === 0) {
+            $suratUpdated = $this->suratModel->update(
+                $disposisiTerkunci['surat_masuk_id'],
+                [
+                    'status' => 'selesai',
+                ]
             );
-        }
 
-        /*
-        |--------------------------------------------------------------------------
-        | AUTO ARCHIVE
-        |--------------------------------------------------------------------------
-        */
+            if (!$suratUpdated) {
+                throw new \RuntimeException(
+                    'Gagal memperbarui status surat masuk.'
+                );
+            }
 
-        $arsipId = $this->archiveSuratMasukIfNeeded(
-            (int) $disposisi['surat_masuk_id']
-        );
+            /*
+            |--------------------------------------------------------------------------
+            | AUTO ARCHIVE
+            |--------------------------------------------------------------------------
+            */
 
-        if ($arsipId === null) {
-            throw new \RuntimeException(
-                'Gagal membuat arsip surat masuk.'
+            $arsipId = $this->archiveSuratMasukIfNeeded(
+                (int) $disposisiTerkunci['surat_masuk_id']
             );
+
+            if ($arsipId === null) {
+                throw new \RuntimeException(
+                    'Gagal membuat arsip surat masuk.'
+                );
+            }
         }
 
         /*

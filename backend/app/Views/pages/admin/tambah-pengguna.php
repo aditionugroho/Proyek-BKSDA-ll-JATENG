@@ -112,7 +112,7 @@ Tambah Pengguna Baru - E-Office SKSDA
             <div class="tp-field">
               <label class="tp-label" for="tp-unit">Unit Kerja Induk (Seksi Wilayah) <span class="tp-req">*</span></label>
               <select id="tp-unit">
-                <option value="Seksi Konservasi Wilayah II" selected>Seksi Konservasi Wilayah II â€” Pemalang</option>
+                <option value="Seksi Konservasi Wilayah II" selected>Seksi Konservasi Wilayah II  Pemalang</option>
               </select>
               <p class="tp-hint">Terkunci otomatis sesuai lingkup kewenangan administratif admin login.</p>
             </div>
@@ -120,7 +120,7 @@ Tambah Pengguna Baru - E-Office SKSDA
               <label class="tp-label" for="tp-resort-input">Resort Konservasi / Subbag Operasional <span class="tp-req">*</span></label>
               <input type="text" id="tp-resort-input" list="tp-resort-list" placeholder="Ketik manual nama resort / subbag..." autocomplete="off" />
               <datalist id="tp-resort-list"></datalist>
-              <p class="tp-hint">Isi manual bebas â€” entri yang pernah diketip muncul sebagai saran dan dikelola di bawah (bisa dihapus).</p>
+              <p class="tp-hint">Isi manual bebas  entri yang pernah diketip muncul sebagai saran dan dikelola di bawah (bisa dihapus).</p>
               <div class="tp-resort-saved" id="tp-resort-saved" hidden>
                 <p class="tp-resort-saved-label">Entri tersimpan (klik &#10005; untuk hapus):</p>
                 <div class="tp-resort-chips" id="tp-resort-chips"></div>
@@ -255,9 +255,9 @@ Tambah Pengguna Baru - E-Office SKSDA
           </div>
 
           <div class="tp-perms">
-            <label class="tp-check"><input type="checkbox" id="opt-1" checked /><span><strong>Wajib Ganti Sandi Pada Login Pertama</strong> â€” pegawai tidak dapat mengakses arsip surat sebelum memperbarui kata sandi pribadinya.</span></label>
-            <label class="tp-check"><input type="checkbox" id="opt-2" checked /><span><strong>Aktifkan Status Akun Segera</strong> â€” akun langsung siap menerima tembusan disposisi dan penugasan per hari ini.</span></label>
-            <label class="tp-check"><input type="checkbox" id="opt-3" checked /><span><strong>Kirim Salinan Kredensial Otomatis</strong> â€” mengirimkan informasi login, panduan e-Office, dan password ke email dinas terdaftar.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-1" checked /><span><strong>Wajib Ganti Sandi Pada Login Pertama</strong>  pegawai tidak dapat mengakses arsip surat sebelum memperbarui kata sandi pribadinya.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-2" checked /><span><strong>Aktifkan Status Akun Segera</strong>  akun langsung siap menerima tembusan disposisi dan penugasan per hari ini.</span></label>
+            <label class="tp-check"><input type="checkbox" id="opt-3" checked /><span><strong>Kirim Salinan Kredensial Otomatis</strong>  mengirimkan informasi login, panduan e-Office, dan password ke email dinas terdaftar.</span></label>
           </div>
         </section>
 
@@ -305,8 +305,8 @@ Tambah Pengguna Baru - E-Office SKSDA
           <div class="tp-preview-row">
             <span class="tp-preview-avatar" id="pv-avatar">AF</span>
             <div>
-              <p class="tp-preview-name" id="pv-nama">â€”</p>
-              <p class="tp-preview-meta" id="pv-meta">NIP. â€”</p>
+              <p class="tp-preview-name" id="pv-nama"></p>
+              <p class="tp-preview-meta" id="pv-meta">NIP. </p>
             </div>
             <span class="tp-preview-status" id="pv-status">BARU</span>
           </div>
@@ -423,8 +423,8 @@ Tambah Pengguna Baru - E-Office SKSDA
 
     /* ===== Preview panel ===== */
     function updatePreview() {
-      $("pv-nama").textContent = $("tp-nama").value.trim() || "â€”";
-      $("pv-meta").textContent = "NIP. " + ($("tp-nip").value.replace(/\s/g, "") || "â€”");
+      $("pv-nama").textContent = $("tp-nama").value.trim() || "";
+      $("pv-meta").textContent = "NIP. " + ($("tp-nip").value.replace(/\s/g, "") || "");
       $("pv-avatar").textContent = inisialDariNama($("tp-nama").value);
     }
 

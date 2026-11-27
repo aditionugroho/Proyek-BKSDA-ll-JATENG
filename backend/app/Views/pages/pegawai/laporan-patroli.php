@@ -13,7 +13,7 @@ Laporan Patroli - E-Office SKSDA
     <section class="pgs-head">
       <div>
         <h1 class="pgs-title">Laporan Patroli</h1>
-        <p class="pgs-desc">Isi laporan patroli lapangan langsung dari HP â€” tanggal, wilayah, temuan, dan foto.</p>
+        <p class="pgs-desc">Isi laporan patroli lapangan langsung dari HP  tanggal, wilayah, temuan, dan foto.</p>
       </div>
     </section>
 

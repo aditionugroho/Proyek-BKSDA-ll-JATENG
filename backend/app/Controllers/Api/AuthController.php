@@ -170,12 +170,23 @@ public function register()
             ], 400);
         }
 
-        $username = trim(
-            $data['username'] ?? ''
-        );
+        $username = $data['username'] ?? '';
 
         $password =
             $data['password'] ?? '';
+
+        if (
+            !is_string($username) ||
+            !is_string($password)
+        ) {
+            return $this->respond([
+                'status' => false,
+                'message' =>
+                    'Username dan password harus berupa teks.',
+            ], 422);
+        }
+
+        $username = trim($username);
 
         if (
             $username === '' ||
@@ -225,26 +236,47 @@ public function register()
             ], 429);
         }
 
-// Cari berdasarkan username terlebih dahulu
-$user = $this->userModel
+/*
+ * Satu query mencocokkan ketiga identitas: username, email,
+ * dan nama. Kecocokan username/email diutamakan karena
+ * bersifat unik; jika hanya cocok nama pada lebih dari satu
+ * akun, minta pengguna login dengan username.
+ */
+
+$identifier = strtolower($username);
+
+$matchingUsers = $this->userModel
     ->where('username', $username)
-    ->first();
+    ->orWhere('email', $identifier)
+    ->orWhere('name', $username)
+    ->findAll();
 
-// Jika username tidak ditemukan, cari berdasarkan nama
-if (!$user) {
-    $matchingUsers = $this->userModel
-        ->where('name', $username)
-        ->findAll();
+$user = null;
 
-    // Nama yang digunakan lebih dari satu akun
-    if (count($matchingUsers) > 1) {
-        return $this->respond([
-            'status' => false,
-            'message' => 'Nama pengguna digunakan oleh beberapa akun. Silakan login menggunakan username.',
-        ], 409);
+foreach ($matchingUsers as $row) {
+    $rowEmail = strtolower((string) ($row['email'] ?? ''));
+
+    if (
+        strcasecmp((string) $row['username'], $username) === 0 ||
+        ($rowEmail !== '' && $rowEmail === $identifier)
+    ) {
+        $user = $row;
+
+        break;
     }
+}
 
-    // Gunakan akun jika nama hanya ditemukan satu kali
+if (
+    !$user &&
+    count($matchingUsers) > 1
+) {
+    return $this->respond([
+        'status' => false,
+        'message' => 'Nama pengguna digunakan oleh beberapa akun. Silakan login menggunakan username.',
+    ], 409);
+}
+
+if (!$user) {
     $user = $matchingUsers[0] ?? null;
 }
 
