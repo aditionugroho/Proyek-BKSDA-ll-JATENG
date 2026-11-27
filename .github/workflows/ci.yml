@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  tests:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: eoffice_bksda_test
+        ports:
+          - "3306:3306"
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+    env:
+      database_tests_hostname: 127.0.0.1
+      database_tests_port: "3306"
+      database_tests_database: eoffice_bksda_test
+      database_tests_username: root
+      database_tests_password: root
+      database_tests_DBDriver: MySQLi
+      database_tests_DBPrefix: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: intl, gd, zip, mysqli, pdo_mysql
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  docker-smoke:
+    name: Docker build & smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare environment file
+        run: cp .env.example .env
+
+      - name: Build and start stack
+        run: docker compose up -d --build
+
+      - name: Wait for application
+        run: |
+          ok=""
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "$ok" ]; then
+            docker compose logs app
+            exit 1
+          fi
+
+      - name: Smoke test endpoints
+        run: |
+          code_app=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/)
+          code_api=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/public/resorts)
+          code_adminer=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/)
+          echo "app=${code_app} api=${code_api} adminer=${code_adminer}"
+          test "$code_app" = "200" && test "$code_api" = "200" && test "$code_adminer" = "200"
+
+      - name: Seed users
+        run: docker compose exec -T app php spark db:seed UsersSeeder
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
