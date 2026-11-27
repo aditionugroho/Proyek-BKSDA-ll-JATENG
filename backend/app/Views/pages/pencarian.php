@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/public') ?>
 
 <?= $this->section('title') ?>
-Pencarian â€” E-Office SKSDA
+Pencarian  E-Office SKSDA
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>

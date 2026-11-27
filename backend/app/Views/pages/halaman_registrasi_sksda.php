@@ -5,7 +5,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<title data-i18n-title="title.reg">Buat Akun â€” E-Office SKSDA Wilayah II Pemalang</title>
+<title data-i18n-title="title.reg">Buat Akun  E-Office SKSDA Wilayah II Pemalang</title>
   <meta name="description" content="Daftarkan akun untuk akses portal resmi E-Office SKSDA Wilayah II Pemalang." />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= base_url('assets/css/pages/registrasi.css') ?>" />
@@ -153,19 +153,19 @@
           <ul class="summary">
             <li>
               <span class="summary-label" data-i18n="reg.sum.nama">Nama Lengkap</span>
-              <span class="summary-value" id="sum-nama">â€”</span>
+              <span class="summary-value" id="sum-nama"></span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.id">ID Resmi / Email</span>
-              <span class="summary-value" id="sum-idemail">â€”</span>
+              <span class="summary-value" id="sum-idemail"></span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.role">Role</span>
-              <span class="summary-value" id="sum-role">â€”</span>
+              <span class="summary-value" id="sum-role"></span>
             </li>
             <li>
               <span class="summary-label">Resort</span>
-              <span class="summary-value" id="sum-resort">â€”</span>
+              <span class="summary-value" id="sum-resort"></span>
             </li>
             <li>
               <span class="summary-label" data-i18n="reg.sum.pass">Kata Sandi</span>
@@ -270,7 +270,7 @@
         const resortSel = document.getElementById("resort");
         document.getElementById("sum-resort").textContent = resortSel.value
           ? (resortSel.querySelector('option[value="' + resortSel.value + '"]') || {}).textContent || resortSel.value
-          : "â€”";
+          : "";
       }
     }
 
