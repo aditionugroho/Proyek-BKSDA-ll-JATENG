@@ -1,18 +1,18 @@
 # E-Office SKSDA Jawa Tengah
 
-Sistem e-office untuk administrasi surat dan kinerja pegawai BKSDA Jawa Tengah: manajemen surat masuk/keluar, disposisi, arsip, laporan patroli, tugas, jadwal, hingga laporan anggaran — dibangun dengan CodeIgniter 4 dan sepenuhnya dapat dijalankan lewat Docker.
+Sistem e-office untuk administrasi surat dan kinerja pegawai BKSDA Jawa Tengah: manajemen surat masuk/keluar, disposisi, arsip, laporan patroli, tugas, jadwal, hingga laporan anggaran. Dibangun dengan CodeIgniter 4 dan sepenuhnya dapat dijalankan lewat Docker.
 
 ## Fitur
 
-- **Surat Masuk & Keluar** — pencatatan, unggah lampiran, preview/unduh file, kunci otomatis setelah didisposisi
-- **Disposisi** — alur Kepala Seksi → Staf (terima, klarifikasi, tindak lanjut, selesai), riwayat perubahan status, auto-arsip ketika seluruh disposisi selesai
-- **Arsip** — pengarsipan surat otomatis dan manual dengan kategori
-- **Laporan Patroli** — laporan harian staf dengan unggah foto (mendukung sinkronisasi offline via `client_uuid` untuk aplikasi mobile)
-- **Tugas** — penugasan dengan checklist, kolaborasi (komentar, aktivitas, lampiran), review Kepala Seksi
-- **Jadwal** — agenda pribadi pegawai dan agenda seksi
-- **Dokumen** — penyimpanan dokumen dengan status draft/publish
-- **Laporan & Export** — target triwulan, realisasi anggaran, wilayah konservasi, export CSV/PDF/XLSX dengan riwayat
-- **Administrasi** — manajemen pengguna, resort, notifikasi, riwayat login, backup database, activity log
+- **Surat Masuk & Keluar**: pencatatan, unggah lampiran, preview/unduh file, kunci otomatis setelah didisposisi
+- **Disposisi**: alur Kepala Seksi → Staf (terima, klarifikasi, tindak lanjut, selesai), riwayat perubahan status, auto-arsip ketika seluruh disposisi selesai
+- **Arsip**: pengarsipan surat otomatis dan manual dengan kategori
+- **Laporan Patroli**: laporan harian staf dengan unggah foto (mendukung sinkronisasi offline via `client_uuid` untuk aplikasi mobile)
+- **Tugas**: penugasan dengan checklist, kolaborasi (komentar, aktivitas, lampiran), review Kepala Seksi
+- **Jadwal**: agenda pribadi pegawai dan agenda seksi
+- **Dokumen**: penyimpanan dokumen dengan status draft/publish
+- **Laporan & Export**: target triwulan, realisasi anggaran, wilayah konservasi, export CSV/PDF/XLSX dengan riwayat
+- **Administrasi**: manajemen pengguna, resort, notifikasi, riwayat login, backup database, activity log
 
 ## Teknologi
 
@@ -22,7 +22,7 @@ Sistem e-office untuk administrasi surat dan kinerja pegawai BKSDA Jawa Tengah: 
 | Database | MariaDB 11.4 |
 | Frontend | Views CodeIgniter 4 (server-rendered) |
 | Export | Dompdf (PDF), PhpSpreadsheet (XLSX/CSV) |
-| Autentikasi | Bearer token — idle 30 menit, absolute 8 jam |
+| Autentikasi | Bearer token, idle 30 menit, absolute 8 jam |
 | Deployment | Docker Compose |
 
 ## Struktur Repositori
@@ -57,27 +57,32 @@ Sistem e-office untuk administrasi surat dan kinerja pegawai BKSDA Jawa Tengah: 
 
    Container `app` akan otomatis menunggu MariaDB siap dan menjalankan `php spark migrate` saat pertama start (`MIGRATE_ON_START=true`).
 
-3. Buat akun admin awal:
+3. Buat akun awal untuk semua role (admin, kepala seksi, staf):
 
    ```bash
-   docker exec sksda-app php spark db:seed AdminSeeder
+   docker exec sksda-app php spark db:seed UsersSeeder
    ```
 
-   Aplikasi tersedia di http://localhost:8080 — login default `admin` / `admin123`. **Segera ubah password setelah login.**
+   Aplikasi tersedia di http://localhost:8080, login default `admin` / `admin123`. Password dapat diatur saat seeding melalui `SEED_USER_PASSWORD`. **Segera ubah password setelah login.**
 
 ### Variabel Konfigurasi (`.env` root)
 
 | Variabel | Wajib | Default | Keterangan |
 |---|---|---|---|
-| `DB_ROOT_PASSWORD` | Ya | — | Password root MariaDB |
-| `DB_PASSWORD` | Ya | — | Password user aplikasi |
-| `DB_NAME` | Ya | — | Nama database yang dibuat compose |
-| `DB_USER` | Ya | — | User aplikasi database |
+| `DB_ROOT_PASSWORD` | Ya | Tidak | Password root MariaDB |
+| `DB_PASSWORD` | Ya | Tidak | Password user aplikasi |
+| `DB_NAME` | Ya | Tidak | Nama database yang dibuat compose |
+| `DB_USER` | Ya | Tidak | User aplikasi database |
 | `APP_PORT` | Tidak | `8080` | Port host untuk aplikasi |
+| `ADMINER_PORT` | Tidak | `8081` | Port host untuk Adminer |
 | `MIGRATE_ON_START` | Tidak | `true` | Jalankan migrasi saat container start |
 | `CI_ENVIRONMENT` | Tidak | `production` | Mode CodeIgniter |
 
 Nama database/user/password ini juga otomatis disuntikkan ke aplikasi melalui mekanisme override env CodeIgniter (`database_default_*`), sehingga `backend/.env` tidak diperlukan di dalam container.
+
+### Inspeksi Database (Adminer)
+
+Adminer tersedia di http://localhost:8081 (hanya diakses dari mesin lokal). Server, user, dan database sudah terisi otomatis, cukup masukkan `DB_PASSWORD`.
 
 ## Menjalankan Tanpa Docker
 
@@ -86,11 +91,37 @@ cd backend
 composer install
 cp env .env            # sesuaikan database.default.* dengan database Anda
 php spark migrate
-php spark db:seed AdminSeeder
+php spark db:seed UsersSeeder
 php spark serve        # http://localhost:8080
 ```
 
-Seed tambahan untuk pengembangan: `DevAccountsSeeder` (akun per role) dan `ResortSeeder`.
+Seed tambahan: `DevAccountsSeeder` (akun khusus development) dan `ResortSeeder`.
+
+## Pengujian
+
+Test suite PHPUnit berjalan terhadap database khusus pengujian (`eoffice_bksda_test`) yang sepenuhnya terpisah dari database aplikasi; skema dimigrasikan otomatis saat suite dijalankan.
+
+```bash
+cd backend
+composer install
+
+# Buat database uji (sekali saja) dan jalankan suite
+docker exec sksda-mariadb mariadb -u root -p"${DB_ROOT_PASSWORD}" \
+  -e "CREATE DATABASE IF NOT EXISTS eoffice_bksda_test; GRANT ALL PRIVILEGES ON eoffice_bksda_test.* TO '${DB_USER}'@'%';"
+
+export database_tests_hostname=127.0.0.1
+export database_tests_database=eoffice_bksda_test
+export database_tests_username=root
+export database_tests_password="${DB_ROOT_PASSWORD}"
+vendor/bin/phpunit
+```
+
+## CI (GitHub Actions)
+
+`.github/workflows/ci.yml` berjalan pada setiap push ke `main` dan pull request:
+
+1. **PHPUnit** terhadap service MariaDB dengan database `eoffice_bksda_test`.
+2. **Docker smoke test**: build image, jalankan stack penuh, verifikasi endpoint aplikasi/API/Adminer, dan seed pengguna.
 
 ## Perintah Spark Kustom
 
